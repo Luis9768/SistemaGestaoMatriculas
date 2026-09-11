@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: gestao_matriculas_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: gestao_matriculas
+      MYSQL_USER: matriculas_user
+      MYSQL_PASSWORD: matriculas_pass
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
