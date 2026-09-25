@@ -1,17 +1,16 @@
 services:
-  mysql:
-    image: mysql:8.0
+  postgres:
+    image: postgres:16-alpine
     container_name: gestao_matriculas_db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: gestao_matriculas
-      MYSQL_USER: matriculas_user
-      MYSQL_PASSWORD: matriculas_pass
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_DB: gestao_matriculas
+      POSTGRES_USER: matriculas_user
+      POSTGRES_PASSWORD: matriculas_pass
     ports:
-      - "3307:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  mysql_data:
+  postgres_data:

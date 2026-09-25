@@ -22,12 +22,14 @@ public class MatriculaController {
 
     @GetMapping
     public ResponseEntity<List<MatriculaDTO>> listar(
+            @RequestParam(required = false) Long escolaId,
             @RequestParam(required = false) Long turmaId,
             @RequestParam(required = false) Long alunoId,
             @RequestParam(required = false) CanalOrigem canal,
             @RequestParam(required = false) StatusMatricula status) {
-        return ResponseEntity.ok(matriculaService.listar(turmaId, alunoId, canal, status));
+        return ResponseEntity.ok(matriculaService.listar(escolaId, turmaId, alunoId, canal, status));
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<MatriculaDTO> buscarPorId(@PathVariable Long id) {
@@ -47,5 +49,17 @@ public class MatriculaController {
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<MatriculaDTO> cancelar(@PathVariable Long id) {
         return ResponseEntity.ok(matriculaService.cancelarMatricula(id));
+    }
+
+    @PatchMapping("/{id}/desligar-faltas")
+    public ResponseEntity<MatriculaDTO> desligarPorFaltas(
+            @PathVariable Long id,
+            @RequestParam(required = false) String motivo) {
+        return ResponseEntity.ok(matriculaService.desligarPorFaltas(id, motivo));
+    }
+
+    @PatchMapping("/{id}/promover-suplente")
+    public ResponseEntity<MatriculaDTO> promoverSuplente(@PathVariable Long id) {
+        return ResponseEntity.ok(matriculaService.promoverSuplente(id));
     }
 }

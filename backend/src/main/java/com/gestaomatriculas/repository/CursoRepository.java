@@ -11,4 +11,8 @@ import java.util.List;
 public interface CursoRepository extends JpaRepository<Curso, Long> {
     List<Curso> findByAtivoTrue();
     List<Curso> findByTipo(TipoCurso tipo);
+    List<Curso> findByEscolaId(Long escolaId);
+    List<Curso> findByEscolaIdAndAtivoTrue(Long escolaId);
+    List<Curso> findByEscolaIdAndTipo(Long escolaId, TipoCurso tipo);
+    boolean existsByEscolaId(Long escolaId);
 }

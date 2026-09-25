@@ -42,6 +42,30 @@ public class Aluno {
     @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "responsavel_id")
+    private Responsavel responsavel;
+
+    @Column(name = "consentimento_lgpd")
+    @Builder.Default
+    private Boolean consentimentoLgpd = true;
+
+    @Column(name = "data_consentimento_lgpd")
+    private LocalDateTime dataConsentimentoLgpd;
+
+    @Column(name = "consentimento_uso_imagem")
+    @Builder.Default
+    private Boolean consentimentoUsoImagem = false;
+
+    @Column(name = "termo_papel_entregue")
+    @Builder.Default
+    private Boolean termoPapelEntregue = true;
+
+    public boolean isMenorDeIdade() {
+        if (dataNascimento == null) return false;
+        return java.time.Period.between(dataNascimento, java.time.LocalDate.now()).getYears() < 18;
+    }
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

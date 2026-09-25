@@ -30,10 +30,18 @@ public class Curso {
     @Column(columnDefinition = "TEXT")
     private String descricao;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "escola_id")
+    private Escola escola;
+
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private TipoCurso tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private com.gestaomatriculas.model.enums.ModalidadeCurso modalidade;
 
     @NotNull
     @Column(name = "duracao_meses", nullable = false)
@@ -42,6 +50,10 @@ public class Curso {
     @NotNull
     @Column(name = "carga_horaria", nullable = false)
     private Integer cargaHoraria;
+
+    @OneToMany(mappedBy = "curso", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private java.util.List<Disciplina> disciplinas = new java.util.ArrayList<>();
 
     @Builder.Default
     @Column(nullable = false)

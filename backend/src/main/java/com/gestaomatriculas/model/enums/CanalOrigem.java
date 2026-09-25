@@ -4,5 +4,7 @@ public enum CanalOrigem {
     PRESENCIAL,
     FORMS,
     SITE,
-    PLANILHA
+    PLANILHA,
+    CULTURA_AZ
 }
+

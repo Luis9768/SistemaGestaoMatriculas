@@ -39,7 +39,17 @@ public class TurmaDTO {
     @Min(value = 1, message = "Deve haver no mínimo 1 vaga")
     private Integer vagasTotais;
 
+    private Long escolaId;
+    private String escolaNome;
+    private String escolaSigla;
+
+    private Integer idadeMinima;
+    private Integer idadeMaxima;
+    private Integer diasToleranciaSuplencia;
+    private Boolean suplenciaAberta;
+
     private Integer vagasOcupadas;
     private StatusTurma status;
     private Boolean matriculaAberta;
 }
+

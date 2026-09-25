@@ -20,9 +20,11 @@ public class TurmaController {
     @GetMapping
     public ResponseEntity<List<TurmaDTO>> listar(
             @RequestParam(required = false) Long cursoId,
+            @RequestParam(required = false) Long escolaId,
             @RequestParam(required = false) Boolean apenasAbertas) {
-        return ResponseEntity.ok(turmaService.listarTodas(cursoId, apenasAbertas));
+        return ResponseEntity.ok(turmaService.listarTodas(cursoId, escolaId, apenasAbertas));
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<TurmaDTO> buscarPorId(@PathVariable Long id) {

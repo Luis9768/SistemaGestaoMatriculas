@@ -26,6 +26,13 @@ public class MatriculaDTO {
     private String turmaCodigo;
     private String cursoNome;
 
+    private Long escolaId;
+    private String escolaNome;
+    private String escolaSigla;
+
+    private String responsavelNome;
+    private String responsavelTelefone;
+
     private LocalDateTime dataMatricula;
 
     @NotNull(message = "O canal de origem é obrigatório")
@@ -34,3 +41,4 @@ public class MatriculaDTO {
     private StatusMatricula status;
     private String observacoes;
 }
+

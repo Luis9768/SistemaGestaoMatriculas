@@ -14,8 +14,12 @@ import java.util.Optional;
 public interface TurmaRepository extends JpaRepository<Turma, Long> {
     Optional<Turma> findByCodigo(String codigo);
     List<Turma> findByCursoId(Long cursoId);
-    List<Turma> findByStatus(StatusTurma status);
+    List<Turma> findByCursoEscolaId(Long escolaId);
 
     @Query("SELECT t FROM Turma t WHERE t.status = 'ABERTA' AND :hoje BETWEEN t.dataAberturaMatricula AND t.dataFechamentoMatricula")
     List<Turma> findTurmasComMatriculaAberta(LocalDate hoje);
+
+    @Query("SELECT t FROM Turma t WHERE t.curso.escola.id = :escolaId AND t.status = 'ABERTA' AND :hoje BETWEEN t.dataAberturaMatricula AND t.dataFechamentoMatricula")
+    List<Turma> findTurmasComMatriculaAbertaPorEscola(Long escolaId, LocalDate hoje);
 }
+

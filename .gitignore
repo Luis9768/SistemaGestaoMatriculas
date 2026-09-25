@@ -24,6 +24,11 @@ frontend/.env*.local
 # Logs e Dados
 *.log
 mysql_data/
+postgres_data/
+data/
+backend/data/
+*.mv.db
+*.trace.db
 
 # Sistema Operacional
 .DS_Store

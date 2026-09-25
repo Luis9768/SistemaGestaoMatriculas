@@ -63,6 +63,19 @@ public class Turma {
     @Column(nullable = false, length = 50)
     private StatusTurma status = StatusTurma.ABERTA;
 
+    @Column(name = "idade_minima")
+    private Integer idadeMinima;
+
+    @Column(name = "idade_maxima")
+    private Integer idadeMaxima;
+
+    @Builder.Default
+    @Column(name = "dias_tolerancia_suplencia")
+    private Integer diasToleranciaSuplencia = 60; // Conforme acordado: prazo padrão de até 2 meses (60 dias) para chamar suplentes
+
+    @Version
+    private Long version;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -79,4 +92,16 @@ public class Turma {
     public boolean temVagasDisponiveis() {
         return vagasOcupadas < vagasTotais;
     }
+
+    public boolean isIdadePermitida(int idade) {
+        if (idadeMinima != null && idade < idadeMinima) return false;
+        if (idadeMaxima != null && idade > idadeMaxima) return false;
+        return true;
+    }
+
+    public boolean isChamadaSuplenciaPermitida(LocalDate data) {
+        if (diasToleranciaSuplencia == null || dataInicioAulas == null) return true;
+        return !data.isAfter(dataInicioAulas.plusDays(diasToleranciaSuplencia));
+    }
 }
+

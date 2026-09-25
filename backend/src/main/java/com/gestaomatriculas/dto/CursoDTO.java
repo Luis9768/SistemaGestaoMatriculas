@@ -22,13 +22,21 @@ public class CursoDTO {
     @NotNull(message = "O tipo do curso é obrigatório (OFICINA ou REGULAR)")
     private TipoCurso tipo;
 
-    @NotNull(message = "A duração em meses é obrigatória")
     @Min(value = 1, message = "A duração deve ser de pelo menos 1 mês")
     private Integer duracaoMeses;
 
-    @NotNull(message = "A carga horária é obrigatória")
     @Min(value = 1, message = "A carga horária deve ser maior que zero")
     private Integer cargaHoraria;
 
+    private Long escolaId;
+    private String escolaNome;
+    private String escolaSigla;
+
+    private com.gestaomatriculas.model.enums.ModalidadeCurso modalidade;
+
     private Boolean ativo;
+
+    @Builder.Default
+    private java.util.List<DisciplinaDTO> disciplinas = new java.util.ArrayList<>();
 }
+

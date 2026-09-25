@@ -28,11 +28,31 @@ public class InscricaoExternaDTO {
     private String telefone;
     private LocalDate dataNascimento;
 
+    // Campos do Responsável Legal (Obrigatórios se dataNascimento indicar menor de 18 anos)
+    private String responsavelNome;
+    private String responsavelCpf;
+    private String responsavelTelefone;
+    private String responsavelEmail;
+    private String responsavelParentesco;
+
     @NotNull(message = "O ID da turma é obrigatório")
     private Long turmaId;
 
-    @NotNull(message = "O canal de origem é obrigatório (ex: FORMS, SITE, PRESENCIAL, PLANILHA)")
+    @NotNull(message = "O canal de origem é obrigatório (ex: FORMS, SITE, PRESENCIAL, PLANILHA, CULTURA_AZ)")
     private CanalOrigem canalOrigem;
 
     private String observacoes;
+
+    @Builder.Default
+    private Boolean consentimentoLgpdGeral = true;
+
+    @Builder.Default
+    private Boolean consentimentoLgpdAluno = true;
+
+    @Builder.Default
+    private Boolean consentimentoUsoImagem = false;
+
+    @Builder.Default
+    private Boolean termoPapelEntregue = true;
 }
+

@@ -24,12 +24,20 @@ public class TurmaService {
     private final CursoRepository cursoRepository;
 
     @Transactional(readOnly = true)
-    public List<TurmaDTO> listarTodas(Long cursoId, Boolean apenasAbertas) {
+    public List<TurmaDTO> listarTodas(Long cursoId, Long escolaId, Boolean apenasAbertas) {
         List<Turma> turmas;
+        LocalDate hoje = LocalDate.now();
+
         if (Boolean.TRUE.equals(apenasAbertas)) {
-            turmas = turmaRepository.findTurmasComMatriculaAberta(LocalDate.now());
+            if (escolaId != null) {
+                turmas = turmaRepository.findTurmasComMatriculaAbertaPorEscola(escolaId, hoje);
+            } else {
+                turmas = turmaRepository.findTurmasComMatriculaAberta(hoje);
+            }
         } else if (cursoId != null) {
             turmas = turmaRepository.findByCursoId(cursoId);
+        } else if (escolaId != null) {
+            turmas = turmaRepository.findByCursoEscolaId(escolaId);
         } else {
             turmas = turmaRepository.findAll();
         }
@@ -63,6 +71,9 @@ public class TurmaService {
                 .dataFimAulas(dto.getDataFimAulas())
                 .vagasTotais(dto.getVagasTotais())
                 .vagasOcupadas(0)
+                .idadeMinima(dto.getIdadeMinima())
+                .idadeMaxima(dto.getIdadeMaxima())
+                .diasToleranciaSuplencia(dto.getDiasToleranciaSuplencia() != null ? dto.getDiasToleranciaSuplencia() : 15)
                 .status(dto.getStatus() == null ? StatusTurma.ABERTA : dto.getStatus())
                 .build();
 
@@ -93,6 +104,11 @@ public class TurmaService {
         turma.setDataInicioAulas(dto.getDataInicioAulas());
         turma.setDataFimAulas(dto.getDataFimAulas());
         turma.setVagasTotais(dto.getVagasTotais());
+        turma.setIdadeMinima(dto.getIdadeMinima());
+        turma.setIdadeMaxima(dto.getIdadeMaxima());
+        if (dto.getDiasToleranciaSuplencia() != null) {
+            turma.setDiasToleranciaSuplencia(dto.getDiasToleranciaSuplencia());
+        }
         if (dto.getStatus() != null) {
             turma.setStatus(dto.getStatus());
         }
@@ -114,10 +130,23 @@ public class TurmaService {
     }
 
     public TurmaDTO toDTO(Turma turma) {
+        Long escolaId = null;
+        String escolaNome = null;
+        String escolaSigla = null;
+
+        if (turma.getCurso() != null && turma.getCurso().getEscola() != null) {
+            escolaId = turma.getCurso().getEscola().getId();
+            escolaNome = turma.getCurso().getEscola().getNome();
+            escolaSigla = turma.getCurso().getEscola().getSigla();
+        }
+
         return TurmaDTO.builder()
                 .id(turma.getId())
                 .cursoId(turma.getCurso().getId())
                 .cursoNome(turma.getCurso().getNome())
+                .escolaId(escolaId)
+                .escolaNome(escolaNome)
+                .escolaSigla(escolaSigla)
                 .codigo(turma.getCodigo())
                 .dataAberturaMatricula(turma.getDataAberturaMatricula())
                 .dataFechamentoMatricula(turma.getDataFechamentoMatricula())
@@ -125,6 +154,10 @@ public class TurmaService {
                 .dataFimAulas(turma.getDataFimAulas())
                 .vagasTotais(turma.getVagasTotais())
                 .vagasOcupadas(turma.getVagasOcupadas())
+                .idadeMinima(turma.getIdadeMinima())
+                .idadeMaxima(turma.getIdadeMaxima())
+                .diasToleranciaSuplencia(turma.getDiasToleranciaSuplencia())
+                .suplenciaAberta(turma.isChamadaSuplenciaPermitida(LocalDate.now()))
                 .status(turma.getStatus())
                 .matriculaAberta(turma.isPeriodoMatriculaAberto())
                 .build();

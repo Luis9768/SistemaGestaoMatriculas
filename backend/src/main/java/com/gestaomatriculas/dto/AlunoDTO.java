@@ -26,4 +26,11 @@ public class AlunoDTO {
 
     private String telefone;
     private LocalDate dataNascimento;
+    private Boolean menorDeIdade;
+    private ResponsavelDTO responsavel;
+    private Boolean consentimentoLgpd;
+    private java.time.LocalDateTime dataConsentimentoLgpd;
+    private Boolean consentimentoUsoImagem;
+    private Boolean termoPapelEntregue;
 }
+
