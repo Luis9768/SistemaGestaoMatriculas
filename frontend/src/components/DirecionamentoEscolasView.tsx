@@ -122,11 +122,11 @@ export function DirecionamentoEscolasView({
       {/* Conteúdo Principal — Macro Espaçamento Utilitário */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-10 sm:py-16 flex flex-col justify-center">
         {/* Saudação no Canto Superior Esquerdo */}
-        <div className="mb-10 text-left">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-medium">
-              Portal de Gestão Integrada
-            </span>
+        <div className="mb-8 text-left">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111111] dark:text-white tracking-tight leading-tight">
+              Seja bem vindo, {usuarioLogado.nome}.
+            </h2>
 
             {/* Pill com Usuário Ativo e Botão para Trocar de Conta */}
             <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-[#EAEAEA] dark:border-slate-800 bg-white dark:bg-[#0E131F] text-xs">
@@ -149,22 +149,6 @@ export function DirecionamentoEscolasView({
               </button>
             </div>
           </div>
-
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111111] dark:text-white tracking-tight leading-tight">
-            Olá, {usuarioLogado.nome}.
-          </h2>
-
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-2xl font-normal leading-relaxed">
-            {isAdmin ? (
-              <>
-                Como <strong>Coordenação Geral</strong>, você tem acesso irrestrito a todas as 4 Escolas Livres. Selecione a unidade que deseja gerenciar:
-              </>
-            ) : (
-              <>
-                Seu perfil está vinculado como <strong>Analista / Encarregada</strong>. O acesso está liberado para a sua unidade designada de atuação:
-              </>
-            )}
-          </p>
         </div>
 
         {/* Grade Bento dos 4 Campos das Escolas Livres */}
