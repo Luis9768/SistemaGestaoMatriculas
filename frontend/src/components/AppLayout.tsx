@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -19,6 +20,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
+  Menu,
   X,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
@@ -62,6 +64,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     abrirModalLgpd,
     abrirModalPerfil,
   } = useApp();
+
+  const [menuAberto, setMenuAberto] = useState(false);
+
+  // Fechar menu ao navegar ou teclar ESC
+  useEffect(() => {
+    setMenuAberto(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuAberto(false);
+      }
+    };
+    if (menuAberto) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [menuAberto]);
 
   useEffect(() => {
     if (!loading && !usuarioLogado) {
@@ -124,22 +151,35 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   const badgeStyle = getEscolaBadgeStyle(escolaAtualObj?.sigla);
+  const tabAtiva = NAV_TABS.find((t) => t.href === pathname);
 
   return (
     <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Topbar Superior Integrada */}
+      {/* Topbar Superior Integrada — Linha única, limpa e espaçosa */}
       <header className="bg-white/95 dark:bg-[#0D1322]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 sticky top-0 z-30 shadow-xs">
-        {/* Linha 1: Identidade, Unidade Ativa, Controles e Sessão */}
         <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            {/* Botão de Retorno ao Hub de Escolas */}
+          {/* Lado Esquerdo: Botão 3 Barrinhas + Hub + Escola Ativa + Módulo Atual */}
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            {/* Botão de 3 Barrinhas (Menu Lateral) */}
+            <button
+              onClick={() => setMenuAberto((prev) => !prev)}
+              type="button"
+              aria-label={menuAberto ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+              aria-expanded={menuAberto}
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 transition cursor-pointer active:scale-95 shadow-xs flex items-center justify-center shrink-0"
+              title="Menu de Módulos (3 barrinhas)"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Retorno ao Hub de Escolas */}
             <Link
               href="/direcionamento"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
               title="Voltar para a Tela de Direcionamento das Escolas"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Hub de Escolas</span>
+              <span className="hidden sm:inline">Hub</span>
             </Link>
 
             <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
@@ -154,6 +194,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <span className="hidden md:inline font-medium text-slate-600 dark:text-slate-300 truncate">
                   — {escolaAtualObj.nome}
                 </span>
+              </div>
+            )}
+
+            {/* Identificação do Módulo Atual */}
+            {tabAtiva && (
+              <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200">
+                <tabAtiva.icon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>{tabAtiva.label}</span>
               </div>
             )}
           </div>
@@ -235,31 +283,117 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </div>
+      </header>
 
-        {/* Linha 2: Barra de Abas Horizontais com Links Semânticos de Rota */}
-        <div className="border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-[#0A0F1D]/60 overflow-x-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center gap-1.5 py-2">
-            {NAV_TABS.map((tab) => {
-              const TabIcon = tab.icon;
-              const active = pathname === tab.href;
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
-                    active
-                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <TabIcon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                </Link>
-              );
-            })}
+      {/* DRAWER / MENU LATERAL COM AS 3 BARRINHAS */}
+      {/* 1. Backdrop com blur e animação de fade */}
+      <div
+        onClick={() => setMenuAberto(false)}
+        className={`fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 transition-opacity duration-300 ${
+          menuAberto ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden="true"
+      />
+
+      {/* 2. Painel Lateral Deslizante à Esquerda */}
+      <aside
+        className={`fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white dark:bg-[#0B101D] border-r border-slate-200 dark:border-slate-800/90 z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
+          menuAberto ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        aria-label="Menu de Navegação Principal"
+      >
+        {/* Topo do Drawer: Brasão de Santo André + Título + Botão de Fechar */}
+        <div className="h-16 px-5 border-b border-slate-200/90 dark:border-slate-800/90 flex items-center justify-between bg-slate-50/70 dark:bg-[#0E1424]/70">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo_santo_andre.png"
+              alt="Brasão Oficial de Santo André"
+              width={28}
+              height={40}
+              className="h-8 w-auto object-contain drop-shadow-xs dark:brightness-110"
+              priority
+            />
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold tracking-wider text-slate-900 dark:text-white uppercase font-sans leading-none">
+                A CASA
+              </span>
+              <span className="text-[9px] font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase font-mono mt-1 leading-none">
+                Módulos do Sistema
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setMenuAberto(false)}
+            type="button"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+            title="Fechar menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Card de Contexto da Unidade Ativa */}
+        {escolaAtualObj && (
+          <div className="p-3.5 mx-4 mt-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                Unidade em Operação
+              </span>
+              <span className={`w-2 h-2 rounded-full ${badgeStyle.dot}`} />
+            </div>
+            <p className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
+              {escolaAtualObj.sigla} — {escolaAtualObj.nome}
+            </p>
+          </div>
+        )}
+
+        {/* Lista Vertical dos 8 Módulos */}
+        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+          <span className="block px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold">
+            Módulos de Gestão
+          </span>
+          {NAV_TABS.map((tab) => {
+            const TabIcon = tab.icon;
+            const active = pathname === tab.href;
+
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                onClick={() => setMenuAberto(false)}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
+                  active
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                }`}
+              >
+                <TabIcon className={`w-4 h-4 shrink-0 ${active ? 'text-amber-500 dark:text-amber-600' : 'text-slate-400'}`} />
+                <span className="truncate">{tab.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Rodapé do Menu com Atalho para o Hub e Informações do Usuário */}
+        <div className="p-4 border-t border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-[#0E1424]/50 space-y-2">
+          <Link
+            href="/direcionamento"
+            onClick={() => setMenuAberto(false)}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Mudar de Escola (Hub)</span>
+          </Link>
+
+          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 px-1">
+            <span className="truncate max-w-[170px]">{usuarioLogado.email}</span>
+            <span className="font-mono text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">
+              {usuarioLogado.role === 'ROLE_ADMIN' ? 'Admin' : 'Encarregada'}
+            </span>
           </div>
         </div>
-      </header>
+      </aside>
 
       {/* Notificações do Sistema */}
       {feedbackMsg && (
