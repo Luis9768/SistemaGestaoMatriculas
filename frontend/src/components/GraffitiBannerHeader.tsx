@@ -6,12 +6,22 @@ import { LogOut } from 'lucide-react';
 
 interface GraffitiBannerHeaderProps {
   onLogout?: () => void;
+  tituloEsquerda?: string;
 }
 
-export function GraffitiBannerHeader({ onLogout }: GraffitiBannerHeaderProps) {
+export function GraffitiBannerHeader({
+  onLogout,
+  tituloEsquerda = 'Secretaria de Cultura • Escolas Livres de Santo André',
+}: GraffitiBannerHeaderProps) {
   return (
     <header className="w-full bg-transparent sticky top-0 z-30 transition-colors">
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 h-12 sm:h-14 flex items-center justify-end">
+      <div className="max-w-6xl w-full mx-auto px-4 sm:px-8 h-12 sm:h-14 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] sm:text-xs font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 font-semibold select-none">
+            {tituloEsquerda}
+          </span>
+        </div>
+
         <div className="flex items-center gap-2.5 sm:gap-3">
           <ThemeToggle showLabel={false} />
 

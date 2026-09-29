@@ -123,29 +123,11 @@ export function DirecionamentoEscolasView({
 
       {/* Conteúdo Principal — Espaçamento Alinhado ao Topo */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 pt-2 sm:pt-4 pb-8 sm:pb-12 flex flex-col">
-        {/* Cabeçalho da Seção com Saudação e Contexto Institucional */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 mb-3 sm:mb-4">
-          <div>
-            <span className="text-[11px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 block mb-1">
-              Secretaria de Cultura • Escolas Livres de Santo André
-            </span>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-baseline gap-2 flex-wrap">
-              <span className="font-fighter text-2xl sm:text-3xl md:text-4xl text-slate-900 dark:text-white font-normal">
-                Seja bem vindo,
-              </span>
-              <span className="font-bold tracking-tight text-slate-900 dark:text-white text-lg sm:text-xl">
-                {primeiroNome}.
-              </span>
-            </h1>
-          </div>
-
-          {/* Badge da Escola / Unidade Atual */}
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 shadow-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>{isAdmin ? 'Acesso Total' : `Unidade ${usuarioLogado?.escolaSigla || 'ELT'}`}</span>
-            </span>
-          </div>
+        {/* Cabeçalho da Seção com Saudação Unificada na Mesma Fonte */}
+        <div className="mb-3 sm:mb-4">
+          <h1 className="font-fighter text-3xl sm:text-4xl md:text-5xl text-slate-900 dark:text-white font-normal tracking-tight">
+            Seja bem vindo, {primeiroNome}.
+          </h1>
         </div>
 
         {/* Banner Artístico das Escolas Livres — Proporção Natural e Qualidade Nativa */}
@@ -303,12 +285,35 @@ export function DirecionamentoEscolasView({
           })}
         </div>
 
-        {/* Rodapé Editorial */}
-        <div className="mt-12 text-center border-t border-[#EAEAEA] dark:border-slate-800 pt-6">
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-            Santo André • Secretaria de Cultura • Gestão de Matrículas e Frequência
-          </p>
-        </div>
+        {/* Rodapé Institucional com Brasão Oficial e Direitos Reservados */}
+        <footer className="mt-14 pt-8 pb-4 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo_santo_andre.png"
+              alt="Brasão Oficial do Município de Santo André"
+              width={38}
+              height={55}
+              className="h-10 w-auto object-contain drop-shadow-xs dark:brightness-110"
+            />
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                Prefeitura de Santo André
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Secretaria de Cultura • Gestão Integrada de Matrículas e Frequência
+              </span>
+            </div>
+          </div>
+
+          <div className="text-center sm:text-right">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+              © {new Date().getFullYear()} Todos os direitos reservados.
+            </p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+              Escolas Livres de Santo André: ELT • ELD • ELCV • ELIA
+            </p>
+          </div>
+        </footer>
       </main>
     </div>
   );
