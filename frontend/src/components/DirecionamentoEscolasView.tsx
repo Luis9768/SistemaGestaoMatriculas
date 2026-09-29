@@ -117,7 +117,7 @@ export function DirecionamentoEscolasView({
   const primeiroNome = usuarioLogado?.nome ? usuarioLogado.nome.trim().split(/\s+/)[0] : '';
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] text-[#111111] dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#090D16] text-[#111111] dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Header Minimalista e Editorial */}
       <GraffitiBannerHeader onLogout={onLogout} />
 
@@ -149,7 +149,7 @@ export function DirecionamentoEscolasView({
         </div>
 
         {/* Banner Artístico das Escolas Livres — Proporção Natural e Qualidade Nativa */}
-        <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] md:aspect-[2.2/1] max-h-[360px] rounded-2xl overflow-hidden mb-5 sm:mb-6 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-black/10 dark:shadow-black/50">
+        <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] md:aspect-[2.2/1] max-h-[360px] rounded-2xl overflow-hidden mb-5 sm:mb-6 border border-slate-200/80 dark:border-slate-800 banner-shadow-elevated">
           <Image
             src="/grafite_banner.webp"
             alt="Mural Artístico das Escolas Livres: Teatro, Dança, Cinema e Iniciação Artística"
@@ -194,8 +194,8 @@ export function DirecionamentoEscolasView({
                 key={escola.id}
                 className={`relative rounded-xl p-4 sm:p-4.5 flex flex-col justify-between transition-all duration-300 border ${
                   liberada
-                    ? 'bg-white dark:bg-[#0E131F] border-slate-200/90 dark:border-slate-700/80 shadow-[0_12px_30px_-6px_rgba(0,0,0,0.12),0_6px_12px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_22px_40px_-8px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_30px_rgba(0,0,0,0.6)] dark:hover:shadow-[0_20px_40px_rgba(0,0,0,0.8)] hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1'
-                    : 'bg-white dark:bg-[#0E131F]/90 border-slate-200/80 dark:border-slate-800/80 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.4)] opacity-70 cursor-not-allowed select-none'
+                    ? 'bg-white dark:bg-[#0E131F] border-slate-200/90 dark:border-slate-700/80 card-shadow-elevated hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1'
+                    : 'bg-white dark:bg-[#0E131F]/90 border-slate-200/80 dark:border-slate-800/80 card-shadow-subtle opacity-75 cursor-not-allowed select-none'
                 }`}
               >
                 <div>
@@ -242,7 +242,7 @@ export function DirecionamentoEscolasView({
 
                   {/* Mini-Indicadores Operacionais Compactos */}
                   {liberada ? (
-                    <div className="grid grid-cols-3 gap-1 py-1.5 px-2 rounded-lg bg-[#FAF9F7] dark:bg-[#080B12] border border-[#EAEAEA] dark:border-slate-800/70 mb-3 text-center">
+                    <div className="grid grid-cols-3 gap-1 py-1.5 px-2 rounded-lg bg-slate-50 dark:bg-[#080B12] border border-slate-200 dark:border-slate-800/70 mb-3 text-center">
                       <div>
                         <span className="block text-xs font-bold text-slate-900 dark:text-slate-100 font-mono">
                           {cursosCount || 2}
@@ -251,7 +251,7 @@ export function DirecionamentoEscolasView({
                           Cursos
                         </span>
                       </div>
-                      <div className="border-x border-[#EAEAEA] dark:border-slate-800">
+                      <div className="border-x border-slate-200 dark:border-slate-800">
                         <span className="block text-xs font-bold text-slate-900 dark:text-slate-100 font-mono">
                           {turmasCount || 4}
                         </span>
@@ -269,7 +269,7 @@ export function DirecionamentoEscolasView({
                       </div>
                     </div>
                   ) : (
-                    <div className="py-2 px-2.5 rounded-lg bg-[#F4F4F5] dark:bg-slate-800/40 border border-[#EAEAEA] dark:border-slate-700/40 mb-3 flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                    <div className="py-2 px-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 mb-3 flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
                       <Lock className="w-3 h-3 shrink-0 text-slate-400" />
                       <span className="truncate">Analista designada</span>
                     </div>
