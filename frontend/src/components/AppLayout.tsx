@@ -14,10 +14,7 @@ import {
   Activity,
   Send,
   ArrowLeft,
-  RefreshCw,
-  Clock,
   LogOut,
-  ShieldCheck,
   CheckCircle2,
   AlertCircle,
   Menu,
@@ -25,8 +22,6 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
-import { LgpdModal } from '@/components/LgpdModal';
 
 const NAV_TABS = [
   { href: '/turmas', label: 'Turmas & Ofertas', icon: Calendar },
@@ -49,11 +44,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     setEscolaSelecionada,
     escolaAtualObj,
     loading,
-    refreshing,
     feedbackMsg,
-    tempoRestanteMin,
     mostrarFeedback,
-    carregarDadosEscola,
     handleLogout,
     showModalTurma,
     setShowModalTurma,
@@ -61,8 +53,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     setNovaTurma,
     cursos,
     handleCriarTurma,
-    abrirModalLgpd,
-    abrirModalPerfil,
   } = useApp();
 
   const [menuAberto, setMenuAberto] = useState(false);
@@ -153,13 +143,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const badgeStyle = getEscolaBadgeStyle(escolaAtualObj?.sigla);
   const tabAtiva = NAV_TABS.find((t) => t.href === pathname);
 
+  const handleVoltar = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/direcionamento');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Topbar Superior Integrada — Linha única, limpa e espaçosa */}
       <header className="bg-white/95 dark:bg-[#0D1322]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-3">
-          {/* Lado Esquerdo: Botão 3 Barrinhas + Hub + Escola Ativa + Módulo Atual */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+          {/* Lado Esquerdo: Botão 3 Barrinhas + Setinha Voltar + Escola Ativa + Módulo Atual */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* Botão de 3 Barrinhas (Menu Lateral) */}
             <button
               onClick={() => setMenuAberto((prev) => !prev)}
@@ -172,22 +170,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Retorno ao Hub de Escolas */}
-            <Link
-              href="/direcionamento"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
-              title="Voltar para a Tela de Direcionamento das Escolas"
+            {/* Setinha para Voltar à Tela Anterior */}
+            <button
+              onClick={handleVoltar}
+              type="button"
+              aria-label="Voltar à tela anterior"
+              title="Voltar à tela anterior"
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer active:scale-95 shadow-xs flex items-center justify-center shrink-0"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Hub</span>
-            </Link>
-
-            <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+              <ArrowLeft className="w-5 h-5" />
+            </button>
 
             {/* Badge da Escola Ativa */}
             {escolaAtualObj && (
               <div
-                className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-xs font-bold border ${badgeStyle.pill} truncate`}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border ${badgeStyle.pill} truncate`}
               >
                 <span className={`w-2 h-2 rounded-full ${badgeStyle.dot} shrink-0`} />
                 <span className="font-extrabold">{escolaAtualObj.sigla}</span>
@@ -207,47 +204,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Ações da Direita */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Troca Rápida de Escola para Administradores */}
-            {usuarioLogado.role === 'ROLE_ADMIN' && escolas.length > 0 && (
-              <div className="hidden xl:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-                {escolas.map((esc) => (
-                  <button
-                    key={esc.id}
-                    onClick={() => setEscolaSelecionada(esc.id)}
-                    type="button"
-                    className={`px-2 py-0.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                      escolaSelecionada === esc.id
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
-                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                    }`}
-                  >
-                    {esc.sigla}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Botão de Atualizar Dados */}
-            <button
-              onClick={carregarDadosEscola}
-              disabled={refreshing}
-              type="button"
-              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer border border-slate-200 dark:border-slate-700"
-              title="Recarregar dados da escola"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-blue-600' : ''}`} />
-            </button>
-
-            {/* Indicador de Tempo de Sessão */}
-            <div
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300"
-              title="Tempo restante de sessão"
-            >
-              <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              <span>{tempoRestanteMin}m</span>
-            </div>
-
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {/* Botão de Modo Claro e Escuro */}
             <ThemeToggle showLabel={false} />
 
@@ -256,26 +213,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-[11px] font-black">
                 {usuarioLogado.nome.charAt(0).toUpperCase()}
               </div>
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[140px]">
                 {usuarioLogado.nome}
               </span>
             </div>
-
-            {/* Botão LGPD */}
-            <button
-              onClick={() => abrirModalLgpd('geral')}
-              type="button"
-              className="hidden sm:inline-flex p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer border border-slate-200 dark:border-slate-700"
-              title="Termos de Privacidade e LGPD"
-            >
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </button>
 
             {/* Botão Sair */}
             <button
               onClick={handleLogout}
               type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:border-rose-300 dark:hover:border-rose-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:border-rose-300 dark:hover:border-rose-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
               title="Encerrar sessão"
             >
               <LogOut className="w-3.5 h-3.5" />
