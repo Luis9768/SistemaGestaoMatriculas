@@ -1,3 +1,5 @@
+package com.gestaomatriculas.service;
+
 import com.gestaomatriculas.dto.LoginRequestDTO;
 import com.gestaomatriculas.dto.LoginResponseDTO;
 import com.gestaomatriculas.dto.RecuperacaoRespostaDTO;
