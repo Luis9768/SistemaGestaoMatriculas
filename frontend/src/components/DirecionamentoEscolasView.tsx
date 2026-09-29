@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Escola, Curso, Turma, Matricula, LoginResponse } from '@/lib/api';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { GraffitiBannerHeader } from '@/components/GraffitiBannerHeader';
 
 interface DirecionamentoEscolasViewProps {
   usuarioLogado: LoginResponse;
@@ -186,78 +187,8 @@ export function DirecionamentoEscolasView({
 
   return (
     <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Top Header Institucional */}
-      <header className="border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-[#0D1322]/90 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-8 py-3.5 shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* Identidade Institucional: Brasão Oficial Santo André */}
-          <div className="flex items-center gap-3">
-            <Image
-              src="/logo_santo_andre.png"
-              alt="Brasão Santo André"
-              width={34}
-              height={58}
-              className="h-9 sm:h-10 w-auto object-contain drop-shadow-xs"
-              priority
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  Santo André
-                </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800/60 uppercase">
-                  Cultura
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Secretaria de Cultura • Escolas Livres
-              </p>
-            </div>
-          </div>
-
-          {/* Ferramentas do Cabeçalho: Tema, Sessão, Perfil e Sair */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Indicador de Tempo de Sessão */}
-            <div
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-xs font-semibold text-slate-600 dark:text-slate-300"
-              title="Tempo restante de validade da sua sessão segura"
-            >
-              <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              <span>
-                Sessão: <strong>{tempoRestanteMin}m</strong>
-              </span>
-            </div>
-
-            {/* Botão de Modo Claro e Escuro */}
-            <ThemeToggle showLabel={false} />
-
-            {/* Perfil do Usuário */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-[11px] font-black">
-                {usuarioLogado.nome.charAt(0).toUpperCase()}
-              </div>
-              <div className="text-left">
-                <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight truncate max-w-[120px]">
-                  {usuarioLogado.nome}
-                </span>
-                <span className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
-                  {isAdmin ? 'Coordenação Geral' : `Analista ${usuarioLogado.escolaSigla || ''}`}
-                </span>
-              </div>
-            </div>
-
-            {/* Botão Sair */}
-            <button
-              onClick={onLogout}
-              type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:border-rose-300 dark:hover:border-rose-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all cursor-pointer shadow-xs"
-              title="Encerrar sessão com segurança"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sair</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Banner Urbano Estilizado Inspirado em Arte Graffiti — Mantém o Sol (ThemeToggle) e remove elementos burocráticos */}
+      <GraffitiBannerHeader onLogout={onLogout} />
 
       {/* Conteúdo Principal — Hub de Direcionamento */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col justify-center">
