@@ -22,7 +22,6 @@ function InscricaoContent() {
     <InscricaoPublicaView
       turmas={turmas}
       turmaPreSelecionadaId={turmaId || turmaCursoPreSelecionadoId || undefined}
-      alunoMenorDeIdade={false}
       onSubmeterInscricao={handleSubmeterInscricao}
       onOpenLgpd={(aba) => abrirModalLgpd(aba)}
     />

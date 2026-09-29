@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { AppLayout } from '@/components/AppLayout';
 import { AlunosPesquisaView } from '@/components/AlunosPesquisaView';
+import { ModalCadastrarAluno } from '@/components/ModalCadastrarAluno';
 
 export default function AlunosPage() {
   const router = useRouter();
+  const [modalCadastroAberto, setModalCadastroAberto] = useState(false);
   const {
     paginaAlunos,
     paginaAtualAlunos,
@@ -40,9 +42,17 @@ export default function AlunosPage() {
           carregarAlunosPaginados(0, termo);
         }}
         onMudarPagina={(pag) => setPaginaAtualAlunos(pag)}
-        onCadastrarNovoAluno={() => router.push('/inscricao')}
+        onCadastrarNovoAluno={() => setModalCadastroAberto(true)}
         onOpenPerfilAluno={(id) => abrirModalPerfil(id)}
         onVerTodasEscolas={() => setEscolaSelecionada(null)}
+      />
+
+      <ModalCadastrarAluno
+        isOpen={modalCadastroAberto}
+        onClose={() => setModalCadastroAberto(false)}
+        onAlunoCadastrado={() => {
+          carregarAlunosPaginados(0);
+        }}
       />
     </AppLayout>
   );

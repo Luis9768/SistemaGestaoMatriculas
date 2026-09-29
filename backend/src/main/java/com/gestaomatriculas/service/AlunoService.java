@@ -242,13 +242,16 @@ public class AlunoService {
 
         return alunoRepository.findByCpf(cpfLimpo).orElseGet(() -> {
             Responsavel responsavel = null;
-            if (isMenor(dataNascimento) && respNome != null && !respNome.isBlank()) {
+            if (isMenor(dataNascimento)) {
+                if (respNome == null || respNome.isBlank() || respCpf == null || respCpf.isBlank()) {
+                    throw new BusinessException("Para alunos menores de 18 anos, o nome e o CPF do responsável legal são obrigatórios.");
+                }
                 ResponsavelDTO respDTO = ResponsavelDTO.builder()
-                        .nome(respNome)
-                        .cpf(respCpf != null ? respCpf : "")
+                        .nome(respNome.trim())
+                        .cpf(respCpf.trim())
                         .telefone(respTelefone)
                         .email(respEmail)
-                        .grauParentesco(respParentesco)
+                        .grauParentesco(respParentesco != null && !respParentesco.isBlank() ? respParentesco : "Responsável Legal")
                         .build();
                 responsavel = obterOuCriarResponsavel(respDTO);
             }

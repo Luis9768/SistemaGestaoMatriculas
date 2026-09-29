@@ -312,6 +312,62 @@ export const formatarCpfMascara = (cpf?: string): string => {
   return cpf;
 };
 
+export interface IdadeInfo {
+  idade: number | null;
+  isMenor: boolean;
+  texto: string;
+}
+
+export function calcularIdade(dataNascStr?: string): IdadeInfo {
+  if (!dataNascStr) {
+    return { idade: null, isMenor: false, texto: '' };
+  }
+  const partes = dataNascStr.split('-');
+  if (partes.length < 3) {
+    return { idade: null, isMenor: false, texto: '' };
+  }
+  const ano = parseInt(partes[0], 10);
+  const mes = parseInt(partes[1], 10);
+  const dia = parseInt(partes[2], 10);
+  if (!ano || !mes || !dia) {
+    return { idade: null, isMenor: false, texto: '' };
+  }
+
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - ano;
+  const mesAtual = hoje.getMonth() + 1;
+  const diaAtual = hoje.getDate();
+
+  if (mesAtual < mes || (mesAtual === mes && diaAtual < dia)) {
+    idade--;
+  }
+
+  if (idade < 0 || idade > 130) {
+    return { idade: null, isMenor: false, texto: '' };
+  }
+
+  const isMenor = idade < 18;
+  const texto = `${idade} ${idade === 1 ? 'ano' : 'anos'}`;
+  return { idade, isMenor, texto };
+}
+
+export const aplicarMascaraCpf = (valor: string): string => {
+  const digits = valor.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
+export const aplicarMascaraTelefone = (valor: string): string => {
+  const digits = valor.replace(/\D/g, '').slice(0, 11);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
 const getAuthHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (typeof window !== 'undefined') {

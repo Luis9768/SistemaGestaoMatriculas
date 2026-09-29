@@ -10,17 +10,24 @@ import {
   Building2,
   ShieldCheck,
   Baby,
+  UserCheck,
   FileText,
   Sparkles,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
-import { Turma, InscricaoExternaPayload } from '@/lib/api';
+import {
+  Turma,
+  InscricaoExternaPayload,
+  calcularIdade,
+  aplicarMascaraCpf,
+  aplicarMascaraTelefone,
+} from '@/lib/api';
 
 interface InscricaoPublicaViewProps {
   turmas: Turma[];
   turmaPreSelecionadaId?: number;
-  alunoMenorDeIdade: boolean;
+  alunoMenorDeIdade?: boolean;
   onSubmeterInscricao: (payload: InscricaoExternaPayload) => Promise<void>;
   onOpenLgpd: (aba: 'geral' | 'alunos') => void;
   onVoltarLogin?: () => void;
@@ -29,7 +36,7 @@ interface InscricaoPublicaViewProps {
 export function InscricaoPublicaView({
   turmas,
   turmaPreSelecionadaId,
-  alunoMenorDeIdade,
+  alunoMenorDeIdade: alunoMenorDeIdadeProp,
   onSubmeterInscricao,
   onOpenLgpd,
   onVoltarLogin,
@@ -47,7 +54,12 @@ export function InscricaoPublicaView({
   const [responsavelNome, setResponsavelNome] = useState('');
   const [responsavelCpf, setResponsavelCpf] = useState('');
   const [responsavelTelefone, setResponsavelTelefone] = useState('');
+  const [responsavelEmail, setResponsavelEmail] = useState('');
   const [responsavelParentesco, setResponsavelParentesco] = useState('Mãe');
+
+  // Cálculo dinâmico da idade com base na data de nascimento
+  const infoIdade = calcularIdade(dataNascimento);
+  const isMenor = dataNascimento ? infoIdade.isMenor : (alunoMenorDeIdadeProp ?? false);
 
   // LGPD
   const [aceiteLgpdGeral, setAceiteLgpdGeral] = useState(false);
@@ -65,6 +77,13 @@ export function InscricaoPublicaView({
       return;
     }
 
+    if (isMenor) {
+      if (!responsavelNome.trim() || !responsavelCpf.trim()) {
+        setErro('Para alunos menores de 18 anos, é obrigatório preencher o Nome e o CPF do responsável legal.');
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       setErro(null);
@@ -77,10 +96,11 @@ export function InscricaoPublicaView({
         turmaId: Number(turmaId),
         canalOrigem,
         observacoes: observacoes.trim() || undefined,
-        responsavelNome: alunoMenorDeIdade ? responsavelNome.trim() : undefined,
-        responsavelCpf: alunoMenorDeIdade ? responsavelCpf.trim() : undefined,
-        responsavelTelefone: alunoMenorDeIdade ? responsavelTelefone.trim() : undefined,
-        responsavelParentesco: alunoMenorDeIdade ? responsavelParentesco : undefined,
+        responsavelNome: isMenor ? responsavelNome.trim() : undefined,
+        responsavelCpf: isMenor ? responsavelCpf.trim() : undefined,
+        responsavelTelefone: isMenor ? (responsavelTelefone.trim() || undefined) : undefined,
+        responsavelEmail: isMenor ? (responsavelEmail.trim() || undefined) : undefined,
+        responsavelParentesco: isMenor ? responsavelParentesco : undefined,
         consentimentoLgpd: true,
         consentimentoUsoImagem: aceiteUsoImagem,
         termoPapelEntregue: true,
@@ -216,8 +236,9 @@ export function InscricaoPublicaView({
                 type="text"
                 required
                 placeholder="000.000.000-00"
+                maxLength={14}
                 value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
+                onChange={(e) => setCpf(aplicarMascaraCpf(e.target.value))}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -227,10 +248,26 @@ export function InscricaoPublicaView({
               <input
                 type="date"
                 required
+                max={new Date().toISOString().split('T')[0]}
                 value={dataNascimento}
                 onChange={(e) => setDataNascimento(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
               />
+              {dataNascimento && infoIdade.idade !== null && (
+                <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  {isMenor ? (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 text-xs font-semibold">
+                      <Baby className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span>{infoIdade.texto} — Menor de idade (Preenchimento do responsável legal ativado abaixo)</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-200 text-xs font-semibold">
+                      <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>{infoIdade.texto} — Aluno Maior de 18 anos (Dispensa responsável legal)</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
@@ -250,8 +287,9 @@ export function InscricaoPublicaView({
               <input
                 type="text"
                 placeholder="(11) 99999-9999"
+                maxLength={15}
                 value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
+                onChange={(e) => setTelefone(aplicarMascaraTelefone(e.target.value))}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -273,70 +311,84 @@ export function InscricaoPublicaView({
         </div>
 
         {/* SEÇÃO CONDICIONAL: RESPONSÁVEL LEGAL PARA MENORES DE IDADE */}
-        {alunoMenorDeIdade && (
-          <div className="bg-amber-50/80 rounded-3xl p-6 sm:p-8 border border-amber-300 shadow-sm space-y-4 animate-in fade-in">
-            <div className="flex items-center space-x-2 text-amber-950 font-bold text-sm">
-              <Baby className="w-5 h-5 text-amber-700" />
-              <span>Aluno Menor de Idade Detectado — Dados do Responsável Legal</span>
+        {isMenor && (
+          <div className="bg-amber-50/80 dark:bg-amber-950/30 rounded-3xl p-6 sm:p-8 border border-amber-300 dark:border-amber-800 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center space-x-2 text-amber-950 dark:text-amber-200 font-bold text-sm">
+              <Baby className="w-5 h-5 text-amber-700 dark:text-amber-400" />
+              <span>Aluno Menor de Idade Detectado ({infoIdade.texto}) — Dados do Responsável Legal</span>
             </div>
-            <p className="text-xs text-amber-800 leading-relaxed">
-              Em cumprimento ao Art. 14 da LGPD e ao Estatuto da Criança e do Adolescente, é indispensável a identificação formal do responsável legal.
+            <p className="text-xs text-amber-800 dark:text-amber-300/90 leading-relaxed">
+              Em cumprimento ao Art. 14 da LGPD e ao Estatuto da Criança e do Adolescente (ECA), é obrigatório cadastrar formalmente os dados do responsável legal pelo aluno.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-2">
               <div>
-                <label className="block font-bold text-amber-950 mb-1">Nome do Responsável Legal *</label>
+                <label className="block font-bold text-amber-950 dark:text-amber-200 mb-1">Nome do Responsável Legal *</label>
                 <input
                   type="text"
-                  required={alunoMenorDeIdade}
-                  placeholder="Nome do pai, mãe ou tutor"
+                  required={isMenor}
+                  placeholder="Nome completo do pai, mãe ou tutor"
                   value={responsavelNome}
                   onChange={(e) => setResponsavelNome(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-amber-300 rounded-xl"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-xl focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-amber-950 mb-1">CPF do Responsável *</label>
+                <label className="block font-bold text-amber-950 dark:text-amber-200 mb-1">CPF do Responsável *</label>
                 <input
                   type="text"
-                  required={alunoMenorDeIdade}
+                  required={isMenor}
                   placeholder="000.000.000-00"
+                  maxLength={14}
                   value={responsavelCpf}
-                  onChange={(e) => setResponsavelCpf(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-amber-300 rounded-xl"
+                  onChange={(e) => setResponsavelCpf(aplicarMascaraCpf(e.target.value))}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-xl focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-amber-950 mb-1">Telefone do Responsável *</label>
+                <label className="block font-bold text-amber-950 dark:text-amber-200 mb-1">Telefone do Responsável *</label>
                 <input
                   type="text"
-                  required={alunoMenorDeIdade}
+                  required={isMenor}
                   placeholder="(11) 98888-7777"
+                  maxLength={15}
                   value={responsavelTelefone}
-                  onChange={(e) => setResponsavelTelefone(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-amber-300 rounded-xl"
+                  onChange={(e) => setResponsavelTelefone(aplicarMascaraTelefone(e.target.value))}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-xl focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-amber-950 mb-1">Grau de Parentesco *</label>
+                <label className="block font-bold text-amber-950 dark:text-amber-200 mb-1">Grau de Parentesco *</label>
                 <select
                   value={responsavelParentesco}
                   onChange={(e) => setResponsavelParentesco(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-amber-300 rounded-xl"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-xl focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="Mãe">Mãe</option>
                   <option value="Pai">Pai</option>
                   <option value="Avó/Avô">Avó/Avô</option>
                   <option value="Tutor Legal">Tutor Legal</option>
+                  <option value="Outro Responsável">Outro Responsável</option>
                 </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-bold text-amber-950 dark:text-amber-200 mb-1">E-mail do Responsável (Opcional)</label>
+                <input
+                  type="email"
+                  placeholder="responsavel@exemplo.com"
+                  value={responsavelEmail}
+                  onChange={(e) => setResponsavelEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-xl focus:ring-2 focus:ring-amber-500"
+                />
               </div>
             </div>
 
-            <div className="pt-2 text-[11px] text-amber-900 border-t border-amber-200/80 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-amber-700" />
+            <div className="pt-2 text-[11px] text-amber-900 dark:text-amber-300 border-t border-amber-200/80 dark:border-amber-800 flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
               <span>O termo físico assinado é recolhido e arquivado em pasta física na secretaria da escola.</span>
             </div>
           </div>
