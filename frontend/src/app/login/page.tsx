@@ -8,19 +8,20 @@ import { LoginCulturalView } from '@/components/LoginCulturalView';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { usuarioLogado, loading, carregarDadosIniciais } = useApp();
+  const { usuarioLogado, loading, carregarDadosIniciais, handleLogout } = useApp();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    if (!loading && usuarioLogado) {
-      router.replace('/direcionamento');
-    }
-  }, [loading, usuarioLogado, router]);
+  }, []);
 
   const handleLoginSucesso = async (user: LoginResponse) => {
     await carregarDadosIniciais(user);
     router.replace('/direcionamento');
+  };
+
+  const handleContinuarHub = () => {
+    router.push('/direcionamento');
   };
 
   if (!mounted || loading) {
@@ -31,5 +32,12 @@ export default function LoginPage() {
     );
   }
 
-  return <LoginCulturalView onLoginSucesso={handleLoginSucesso} />;
+  return (
+    <LoginCulturalView
+      onLoginSucesso={handleLoginSucesso}
+      usuarioAtual={usuarioLogado}
+      onContinuarHub={handleContinuarHub}
+      onLogout={handleLogout}
+    />
+  );
 }

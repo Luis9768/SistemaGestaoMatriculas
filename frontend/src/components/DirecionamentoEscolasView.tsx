@@ -194,9 +194,35 @@ export function DirecionamentoEscolasView({
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col justify-center">
         {/* Saudação Obrigatória no Canto Superior Esquerdo */}
         <div className="mb-8 sm:mb-10 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Portal de Gestão Integrada</span>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Portal de Gestão Integrada</span>
+            </div>
+
+            {/* Card com Usuário Ativo e Botão Rápido para Trocar de Conta / Sair */}
+            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-[11px] font-black shrink-0">
+                {usuarioLogado.nome.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                  {usuarioLogado.nome}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  {isAdmin ? 'Coordenação Geral' : `Analista • ${usuarioLogado.escolaSigla || 'Escola'}`}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={onLogout}
+                className="ml-2 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800/80 text-rose-700 dark:text-rose-300 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                title="Sair desta conta ou fazer login com outro usuário"
+              >
+                <LogOut className="w-3 h-3 text-rose-500" />
+                <span>Trocar de Conta</span>
+              </button>
+            </div>
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">

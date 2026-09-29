@@ -131,16 +131,16 @@ export function GraffitiBannerHeader({ onLogout }: GraffitiBannerHeaderProps) {
             </div>
           </div>
 
-          {/* Botão Sair Discreto */}
+          {/* Botão Sair com Destaque Urbano e Contraste */}
           {onLogout && (
             <button
               onClick={onLogout}
               type="button"
-              className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-rose-950/60 hover:border-rose-800 text-slate-400 hover:text-rose-400 text-xs font-bold transition-all cursor-pointer shadow-xs inline-flex items-center gap-1.5"
-              title="Encerrar sessão"
+              className="px-3 py-2 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/25 hover:border-rose-400 text-rose-300 hover:text-white text-xs font-bold transition-all cursor-pointer shadow-md inline-flex items-center gap-1.5 active:scale-95"
+              title="Encerrar sessão e voltar ao login"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sair</span>
+              <LogOut className="w-4 h-4 text-rose-400" />
+              <span>Sair</span>
             </button>
           )}
         </div>
