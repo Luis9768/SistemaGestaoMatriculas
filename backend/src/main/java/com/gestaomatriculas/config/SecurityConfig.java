@@ -60,27 +60,21 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Endpoints Públicos Estritos (Login da secretaria e formulário de inscrição do cidadão)
+                        // 1. Endpoints Públicos Estritos (Apenas autenticação institucional e endpoint público de inscrição externa)
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/matriculas/inscrever").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/escolas/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/cursos/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/turmas/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/importacao/modelo-csv").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
 
-                        // 2. Proteção LGPD Rigorosa: Dashboard, Alunos, Matrículas e Administração exigem JWT Bearer
-                        .requestMatchers("/api/dashboard/**").authenticated()
-                        .requestMatchers("/api/alunos/**").authenticated()
+                        // 2. Proteção Integral (OWASP / LGPD): Todas as entidades e dados institucionais exigem JWT Bearer
+                        .requestMatchers("/api/escolas/**").authenticated()
+                        .requestMatchers("/api/cursos/**").authenticated()
+                        .requestMatchers("/api/turmas/**").authenticated()
                         .requestMatchers("/api/matriculas/**").authenticated()
+                        .requestMatchers("/api/alunos/**").authenticated()
+                        .requestMatchers("/api/dashboard/**").authenticated()
                         .requestMatchers("/api/importacao/**").authenticated()
                         .requestMatchers("/api/usuarios/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/cursos/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/cursos/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/cursos/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/turmas/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/turmas/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/turmas/**").authenticated()
 
                         // 3. Qualquer outra requisição deve ser autenticada
                         .anyRequest().authenticated()
