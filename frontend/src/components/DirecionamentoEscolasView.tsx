@@ -121,17 +121,17 @@ export function DirecionamentoEscolasView({
       {/* Top Header Minimalista e Editorial */}
       <GraffitiBannerHeader onLogout={onLogout} />
 
-      {/* Conteúdo Principal — Macro Espaçamento Utilitário e Compacto */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col justify-center">
+      {/* Conteúdo Principal — Espaçamento Alinhado ao Topo */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 pt-2 sm:pt-4 pb-8 sm:pb-12 flex flex-col">
         {/* Saudação no Canto Superior Esquerdo */}
-        <div className="mb-4 text-left">
+        <div className="mb-3 sm:mb-4 text-left">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111111] dark:text-white tracking-tight leading-tight">
             Seja bem vindo, {primeiroNome}.
           </h2>
         </div>
 
         {/* Banner Artístico das Escolas Livres */}
-        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-2xl overflow-hidden mb-6 sm:mb-8 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-slate-200/80 dark:border-slate-800 shadow-xs">
           <Image
             src="/grafite_banner.webp"
             alt="Mural Artístico das Escolas Livres: Teatro, Dança, Cinema e Iniciação Artística"
