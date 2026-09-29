@@ -131,7 +131,7 @@ export function DirecionamentoEscolasView({
         </div>
 
         {/* Banner Artístico das Escolas Livres */}
-        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-slate-200/80 dark:border-slate-800 shadow-md dark:shadow-[0_8px_25px_rgba(0,0,0,0.5)]">
           <Image
             src="/grafite_banner.webp"
             alt="Mural Artístico das Escolas Livres: Teatro, Dança, Cinema e Iniciação Artística"
@@ -173,10 +173,10 @@ export function DirecionamentoEscolasView({
             return (
               <div
                 key={escola.id}
-                className={`relative rounded-xl p-4 sm:p-4.5 flex flex-col justify-between transition-all duration-200 border ${
+                className={`relative rounded-xl p-4 sm:p-4.5 flex flex-col justify-between transition-all duration-300 border ${
                   liberada
-                    ? 'bg-white dark:bg-[#0E131F] border-[#EAEAEA] dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 shadow-2xs'
-                    : 'bg-[#FBFBFA] dark:bg-slate-900/30 border-[#EAEAEA] dark:border-slate-800/60 opacity-60 cursor-not-allowed select-none'
+                    ? 'bg-white dark:bg-[#0E131F] border-slate-200/90 dark:border-slate-700/80 shadow-[0_12px_30px_-6px_rgba(0,0,0,0.12),0_6px_12px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_22px_40px_-8px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_30px_rgba(0,0,0,0.6)] dark:hover:shadow-[0_20px_40px_rgba(0,0,0,0.8)] hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-1'
+                    : 'bg-white dark:bg-[#0E131F]/90 border-slate-200/80 dark:border-slate-800/80 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.4)] opacity-70 cursor-not-allowed select-none'
                 }`}
               >
                 <div>
@@ -263,7 +263,7 @@ export function DirecionamentoEscolasView({
                     <button
                       type="button"
                       onClick={() => onSelecionarEscola(escola.id)}
-                      className="w-full py-2 px-3 rounded-lg bg-[#111111] hover:bg-[#27272A] text-white dark:bg-white dark:text-[#111111] dark:hover:bg-slate-200 text-xs font-semibold transition active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full py-2 px-3 rounded-lg bg-[#111111] hover:bg-[#27272A] text-white dark:bg-white dark:text-[#111111] dark:hover:bg-slate-200 text-xs font-semibold transition active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer shadow-sm hover:shadow-md dark:shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
                     >
                       <span>Acessar {config.sigla}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
