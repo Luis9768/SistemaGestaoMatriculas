@@ -69,7 +69,6 @@ export function LoginCulturalView({ onLoginSucesso }: LoginCulturalViewProps) {
     setEtapaRecuperacao('email');
     setEmailRecuperacao(email.trim());
     setCodigoRecuperacao('');
-    setCodigoDemo('');
     setNovaSenha('');
     setConfirmarSenha('');
     setRecuperacaoErro(null);
@@ -671,6 +670,7 @@ export function LoginCulturalView({ onLoginSucesso }: LoginCulturalViewProps) {
             </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

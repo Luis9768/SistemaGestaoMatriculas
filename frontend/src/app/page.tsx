@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   api,
   Escola,
@@ -13,7 +14,8 @@ import {
   ImportacaoResultado,
   InscricaoExternaPayload,
 } from '@/lib/api';
-import { SidebarCultural, ScreenId } from '@/components/SidebarCultural';
+import { DirecionamentoEscolasView } from '@/components/DirecionamentoEscolasView';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { EscolasCampusView } from '@/components/EscolasCampusView';
 import { PortalProfessorasView } from '@/components/PortalProfessorasView';
 import { TurmasOfertasView } from '@/components/TurmasOfertasView';
@@ -26,22 +28,59 @@ import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 import { LgpdModal } from '@/components/LgpdModal';
 import { LoginCulturalView } from '@/components/LoginCulturalView';
 import {
-  Lock,
   RefreshCw,
   Sparkles,
   Calendar,
   X,
   CheckCircle2,
   AlertCircle,
-  Menu,
   Building2,
   Clock,
+  ArrowLeft,
+  LogOut,
+  Users,
+  Layers,
+  BookOpen,
+  Search,
+  FileSpreadsheet,
+  Activity,
+  Send,
+  ShieldCheck,
+  ChevronDown,
 } from 'lucide-react';
 
-export default function Home() {
-  const [currentScreen, setCurrentScreen] = useState<ScreenId>('panorama');
+export type ScreenId =
+  | 'panorama'
+  | 'escolas'
+  | 'professoras'
+  | 'turmas'
+  | 'matriculas'
+  | 'frequencia'
+  | 'alunos'
+  | 'inscricao'
+  | 'importacao';
 
-  // Estado da Escola Ativa (null = Todas / Global)
+interface NavTabItem {
+  id: ScreenId;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const NAV_TABS: NavTabItem[] = [
+  { id: 'turmas', label: 'Turmas & Ofertas', icon: Calendar },
+  { id: 'matriculas', label: 'Matrículas & Fila', icon: Users },
+  { id: 'frequencia', label: 'Diário & Frequência', icon: Layers },
+  { id: 'professoras', label: 'Matriz Curricular & Cursos', icon: BookOpen },
+  { id: 'alunos', label: 'Cadastro de Alunos', icon: Search },
+  { id: 'importacao', label: 'Importação em Lote', icon: FileSpreadsheet },
+  { id: 'panorama', label: 'Panorama & Métricas', icon: Activity },
+  { id: 'inscricao', label: 'Inscrição Pública', icon: Send },
+];
+
+export default function Home() {
+  const [currentScreen, setCurrentScreen] = useState<ScreenId>('turmas');
+
+  // Estado da Escola Ativa (null = Hub de Direcionamento)
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [escolaSelecionada, setEscolaSelecionada] = useState<number | null>(null);
 
@@ -95,8 +134,7 @@ export default function Home() {
   const [showModalLgpd, setShowModalLgpd] = useState(false);
   const [lgpdAbaInicial, setLgpdAbaInicial] = useState<'geral' | 'alunos'>('geral');
 
-  // Menu móvel e tempo de sessão
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Tempo de sessão
   const [tempoRestanteMin, setTempoRestanteMin] = useState<number>(120);
 
   useEffect(() => {
@@ -104,9 +142,8 @@ export default function Home() {
     const user = api.getUsuarioSalvo();
     if (user) {
       setUsuarioLogado(user);
-      if (user.role === 'ROLE_ENCARREGADA' && user.escolaId) {
-        setEscolaSelecionada(user.escolaId);
-      }
+      // Mantém escolaSelecionada como null para que a 2ª tela (Direcionamento) seja exibida inicialmente
+      setEscolaSelecionada(null);
       const { minutos } = api.getTempoRestanteSessao();
       setTempoRestanteMin(minutos);
       carregarDadosIniciais(user);
@@ -133,11 +170,15 @@ export default function Home() {
   }, [usuarioLogado]);
 
   useEffect(() => {
-    carregarDadosEscola();
+    if (escolaSelecionada !== null) {
+      carregarDadosEscola();
+    }
   }, [escolaSelecionada]);
 
   useEffect(() => {
-    carregarAlunosPaginados(paginaAtualAlunos);
+    if (escolaSelecionada !== null) {
+      carregarAlunosPaginados(paginaAtualAlunos);
+    }
   }, [escolaSelecionada, paginaAtualAlunos]);
 
   const carregarDadosIniciais = async (userAtivo?: LoginResponse | null) => {
@@ -147,7 +188,14 @@ export default function Home() {
       setEscolas(esc);
       const isAuth = !!(userAtivo || usuarioLogado);
       if (isAuth) {
-        await carregarDadosEscola();
+        const [c, t, m] = await Promise.all([
+          api.getCursos(),
+          api.getTurmas(),
+          api.getMatriculas(),
+        ]);
+        setCursos(c);
+        setTurmas(t);
+        setMatriculas(m);
       } else {
         const [c, t] = await Promise.all([
           api.getCursos(),
@@ -223,18 +271,16 @@ export default function Home() {
     const { minutos } = api.getTempoRestanteSessao();
     setTempoRestanteMin(minutos);
     mostrarFeedback('sucesso', `Bem-vinda(o), ${resp.nome}! Sessão iniciada com sucesso.`);
-    if (resp.role === 'ROLE_ENCARREGADA' && resp.escolaId) {
-      setEscolaSelecionada(resp.escolaId);
-    }
-    await carregarDadosEscola();
-    await carregarAlunosPaginados(0);
+    // Abre diretamente na Segunda Tela de Direcionamento
+    setEscolaSelecionada(null);
+    await carregarDadosIniciais(resp);
   };
 
   const handleLogout = () => {
     api.logout();
     setUsuarioLogado(null);
     setEscolaSelecionada(null);
-    setCurrentScreen('panorama');
+    setCurrentScreen('turmas');
     mostrarFeedback('sucesso', 'Sessão encerrada com segurança.');
   };
 
@@ -261,7 +307,7 @@ export default function Home() {
     }
   };
 
-  // Criação de Curso com Disciplinas (Pedido das Professoras)
+  // Criação de Curso com Disciplinas
   const handleSalvarCursoComDisciplinas = async (cursoData: Curso) => {
     const salvo = await api.createCurso(cursoData);
     mostrarFeedback('sucesso', `Curso "${salvo.nome}" cadastrado com sucesso!`);
@@ -298,290 +344,373 @@ export default function Home() {
 
   const escolaAtualObj = escolas.find((e) => e.id === escolaSelecionada) || null;
 
-  const getScreenTitle = (screen: ScreenId) => {
-    switch (screen) {
-      case 'panorama':
-        return 'Panorama Cultural & Indicadores de Evasão';
-      case 'escolas':
-        return 'As 4 Casas de Cultura de Santo André';
-      case 'professoras':
-        return 'Portal Pedagógico das Professoras — Matriz Curricular & Cursos';
-      case 'turmas':
-        return 'Turmas, Ofertas Letivas & Vagas';
-      case 'matriculas':
-        return 'Secretaria de Matrículas & Suplência';
-      case 'frequencia':
-        return 'Diário de Frequência, Presenças & Busca Ativa';
-      case 'alunos':
-        return 'Cadastro Central de Alunos';
-      case 'inscricao':
-        return 'Portal do Munícipe — Inscrição Pública';
-      case 'importacao':
-        return 'Automação de Importação em Lote';
+  const getEscolaBadgeStyle = (sigla?: string) => {
+    switch (sigla?.toUpperCase()) {
+      case 'ELT':
+        return {
+          pill: 'bg-violet-100 text-violet-800 dark:bg-violet-950/70 dark:text-violet-300 border-violet-300 dark:border-violet-800',
+          dot: 'bg-violet-600',
+        };
+      case 'ELD':
+        return {
+          pill: 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-300 dark:border-rose-800',
+          dot: 'bg-rose-600',
+        };
+      case 'ELCV':
+        return {
+          pill: 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 border-sky-300 dark:border-sky-800',
+          dot: 'bg-sky-600',
+        };
+      case 'ELIA':
+        return {
+          pill: 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+          dot: 'bg-amber-600',
+        };
       default:
-        return 'SIGMA Cultura';
+        return {
+          pill: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700',
+          dot: 'bg-slate-500',
+        };
     }
   };
 
-  // Mandatório: Se o usuário não estiver autenticado, exibe a Tela de Login Cultural em tela cheia!
+  // 1. Não autenticado: Exibe a Tela de Login Cultural
   if (!usuarioLogado) {
+    return <LoginCulturalView onLoginSucesso={handleLoginSucesso} />;
+  }
+
+  // 2. Autenticado mas sem escola selecionada: Exibe a SEGUNDA TELA DE DIRECIONAMENTO
+  if (escolaSelecionada === null) {
     return (
-      <LoginCulturalView
-        onLoginSucesso={handleLoginSucesso}
+      <DirecionamentoEscolasView
+        usuarioLogado={usuarioLogado}
+        escolas={escolas}
+        cursos={cursos}
+        turmas={turmas}
+        matriculas={matriculas}
+        tempoRestanteMin={tempoRestanteMin}
+        onSelecionarEscola={(id) => {
+          setEscolaSelecionada(id);
+          setCurrentScreen('turmas');
+        }}
+        onLogout={handleLogout}
       />
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex font-sans">
-      {/* Sidebar Cultural Fixa */}
-      <div className="hidden lg:block shrink-0">
-        <SidebarCultural
-          currentScreen={currentScreen}
-          onSelectScreen={setCurrentScreen}
-          escolas={escolas}
-          escolaSelecionada={escolaSelecionada}
-          onSelectEscola={setEscolaSelecionada}
-          usuarioLogado={usuarioLogado}
-          onOpenLogin={handleLogout}
-          onLogout={handleLogout}
-          onOpenLgpd={(aba) => {
-            setLgpdAbaInicial(aba);
-            setShowModalLgpd(true);
-          }}
-        />
-      </div>
+  // 3. Autenticado e dentro de uma escola selecionada: Layout moderno SEM menu lateral SIGMA
+  const badgeStyle = getEscolaBadgeStyle(escolaAtualObj?.sigla);
 
-      {/* Container Principal */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar Superior com Identidade Cultural e Breadcrumbs */}
-        <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/90 h-16 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-          <div className="flex items-center space-x-3">
+  return (
+    <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+      {/* Topbar Superior Integrada — Substitui completamente a antiga Sidebar SIGMA */}
+      <header className="bg-white/95 dark:bg-[#0D1322]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 sticky top-0 z-30 shadow-xs">
+        {/* Linha 1: Identidade, Unidade Ativa, Controles e Sessão */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            {/* Botão de Retorno ao Hub de Escolas */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
+              onClick={() => setEscolaSelecionada(null)}
+              type="button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+              title="Voltar para a Tela de Direcionamento das Escolas"
             >
-              <Menu className="w-5 h-5" />
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Hub de Escolas</span>
             </button>
 
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Santo André
+            <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+
+            {/* Badge da Escola Ativa */}
+            {escolaAtualObj && (
+              <div
+                className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-xs font-bold border ${badgeStyle.pill} truncate`}
+              >
+                <span className={`w-2 h-2 rounded-full ${badgeStyle.dot} shrink-0`} />
+                <span className="font-extrabold">{escolaAtualObj.sigla}</span>
+                <span className="hidden md:inline font-medium text-slate-600 dark:text-slate-300 truncate">
+                  — {escolaAtualObj.nome}
                 </span>
-                <span className="text-slate-300">•</span>
-                <h1 className="text-sm font-extrabold text-slate-800 tracking-tight">
-                  {getScreenTitle(currentScreen)}
-                </h1>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Contexto da Escola e Ações */}
-          <div className="flex items-center space-x-3">
-            {escolaAtualObj ? (
-              <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                <span>Unidade: <strong>{escolaAtualObj.sigla}</strong> ({escolaAtualObj.nome})</span>
-                <button
-                  onClick={() => setEscolaSelecionada(null)}
-                  className="text-blue-600 hover:text-blue-800 font-bold ml-1 cursor-pointer"
-                  title="Ver todas as 4 escolas"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <div className="hidden sm:flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-600">
-                <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                <span>Visão Integrada: <strong>Todas as 4 Escolas</strong></span>
+          {/* Ações da Direita: Troca Rápida (Admin), Refresh, Tema, Sessão e Logout */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Troca Rápida de Escola para Administradores */}
+            {usuarioLogado.role === 'ROLE_ADMIN' && escolas.length > 0 && (
+              <div className="hidden xl:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                {escolas.map((esc) => (
+                  <button
+                    key={esc.id}
+                    onClick={() => setEscolaSelecionada(esc.id)}
+                    className={`px-2 py-0.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                      escolaSelecionada === esc.id
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                  >
+                    {esc.sigla}
+                  </button>
+                ))}
               </div>
             )}
 
+            {/* Botão de Atualizar Dados */}
             <button
               onClick={carregarDadosEscola}
               disabled={refreshing}
-              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer border border-slate-200"
-              title="Recarregar dados"
+              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer border border-slate-200 dark:border-slate-700"
+              title="Recarregar dados da escola"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-blue-600' : ''}`} />
             </button>
-          </div>
-        </header>
 
-        {/* Notificações do Sistema */}
-        {feedbackMsg && (
-          <div className="max-w-7xl mx-auto w-full px-4 sm:px-8 mt-4">
+            {/* Indicador de Tempo de Sessão */}
             <div
-              className={`p-4 rounded-2xl flex items-center justify-between shadow-xs border ${
-                feedbackMsg.tipo === 'sucesso'
-                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                  : 'bg-rose-50 text-rose-900 border-rose-300'
-              }`}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300"
+              title="Tempo restante de sessão"
             >
-              <div className="flex items-center space-x-3">
-                {feedbackMsg.tipo === 'sucesso' ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                )}
-                <span className="text-xs font-semibold">{feedbackMsg.texto}</span>
-              </div>
-              <button
-                onClick={() => setFeedbackMsg(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>{tempoRestanteMin}m</span>
             </div>
-          </div>
-        )}
 
-        {/* Conteúdo Principal Renderizado Conforme a Tela Selecionada */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8">
-          {/* TELA 1: PANORAMA & INDICADORES DE EVASÃO */}
-          {currentScreen === 'panorama' && (
-            <DashboardAnalytics
-              escolaId={escolaSelecionada}
-              turmas={turmas}
-              usuarioLogado={usuarioLogado}
-              onOpenLogin={handleLogout}
-              onOpenPerfilAluno={(id) => {
-                setPerfilAlunoId(id);
-                setShowModalPerfil(true);
-              }}
-            />
-          )}
+            {/* Botão de Modo Claro e Escuro */}
+            <ThemeToggle showLabel={false} />
 
-          {/* TELA 2: AS 4 CASAS DE CULTURA */}
-          {currentScreen === 'escolas' && (
-            <EscolasCampusView
-              escolas={escolas}
-              cursos={cursos}
-              turmas={turmas}
-              onFiltrarEscola={(id) => setEscolaSelecionada(id)}
-              onVerCursosEscola={(id) => {
-                setEscolaSelecionada(id);
-                setCurrentScreen('professoras');
-              }}
-            />
-          )}
+            {/* Perfil do Usuário */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-[11px] font-black">
+                {usuarioLogado.nome.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
+                {usuarioLogado.nome}
+              </span>
+            </div>
 
-          {/* TELA 3: PORTAL DAS PROFESSORAS (MATRIZ CURRICULAR, DISCIPLINAS E CARGA HORÁRIA) */}
-          {currentScreen === 'professoras' && (
-            <PortalProfessorasView
-              cursos={cursos}
-              escolas={escolas}
-              escolaSelecionada={escolaSelecionada}
-              onSalvarCurso={handleSalvarCursoComDisciplinas}
-              onAbrirNovaTurma={(cursoId) => {
-                setTurmaCursoPreSelecionadoId(cursoId);
-                setNovaTurma((prev) => ({ ...prev, cursoId }));
-                setShowModalTurma(true);
-              }}
-            />
-          )}
-
-          {/* TELA 4: TURMAS & OFERTAS */}
-          {currentScreen === 'turmas' && (
-            <TurmasOfertasView
-              turmas={turmas}
-              cursos={cursos}
-              escolas={escolas}
-              escolaSelecionada={escolaSelecionada}
-              onAbrirModalTurma={() => setShowModalTurma(true)}
-              onMatricularNaTurma={(turmaId) => {
-                setTurmaCursoPreSelecionadoId(turmaId);
-                setCurrentScreen('inscricao');
-              }}
-            />
-          )}
-
-          {/* TELA 5: MATRÍCULAS & FILA DE ESPERA */}
-          {currentScreen === 'matriculas' && (
-            <MatriculasView
-              matriculas={matriculas}
-              escolaSelecionada={escolaSelecionada}
-              onNovaMatricula={() => setCurrentScreen('inscricao')}
-              onPromoverSuplente={handlePromoverSuplente}
-              onCancelarMatricula={handleCancelarMatricula}
-              onOpenPerfilAluno={(id) => {
-                setPerfilAlunoId(id);
-                setShowModalPerfil(true);
-              }}
-            />
-          )}
-
-          {/* TELA 6: FREQUÊNCIA & DIÁRIO DE CLASSE */}
-          {currentScreen === 'frequencia' && (
-            <DashboardAnalytics
-              escolaId={escolaSelecionada}
-              turmas={turmas}
-              usuarioLogado={usuarioLogado}
-              onOpenLogin={handleLogout}
-              onOpenPerfilAluno={(id) => {
-                setPerfilAlunoId(id);
-                setShowModalPerfil(true);
-              }}
-            />
-          )}
-
-          {/* TELA 7: CADASTRO DE ALUNOS */}
-          {currentScreen === 'alunos' && (
-            <AlunosPesquisaView
-              paginaAlunos={paginaAlunos}
-              paginaAtualAlunos={paginaAtualAlunos}
-              buscaAlunoTermo={buscaAlunoTermo}
-              loadingAlunos={loadingAlunos}
-              escolaAtualObj={escolaAtualObj}
-              onBuscarAlunos={(termo) => {
-                setBuscaAlunoTermo(termo);
-                setPaginaAtualAlunos(0);
-                carregarAlunosPaginados(0, termo);
-              }}
-              onMudarPagina={(pag) => setPaginaAtualAlunos(pag)}
-              onCadastrarNovoAluno={() => setCurrentScreen('inscricao')}
-              onOpenPerfilAluno={(id) => {
-                setPerfilAlunoId(id);
-                setShowModalPerfil(true);
-              }}
-              onVerTodasEscolas={() => setEscolaSelecionada(null)}
-            />
-          )}
-
-          {/* TELA 8: INSCRIÇÃO PÚBLICA / PORTAL DO MUNÍCIPE */}
-          {currentScreen === 'inscricao' && (
-            <InscricaoPublicaView
-              turmas={turmas}
-              turmaPreSelecionadaId={turmaCursoPreSelecionadoId || undefined}
-              alunoMenorDeIdade={false}
-              onSubmeterInscricao={handleSubmeterInscricao}
-              onOpenLgpd={(aba) => {
-                setLgpdAbaInicial(aba);
+            {/* Botão LGPD */}
+            <button
+              onClick={() => {
+                setLgpdAbaInicial('geral');
                 setShowModalLgpd(true);
               }}
-            />
-          )}
+              type="button"
+              className="hidden sm:inline-flex p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer border border-slate-200 dark:border-slate-700"
+              title="Termos de Privacidade e LGPD"
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </button>
 
-          {/* TELA 9: IMPORTAÇÃO EM LOTE */}
-          {currentScreen === 'importacao' && (
-            <ImportacaoLoteView onUploadPlanilha={handleUploadPlanilha} />
-          )}
-        </main>
-      </div>
+            {/* Botão Sair */}
+            <button
+              onClick={handleLogout}
+              type="button"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:border-rose-300 dark:hover:border-rose-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all cursor-pointer shadow-xs"
+              title="Encerrar sessão"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Linha 2: Barra de Abas Horizontais dos Módulos */}
+        <div className="border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-[#0A0F1D]/60 overflow-x-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center gap-1.5 py-2">
+            {NAV_TABS.map((tab) => {
+              const TabIcon = tab.icon;
+              const active = currentScreen === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setCurrentScreen(tab.id)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                    active
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <TabIcon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </header>
+
+      {/* Notificações do Sistema */}
+      {feedbackMsg && (
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-8 mt-4">
+          <div
+            className={`p-4 rounded-2xl flex items-center justify-between shadow-xs border ${
+              feedbackMsg.tipo === 'sucesso'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+            }`}
+          >
+            <div className="flex items-center space-x-3">
+              {feedbackMsg.tipo === 'sucesso' ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+              )}
+              <span className="text-xs font-semibold">{feedbackMsg.texto}</span>
+            </div>
+            <button
+              onClick={() => setFeedbackMsg(null)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Conteúdo Principal — Espaço Amplo sem a barra lateral */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8">
+        {/* TELA 1: TURMAS & OFERTAS */}
+        {currentScreen === 'turmas' && (
+          <TurmasOfertasView
+            turmas={turmas}
+            cursos={cursos}
+            escolas={escolas}
+            escolaSelecionada={escolaSelecionada}
+            onAbrirModalTurma={() => setShowModalTurma(true)}
+            onMatricularNaTurma={(turmaId) => {
+              setTurmaCursoPreSelecionadoId(turmaId);
+              setCurrentScreen('inscricao');
+            }}
+          />
+        )}
+
+        {/* TELA 2: MATRÍCULAS & FILA DE ESPERA */}
+        {currentScreen === 'matriculas' && (
+          <MatriculasView
+            matriculas={matriculas}
+            escolaSelecionada={escolaSelecionada}
+            onNovaMatricula={() => setCurrentScreen('inscricao')}
+            onPromoverSuplente={handlePromoverSuplente}
+            onCancelarMatricula={handleCancelarMatricula}
+            onOpenPerfilAluno={(id) => {
+              setPerfilAlunoId(id);
+              setShowModalPerfil(true);
+            }}
+          />
+        )}
+
+        {/* TELA 3: FREQUÊNCIA & DIÁRIO DE CLASSE */}
+        {currentScreen === 'frequencia' && (
+          <DashboardAnalytics
+            escolaId={escolaSelecionada}
+            turmas={turmas}
+            usuarioLogado={usuarioLogado}
+            onOpenLogin={handleLogout}
+            onOpenPerfilAluno={(id) => {
+              setPerfilAlunoId(id);
+              setShowModalPerfil(true);
+            }}
+          />
+        )}
+
+        {/* TELA 4: PORTAL DAS PROFESSORAS (MATRIZ CURRICULAR) */}
+        {currentScreen === 'professoras' && (
+          <PortalProfessorasView
+            cursos={cursos}
+            escolas={escolas}
+            escolaSelecionada={escolaSelecionada}
+            onSalvarCurso={handleSalvarCursoComDisciplinas}
+            onAbrirNovaTurma={(cursoId) => {
+              setTurmaCursoPreSelecionadoId(cursoId);
+              setNovaTurma((prev) => ({ ...prev, cursoId }));
+              setShowModalTurma(true);
+            }}
+          />
+        )}
+
+        {/* TELA 5: CADASTRO DE ALUNOS */}
+        {currentScreen === 'alunos' && (
+          <AlunosPesquisaView
+            paginaAlunos={paginaAlunos}
+            paginaAtualAlunos={paginaAtualAlunos}
+            buscaAlunoTermo={buscaAlunoTermo}
+            loadingAlunos={loadingAlunos}
+            escolaAtualObj={escolaAtualObj}
+            onBuscarAlunos={(termo) => {
+              setBuscaAlunoTermo(termo);
+              setPaginaAtualAlunos(0);
+              carregarAlunosPaginados(0, termo);
+            }}
+            onMudarPagina={(pag) => setPaginaAtualAlunos(pag)}
+            onCadastrarNovoAluno={() => setCurrentScreen('inscricao')}
+            onOpenPerfilAluno={(id) => {
+              setPerfilAlunoId(id);
+              setShowModalPerfil(true);
+            }}
+            onVerTodasEscolas={() => setEscolaSelecionada(null)}
+          />
+        )}
+
+        {/* TELA 6: IMPORTAÇÃO EM LOTE */}
+        {currentScreen === 'importacao' && (
+          <ImportacaoLoteView onUploadPlanilha={handleUploadPlanilha} />
+        )}
+
+        {/* TELA 7: PANORAMA & INDICADORES DE EVASÃO */}
+        {currentScreen === 'panorama' && (
+          <DashboardAnalytics
+            escolaId={escolaSelecionada}
+            turmas={turmas}
+            usuarioLogado={usuarioLogado}
+            onOpenLogin={handleLogout}
+            onOpenPerfilAluno={(id) => {
+              setPerfilAlunoId(id);
+              setShowModalPerfil(true);
+            }}
+          />
+        )}
+
+        {/* TELA 8: INSCRIÇÃO PÚBLICA / PORTAL DO MUNÍCIPE */}
+        {currentScreen === 'inscricao' && (
+          <InscricaoPublicaView
+            turmas={turmas}
+            turmaPreSelecionadaId={turmaCursoPreSelecionadoId || undefined}
+            alunoMenorDeIdade={false}
+            onSubmeterInscricao={handleSubmeterInscricao}
+            onOpenLgpd={(aba) => {
+              setLgpdAbaInicial(aba);
+              setShowModalLgpd(true);
+            }}
+          />
+        )}
+
+        {/* TELA 9: AS 4 CASAS DE CULTURA (VISÃO GLOBAL) */}
+        {currentScreen === 'escolas' && (
+          <EscolasCampusView
+            escolas={escolas}
+            cursos={cursos}
+            turmas={turmas}
+            onFiltrarEscola={(id) => setEscolaSelecionada(id)}
+            onVerCursosEscola={(id) => {
+              setEscolaSelecionada(id);
+              setCurrentScreen('professoras');
+            }}
+          />
+        )}
+      </main>
 
       {/* MODAL NOVA TURMA */}
       {showModalTurma && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-[#0F1629] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="font-black text-base text-slate-900">Abrir Nova Turma / Oferta</h3>
-                <p className="text-[11px] text-slate-500">Defina vagas, datas e restrições etárias</p>
+                <h3 className="font-black text-base text-slate-900 dark:text-white">Abrir Nova Turma / Oferta</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Defina vagas, datas e restrições etárias</p>
               </div>
               <button
                 onClick={() => setShowModalTurma(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -589,12 +718,12 @@ export default function Home() {
 
             <form onSubmit={handleCriarTurma} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Curso Vinculado *</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Curso Vinculado *</label>
                 <select
                   required
                   value={novaTurma.cursoId}
                   onChange={(e) => setNovaTurma({ ...novaTurma, cursoId: Number(e.target.value) })}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-semibold"
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-semibold"
                 >
                   <option value="">Selecione o curso...</option>
                   {cursos.map((c) => (
@@ -607,123 +736,127 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Código da Turma *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Código da Turma *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ex: ELT-2026-T1"
                     value={novaTurma.codigo}
                     onChange={(e) => setNovaTurma({ ...novaTurma, codigo: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Vagas Totais *</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Vagas Totais *</label>
                   <input
                     type="number"
                     min={1}
                     required
                     value={novaTurma.vagasTotais}
                     onChange={(e) => setNovaTurma({ ...novaTurma, vagasTotais: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
 
               {/* Faixa Etária */}
-              <div className="p-3 bg-amber-50/60 rounded-2xl space-y-2 border border-amber-200">
-                <span className="font-bold text-amber-900 block text-[10px] uppercase tracking-wider">
+              <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl space-y-2 border border-amber-200 dark:border-amber-800/60">
+                <span className="font-bold text-amber-900 dark:text-amber-300 block text-[10px] uppercase tracking-wider">
                   Faixa Etária Permitida
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] text-slate-600 mb-0.5">Idade Mínima</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Idade Mínima</label>
                     <input
                       type="number"
                       placeholder="Ex: 5 ou 16"
                       value={novaTurma.idadeMinima || ''}
-                      onChange={(e) => setNovaTurma({ ...novaTurma, idadeMinima: e.target.value ? Number(e.target.value) : undefined })}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                      onChange={(e) =>
+                        setNovaTurma({ ...novaTurma, idadeMinima: e.target.value ? Number(e.target.value) : undefined })
+                      }
+                      className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-600 mb-0.5">Idade Máxima</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Idade Máxima</label>
                     <input
                       type="number"
                       placeholder="Ex: 12 ou 99"
                       value={novaTurma.idadeMaxima || ''}
-                      onChange={(e) => setNovaTurma({ ...novaTurma, idadeMaxima: e.target.value ? Number(e.target.value) : undefined })}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                      onChange={(e) =>
+                        setNovaTurma({ ...novaTurma, idadeMaxima: e.target.value ? Number(e.target.value) : undefined })
+                      }
+                      className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Período de Inscrição */}
-              <div className="p-3 bg-blue-50/60 rounded-2xl space-y-2 border border-blue-100">
-                <span className="font-bold text-blue-900 block text-[10px] uppercase tracking-wider">
+              <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl space-y-2 border border-blue-100 dark:border-blue-900/60">
+                <span className="font-bold text-blue-900 dark:text-blue-300 block text-[10px] uppercase tracking-wider">
                   Período de Inscrição
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] text-slate-600 mb-0.5">Abertura *</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Abertura *</label>
                     <input
                       type="date"
                       required
                       value={novaTurma.dataAberturaMatricula}
                       onChange={(e) => setNovaTurma({ ...novaTurma, dataAberturaMatricula: e.target.value })}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                      className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-600 mb-0.5">Fechamento *</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Fechamento *</label>
                     <input
                       type="date"
                       required
                       value={novaTurma.dataFechamentoMatricula}
                       onChange={(e) => setNovaTurma({ ...novaTurma, dataFechamentoMatricula: e.target.value })}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                      className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Período de Aulas */}
-              <div className="p-3 bg-slate-50 rounded-2xl space-y-2 border border-slate-200">
-                <span className="font-bold text-slate-700 block text-[10px] uppercase tracking-wider">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-2 border border-slate-200 dark:border-slate-700">
+                <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">
                   Aulas & Tolerância de Suplência
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] text-slate-600 mb-0.5">Início *</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Início *</label>
                     <input
                       type="date"
                       required
                       value={novaTurma.dataInicioAulas}
                       onChange={(e) => setNovaTurma({ ...novaTurma, dataInicioAulas: e.target.value })}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                      className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-600 mb-0.5">Término *</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Término *</label>
                     <input
                       type="date"
                       required
                       value={novaTurma.dataFimAulas}
                       onChange={(e) => setNovaTurma({ ...novaTurma, dataFimAulas: e.target.value })}
-                      className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                      className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
                 <div className="pt-1">
-                  <label className="block text-[11px] text-slate-600 mb-0.5">
+                  <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">
                     Tolerância para Chamar Suplentes (Dias após o início)
                   </label>
                   <input
                     type="number"
                     value={novaTurma.diasToleranciaSuplencia || 60}
                     onChange={(e) => setNovaTurma({ ...novaTurma, diasToleranciaSuplencia: Number(e.target.value) })}
-                    className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                    className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -732,7 +865,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setShowModalTurma(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-xl font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   Cancelar
                 </button>
