@@ -163,9 +163,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const carregarDadosIniciais = async (userAtivo?: LoginResponse | null) => {
     setLoading(true);
     try {
+      const activeUser = userAtivo !== undefined ? userAtivo : (usuarioLogado || api.getUsuarioSalvo());
+      if (activeUser) {
+        setUsuarioLogado(activeUser);
+        if (activeUser.role === 'ROLE_ENCARREGADA' && activeUser.escolaId) {
+          setEscolaSelecionadaState(activeUser.escolaId);
+          api.setEscolaAtivaId(activeUser.escolaId);
+        }
+        const { minutos } = api.getTempoRestanteSessao();
+        setTempoRestanteMin(minutos);
+      } else {
+        setUsuarioLogado(null);
+      }
+
       const esc = await api.getEscolas();
       setEscolas(esc);
-      const isAuth = !!(userAtivo || usuarioLogado);
+      const isAuth = !!activeUser;
       if (isAuth) {
         const [c, t, m] = await Promise.all([
           api.getCursos(),

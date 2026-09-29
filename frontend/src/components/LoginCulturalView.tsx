@@ -19,7 +19,7 @@ import { api, LoginResponse } from '@/lib/api';
 import { GradientHoverButton } from './GradientHoverButton';
 
 interface LoginCulturalViewProps {
-  onLoginSucesso: (user: LoginResponse) => void;
+  onLoginSucesso: (user: LoginResponse) => void | Promise<void>;
   onAcessarInscricaoPublica?: () => void;
 }
 
@@ -55,10 +55,9 @@ export function LoginCulturalView({ onLoginSucesso }: LoginCulturalViewProps) {
       setLoading(true);
       setErro(null);
       const user = await api.login(email.trim(), senha);
-      onLoginSucesso(user);
+      await onLoginSucesso(user);
     } catch (err: any) {
       setErro(err.message || 'Credenciais inválidas. Verifique seus dados.');
-    } finally {
       setLoading(false);
     }
   };

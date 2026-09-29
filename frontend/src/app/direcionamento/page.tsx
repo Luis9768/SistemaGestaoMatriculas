@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
 import { DirecionamentoEscolasView } from '@/components/DirecionamentoEscolasView';
 
 export default function DirecionamentoPage() {
@@ -19,13 +20,15 @@ export default function DirecionamentoPage() {
     handleLogout,
   } = useApp();
 
+  const userEfetivo = usuarioLogado || (typeof window !== 'undefined' ? api.getUsuarioSalvo() : null);
+
   useEffect(() => {
-    if (!loading && !usuarioLogado) {
+    if (!loading && !userEfetivo) {
       router.replace('/login');
     }
-  }, [loading, usuarioLogado, router]);
+  }, [loading, userEfetivo, router]);
 
-  if (loading || !usuarioLogado) {
+  if (loading || !userEfetivo) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -45,7 +48,7 @@ export default function DirecionamentoPage() {
 
   return (
     <DirecionamentoEscolasView
-      usuarioLogado={usuarioLogado}
+      usuarioLogado={userEfetivo}
       escolas={escolas}
       cursos={cursos}
       turmas={turmas}

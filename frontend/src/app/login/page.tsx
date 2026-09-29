@@ -8,7 +8,7 @@ import { LoginCulturalView } from '@/components/LoginCulturalView';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loading, carregarDadosIniciais } = useApp();
+  const { carregarDadosIniciais } = useApp();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -17,10 +17,10 @@ export default function LoginPage() {
 
   const handleLoginSucesso = async (user: LoginResponse) => {
     await carregarDadosIniciais(user);
-    router.replace('/direcionamento');
+    router.push('/direcionamento');
   };
 
-  if (!mounted || loading) {
+  if (!mounted) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#18181B]/20 border-t-[#18181B] rounded-full animate-spin" />
