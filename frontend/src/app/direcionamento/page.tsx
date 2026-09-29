@@ -13,7 +13,6 @@ export default function DirecionamentoPage() {
     escolas,
     cursos,
     turmas,
-    matriculas,
     tempoRestanteMin,
     loading,
     setEscolaSelecionada,
@@ -52,7 +51,6 @@ export default function DirecionamentoPage() {
       escolas={escolas}
       cursos={cursos}
       turmas={turmas}
-      matriculas={matriculas}
       tempoRestanteMin={tempoRestanteMin}
       onSelecionarEscola={handleSelecionarEscola}
       onLogout={handleLogout}

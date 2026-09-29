@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { AppLayout } from '@/components/AppLayout';
@@ -11,10 +11,15 @@ export default function MatriculasPage() {
   const {
     matriculas,
     escolaSelecionada,
+    carregarMatriculas,
     handlePromoverSuplente,
     handleCancelarMatricula,
     abrirModalPerfil,
   } = useApp();
+
+  useEffect(() => {
+    carregarMatriculas();
+  }, [escolaSelecionada]);
 
   return (
     <AppLayout>

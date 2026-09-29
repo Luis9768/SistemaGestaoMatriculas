@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { AppLayout } from '@/components/AppLayout';
@@ -14,12 +14,17 @@ export default function AlunosPage() {
     buscaAlunoTermo,
     loadingAlunos,
     escolaAtualObj,
+    escolaSelecionada,
     setBuscaAlunoTermo,
     setPaginaAtualAlunos,
     carregarAlunosPaginados,
     abrirModalPerfil,
     setEscolaSelecionada,
   } = useApp();
+
+  useEffect(() => {
+    carregarAlunosPaginados(paginaAtualAlunos);
+  }, [escolaSelecionada]);
 
   return (
     <AppLayout>

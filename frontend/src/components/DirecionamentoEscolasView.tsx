@@ -20,7 +20,7 @@ interface DirecionamentoEscolasViewProps {
   escolas: Escola[];
   cursos: Curso[];
   turmas: Turma[];
-  matriculas: Matricula[];
+  matriculas?: Matricula[];
   tempoRestanteMin: number;
   onSelecionarEscola: (escolaId: number) => void;
   onLogout: () => void;
@@ -183,12 +183,11 @@ export function DirecionamentoEscolasView({
             const cursosCount = cursos.filter(
               (c) => c.escolaId === escola.id || c.escolaSigla?.toUpperCase() === siglaUpper
             ).length;
-            const turmasCount = turmas.filter(
+            const turmasDaEscola = turmas.filter(
               (t) => t.escolaId === escola.id || t.escolaSigla?.toUpperCase() === siglaUpper
-            ).length;
-            const matriculasCount = matriculas.filter(
-              (m) => m.escolaId === escola.id || m.escolaSigla?.toUpperCase() === siglaUpper
-            ).length;
+            );
+            const turmasCount = turmasDaEscola.length;
+            const vagasCount = turmasDaEscola.reduce((acc, t) => acc + (t.vagasTotais || 0), 0) || 60;
 
             return (
               <div
@@ -262,7 +261,7 @@ export function DirecionamentoEscolasView({
                       </div>
                       <div>
                         <span className="block text-xs font-bold text-slate-900 dark:text-slate-100 font-mono">
-                          {matriculasCount || 60}
+                          {vagasCount}
                         </span>
                         <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           Vagas

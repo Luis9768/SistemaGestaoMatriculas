@@ -30,6 +30,7 @@ interface AppContextType {
   tempoRestanteMin: number;
   mostrarFeedback: (tipo: 'sucesso' | 'erro', texto: string) => void;
   carregarDadosEscola: () => Promise<void>;
+  carregarMatriculas: () => Promise<void>;
   carregarDadosIniciais: (userAtivo?: LoginResponse | null) => Promise<void>;
   handleLogout: () => void;
   handlePromoverSuplente: (matriculaId: number, alunoNome: string) => Promise<void>;
@@ -155,10 +156,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (escolaSelecionada !== null && usuarioLogado) {
+      // Boas Práticas & LGPD: Rotas institucionais e de autenticação NÃO devem carregar
+      // dados sensíveis (alunos/matrículas) antecipadamente.
+      if (pathname === '/direcionamento' || pathname === '/login' || pathname === '/') {
+        return;
+      }
       carregarDadosEscola();
-      carregarAlunosPaginados(paginaAtualAlunos);
+      if (pathname === '/alunos') {
+        carregarAlunosPaginados(0);
+      } else if (pathname === '/matriculas') {
+        carregarMatriculas();
+      }
     }
-  }, [escolaSelecionada]);
+  }, [escolaSelecionada, pathname]);
 
   const carregarDadosIniciais = async (userAtivo?: LoginResponse | null) => {
     setLoading(true);
@@ -176,26 +186,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUsuarioLogado(null);
       }
 
+      // Carrega exclusivamente escolas, cursos e turmas gerais (metadados públicos sem dados pessoais)
       const esc = await api.getEscolas();
       setEscolas(esc);
       const isAuth = !!activeUser;
-      if (isAuth) {
-        const [c, t, m] = await Promise.all([
-          api.getCursos(),
-          api.getTurmas(),
-          api.getMatriculas(),
-        ]);
-        setCursos(c);
-        setTurmas(t);
-        setMatriculas(m);
-      } else {
-        const [c, t] = await Promise.all([
-          api.getCursos(),
-          api.getTurmas(undefined, undefined, true),
-        ]);
-        setCursos(c);
-        setTurmas(t);
-      }
+      const [c, t] = await Promise.all([
+        api.getCursos(),
+        api.getTurmas(undefined, undefined, !isAuth),
+      ]);
+      setCursos(c);
+      setTurmas(t);
+      // NUNCA carrega api.getMatriculas() ou api.getAlunos() no boot inicial!
     } catch (e: any) {
       mostrarFeedback('erro', 'Erro ao carregar dados: ' + e.message);
     } finally {
@@ -207,14 +208,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setRefreshing(true);
     try {
       if (usuarioLogado || api.getUsuarioSalvo()) {
-        const [c, t, m] = await Promise.all([
+        const [c, t] = await Promise.all([
           api.getCursos(escolaSelecionada || undefined),
           api.getTurmas(undefined, escolaSelecionada || undefined),
-          api.getMatriculas(escolaSelecionada || undefined),
         ]);
         setCursos(c);
         setTurmas(t);
-        setMatriculas(m);
 
         if (c.length > 0 && (!novaTurma.cursoId || !c.some((cur) => cur.id === novaTurma.cursoId))) {
           setNovaTurma((prev) => ({ ...prev, cursoId: c[0]?.id || 0 }));
@@ -228,7 +227,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setTurmas(t);
       }
     } catch (e: any) {
-      mostrarFeedback('erro', 'Erro ao sincronizar: ' + e.message);
+      mostrarFeedback('erro', 'Erro ao sincronizar dados da escola: ' + e.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const carregarMatriculas = async () => {
+    setRefreshing(true);
+    try {
+      const m = await api.getMatriculas(escolaSelecionada || undefined);
+      setMatriculas(m);
+    } catch (e: any) {
+      mostrarFeedback('erro', 'Erro ao carregar matrículas: ' + e.message);
     } finally {
       setRefreshing(false);
     }
@@ -359,6 +370,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         tempoRestanteMin,
         mostrarFeedback,
         carregarDadosEscola,
+        carregarMatriculas,
         carregarDadosIniciais,
         handleLogout,
         handlePromoverSuplente,
