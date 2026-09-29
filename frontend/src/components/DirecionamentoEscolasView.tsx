@@ -124,8 +124,8 @@ export function DirecionamentoEscolasView({
       {/* Conteúdo Principal — Espaçamento Alinhado ao Topo */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 pt-2 sm:pt-4 pb-8 sm:pb-12 flex flex-col">
         {/* Saudação no Canto Superior Esquerdo */}
-        <div className="mb-3 sm:mb-4 text-left">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111111] dark:text-white tracking-tight leading-tight">
+        <div className="mb-2 sm:mb-3 text-left">
+          <h2 className="font-fighter text-3xl sm:text-4xl md:text-5xl font-normal text-[#111111] dark:text-white tracking-wide leading-tight">
             Seja bem vindo, {primeiroNome}.
           </h2>
         </div>

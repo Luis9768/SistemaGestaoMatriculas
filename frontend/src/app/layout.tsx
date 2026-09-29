@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 
@@ -13,6 +14,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fighterAttack = localFont({
+  src: "./fonts/FighterAttack.ttf",
+  variable: "--font-fighter-attack",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Gestão de Matrículas | Escolas Livres de Santo André",
   description: "Sistema Integrado de Gestão de Matrículas para ELT, ELD, ELCV e ELIA — Santo André",
@@ -22,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fighterAttack.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#FAF9F7] dark:bg-[#090D16]">
         <AppProvider>{children}</AppProvider>

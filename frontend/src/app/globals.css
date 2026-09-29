@@ -14,11 +14,24 @@
   color-scheme: dark;
 }
 
+@font-face {
+  font-family: 'FighterAttack';
+  src: url('/fonts/FighterAttack.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-fighter: var(--font-fighter-attack), 'FighterAttack', cursive;
+}
+
+.font-fighter {
+  font-family: var(--font-fighter-attack), 'FighterAttack', cursive, sans-serif;
 }
 
 body {

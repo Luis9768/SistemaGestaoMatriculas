@@ -247,7 +247,7 @@ export function LoginCulturalView({ onLoginSucesso }: LoginCulturalViewProps) {
                   </div>
 
                   {/* Título: Apenas Portal de Acesso */}
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#18181B] tracking-tight text-center uppercase mb-5">
+                  <h2 className="font-fighter text-3xl sm:text-4xl font-normal text-[#18181B] tracking-wide text-center mb-4">
                     Portal de Acesso
                   </h2>
 
