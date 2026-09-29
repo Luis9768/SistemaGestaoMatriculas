@@ -123,20 +123,40 @@ export function DirecionamentoEscolasView({
 
       {/* Conteúdo Principal — Espaçamento Alinhado ao Topo */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 pt-2 sm:pt-4 pb-8 sm:pb-12 flex flex-col">
-        {/* Saudação no Canto Superior Esquerdo */}
-        <div className="mb-2 sm:mb-3 text-left">
-          <h2 className="font-fighter text-3xl sm:text-4xl md:text-5xl font-normal text-[#111111] dark:text-white tracking-wide leading-tight">
-            Seja bem vindo, {primeiroNome}.
-          </h2>
+        {/* Cabeçalho da Seção com Saudação e Contexto Institucional */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 mb-3 sm:mb-4">
+          <div>
+            <span className="text-[11px] font-mono uppercase tracking-widest text-slate-500 dark:text-slate-400 block mb-1">
+              Secretaria de Cultura • Escolas Livres de Santo André
+            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-baseline gap-2 flex-wrap">
+              <span className="font-fighter text-2xl sm:text-3xl md:text-4xl text-slate-900 dark:text-white font-normal">
+                Seja bem vindo,
+              </span>
+              <span className="font-bold tracking-tight text-slate-900 dark:text-white text-lg sm:text-xl">
+                {primeiroNome}.
+              </span>
+            </h1>
+          </div>
+
+          {/* Badge da Escola / Unidade Atual */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 shadow-xs font-mono">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>{isAdmin ? 'Acesso Total' : `Unidade ${usuarioLogado?.escolaSigla || 'ELT'}`}</span>
+            </span>
+          </div>
         </div>
 
-        {/* Banner Artístico das Escolas Livres */}
-        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-slate-200/80 dark:border-slate-800 shadow-md dark:shadow-[0_8px_25px_rgba(0,0,0,0.5)]">
+        {/* Banner Artístico das Escolas Livres — Proporção Natural e Qualidade Nativa */}
+        <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] md:aspect-[2.2/1] max-h-[360px] rounded-2xl overflow-hidden mb-5 sm:mb-6 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-black/10 dark:shadow-black/50">
           <Image
             src="/grafite_banner.webp"
             alt="Mural Artístico das Escolas Livres: Teatro, Dança, Cinema e Iniciação Artística"
             fill
             priority
+            quality={100}
+            unoptimized={true}
             className="object-cover object-center"
             sizes="(max-width: 1200px) 100vw, 1200px"
           />
