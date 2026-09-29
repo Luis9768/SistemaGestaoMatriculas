@@ -9,7 +9,6 @@ import {
   Lock,
   ArrowRight,
   CheckCircle2,
-  LogOut,
   Building2,
 } from 'lucide-react';
 import { Escola, Curso, Turma, Matricula, LoginResponse } from '@/lib/api';
@@ -123,32 +122,9 @@ export function DirecionamentoEscolasView({
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-10 sm:py-16 flex flex-col justify-center">
         {/* Saudação no Canto Superior Esquerdo */}
         <div className="mb-8 text-left">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111111] dark:text-white tracking-tight leading-tight">
-              Seja bem vindo, {usuarioLogado.nome}.
-            </h2>
-
-            {/* Pill com Usuário Ativo e Botão para Trocar de Conta */}
-            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-[#EAEAEA] dark:border-slate-800 bg-white dark:bg-[#0E131F] text-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                {usuarioLogado.nome}
-              </span>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                {isAdmin ? 'Coordenação Geral' : `Analista • ${usuarioLogado.escolaSigla || 'Escola'}`}
-              </span>
-              <button
-                type="button"
-                onClick={onLogout}
-                className="ml-2 text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer flex items-center gap-1"
-                title="Sair desta conta"
-              >
-                <LogOut className="w-3 h-3" />
-                <span>Trocar</span>
-              </button>
-            </div>
-          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111111] dark:text-white tracking-tight leading-tight">
+            Seja bem vindo, {usuarioLogado.nome}.
+          </h2>
         </div>
 
         {/* Grade Bento dos 4 Campos das Escolas Livres */}
