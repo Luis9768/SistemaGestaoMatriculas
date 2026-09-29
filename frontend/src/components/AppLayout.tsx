@@ -144,10 +144,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const tabAtiva = NAV_TABS.find((t) => t.href === pathname);
 
   const handleVoltar = () => {
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
-    } else {
+    if (pathname === '/turmas') {
       router.push('/direcionamento');
+    } else {
+      router.push('/turmas');
     }
   };
 
@@ -170,12 +170,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Setinha para Voltar à Tela Anterior */}
+            {/* Setinha para Escolha de Turmas / Voltar */}
             <button
               onClick={handleVoltar}
               type="button"
-              aria-label="Voltar à tela anterior"
-              title="Voltar à tela anterior"
+              aria-label={pathname === '/turmas' ? 'Voltar para escolha de escolas' : 'Ir para escolha de turmas'}
+              title={pathname === '/turmas' ? 'Voltar para escolha de escolas (Hub)' : 'Ir para escolha de turmas (/turmas)'}
               className="p-2 sm:p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer active:scale-95 shadow-xs flex items-center justify-center shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
