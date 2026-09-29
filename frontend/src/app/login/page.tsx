@@ -8,7 +8,7 @@ import { LoginCulturalView } from '@/components/LoginCulturalView';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { usuarioLogado, loading, carregarDadosIniciais, handleLogout } = useApp();
+  const { loading, carregarDadosIniciais } = useApp();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -20,10 +20,6 @@ export default function LoginPage() {
     router.replace('/direcionamento');
   };
 
-  const handleContinuarHub = () => {
-    router.push('/direcionamento');
-  };
-
   if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
@@ -32,12 +28,5 @@ export default function LoginPage() {
     );
   }
 
-  return (
-    <LoginCulturalView
-      onLoginSucesso={handleLoginSucesso}
-      usuarioAtual={usuarioLogado}
-      onContinuarHub={handleContinuarHub}
-      onLogout={handleLogout}
-    />
-  );
+  return <LoginCulturalView onLoginSucesso={handleLoginSucesso} />;
 }
