@@ -114,6 +114,8 @@ export function DirecionamentoEscolasView({
           { id: 4, sigla: 'ELIA', nome: 'Escola Livre de Iniciação Artística', corTema: 'amber' },
         ];
 
+  const primeiroNome = usuarioLogado?.nome ? usuarioLogado.nome.trim().split(/\s+/)[0] : '';
+
   return (
     <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] text-[#111111] dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Header Minimalista e Editorial */}
@@ -124,7 +126,7 @@ export function DirecionamentoEscolasView({
         {/* Saudação no Canto Superior Esquerdo */}
         <div className="mb-4 text-left">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111111] dark:text-white tracking-tight leading-tight">
-            Seja bem vindo, {usuarioLogado.nome}.
+            Seja bem vindo, {primeiroNome}.
           </h2>
         </div>
 
