@@ -322,18 +322,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Rodapé do Menu com Atalho para o Hub e Informações do Usuário */}
-        <div className="p-4 border-t border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-[#0E1424]/50 space-y-2">
-          <Link
-            href="/direcionamento"
-            onClick={() => setMenuAberto(false)}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Mudar de Escola (Hub)</span>
-          </Link>
-
-          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 px-1">
+        {/* Rodapé do Menu com Informações do Usuário */}
+        <div className="p-4 border-t border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-[#0E1424]/50">
+          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
             <span className="truncate max-w-[170px]">{usuarioLogado.email}</span>
             <span className="font-mono text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">
               {usuarioLogado.role === 'ROLE_ADMIN' ? 'Admin' : 'Encarregada'}
