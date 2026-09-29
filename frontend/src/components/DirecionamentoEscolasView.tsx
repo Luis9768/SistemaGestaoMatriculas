@@ -121,17 +121,17 @@ export function DirecionamentoEscolasView({
       {/* Top Header Minimalista e Editorial */}
       <GraffitiBannerHeader onLogout={onLogout} />
 
-      {/* Conteúdo Principal — Espaçamento Alinhado ao Topo */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 pt-2 sm:pt-4 pb-8 sm:pb-12 flex flex-col">
-        {/* Cabeçalho da Seção com Saudação Unificada na Mesma Fonte */}
-        <div className="mb-3 sm:mb-4">
-          <h1 className="font-fighter text-3xl sm:text-4xl md:text-5xl text-slate-900 dark:text-white font-normal tracking-tight">
+      {/* Conteúdo Principal — Espaçamento Confortável e Editorial */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 pt-6 sm:pt-8 md:pt-10 pb-10 sm:pb-14 flex flex-col">
+        {/* Cabeçalho da Seção com Saudação e Espaço Seguro para Descendentes da Fonte */}
+        <div className="mb-6 sm:mb-8 md:mb-10">
+          <h1 className="font-fighter text-3xl sm:text-4xl md:text-5xl text-slate-900 dark:text-white font-normal tracking-normal leading-relaxed">
             Seja bem vindo, {primeiroNome}.
           </h1>
         </div>
 
         {/* Banner Artístico das Escolas Livres — Proporção Natural e Qualidade Nativa */}
-        <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] md:aspect-[2.2/1] max-h-[360px] rounded-2xl overflow-hidden mb-5 sm:mb-6 border border-slate-200/80 dark:border-slate-800 banner-shadow-elevated">
+        <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] md:aspect-[2.2/1] max-h-[360px] rounded-2xl overflow-hidden mb-6 sm:mb-8 border border-slate-200/80 dark:border-slate-800 banner-shadow-elevated">
           <Image
             src="/grafite_banner.webp"
             alt="Mural Artístico das Escolas Livres: Teatro, Dança, Cinema e Iniciação Artística"
