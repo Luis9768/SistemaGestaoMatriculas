@@ -106,8 +106,8 @@ public class AuthService {
 
         String mascarado = mascararEmail(emailNorm);
 
-        // Registro seguro de auditoria do envio de e-mail institucional
-        log.info("[RECUPERAÇÃO DE SENHA] Código institucional de 7 dígitos gerado para o e-mail: {}", mascarado);
+        // Registro seguro de auditoria do envio de e-mail institucional (com exibição no console local)
+        log.info("[RECUPERAÇÃO DE SENHA] Código institucional de 7 dígitos gerado para o e-mail: {} [CÓDIGO: {}]", mascarado, codigo);
         log.info("[RECUPERAÇÃO DE SENHA] Expiração em 10 minutos (até {}). Armazenamento exclusivamente em memória.", expiracao.toLocalTime());
 
         return RecuperacaoRespostaDTO.builder()

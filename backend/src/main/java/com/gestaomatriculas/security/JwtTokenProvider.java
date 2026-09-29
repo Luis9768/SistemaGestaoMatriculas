@@ -17,12 +17,15 @@ public class JwtTokenProvider {
 
     private final SecretKey key;
     private final long expirationMs;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public JwtTokenProvider(
             @Value("${jwt.secret:santoandre_cultural_escolas_livres_secret_token_2026_super_secure_sigma_key}") String secret,
-            @Value("${jwt.expiration:7200000}") long expirationMs) {
+            @Value("${jwt.expiration:7200000}") long expirationMs,
+            TokenBlacklistService tokenBlacklistService) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     public String gerarToken(Usuario usuario) {
@@ -48,10 +51,26 @@ public class JwtTokenProvider {
 
     public boolean validarToken(String token) {
         try {
+            if (tokenBlacklistService.isRevogado(token)) {
+                return false;
+            }
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
+        }
+    }
+
+    public void revogarToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            return;
+        }
+        try {
+            Claims claims = obterClaims(token);
+            Date expiracao = claims.getExpiration();
+            tokenBlacklistService.revogarToken(token, expiracao);
+        } catch (Exception e) {
+            tokenBlacklistService.revogarToken(token, null);
         }
     }
 

@@ -269,12 +269,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setFeedbackMsg(null), 6000);
   };
 
-  const handleLogout = () => {
-    api.logout();
+  const handleLogout = async () => {
+    await api.logout();
     setUsuarioLogado(null);
     setEscolaSelecionadaState(null);
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.replace('/login');
     } else {
       router.replace('/login');
     }

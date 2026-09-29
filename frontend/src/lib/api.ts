@@ -344,12 +344,27 @@ export const api = {
     return data;
   },
 
-  logout(): void {
+  async logout(): Promise<void> {
     if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('sigma_jwt_token');
+      if (token) {
+        try {
+          await fetch(`${API_BASE}/auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+        } catch (e) {
+          console.warn('Servidor indisponível para logout remoto:', e);
+        }
+      }
       localStorage.removeItem('sigma_jwt_token');
       localStorage.removeItem('sigma_user');
       localStorage.removeItem('sigma_token_timestamp');
       localStorage.removeItem('sigma_escola_ativa_id');
+      sessionStorage.clear();
     }
   },
 

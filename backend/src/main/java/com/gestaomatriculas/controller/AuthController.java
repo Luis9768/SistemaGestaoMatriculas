@@ -22,6 +22,17 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.gestaomatriculas.security.JwtTokenProvider jwtTokenProvider;
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout(jakarta.servlet.http.HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            String token = bearerToken.substring(7);
+            jwtTokenProvider.revogarToken(token);
+        }
+        return ResponseEntity.ok(Map.of("sucesso", true, "mensagem", "Sessão encerrada com sucesso. Token invalidado no servidor."));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto) {
