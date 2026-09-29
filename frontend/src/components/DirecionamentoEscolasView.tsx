@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   Theater,
   Music,
@@ -121,10 +122,22 @@ export function DirecionamentoEscolasView({
       {/* Conteúdo Principal — Macro Espaçamento Utilitário */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-10 sm:py-16 flex flex-col justify-center">
         {/* Saudação no Canto Superior Esquerdo */}
-        <div className="mb-8 text-left">
+        <div className="mb-6 text-left">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111111] dark:text-white tracking-tight leading-tight">
             Seja bem vindo, {usuarioLogado.nome}.
           </h2>
+        </div>
+
+        {/* Banner Artístico das Escolas Livres */}
+        <div className="relative w-full h-44 sm:h-60 md:h-72 rounded-2xl overflow-hidden mb-8 sm:mb-10 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <Image
+            src="/grafite_banner.webp"
+            alt="Mural Artístico das Escolas Livres: Teatro, Dança, Cinema e Iniciação Artística"
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="(max-width: 1200px) 100vw, 1200px"
+          />
         </div>
 
         {/* Grade Bento dos 4 Campos das Escolas Livres */}
