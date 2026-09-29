@@ -349,6 +349,25 @@ export const api = {
       localStorage.removeItem('sigma_jwt_token');
       localStorage.removeItem('sigma_user');
       localStorage.removeItem('sigma_token_timestamp');
+      localStorage.removeItem('sigma_escola_ativa_id');
+    }
+  },
+
+  getEscolaAtivaId(): number | null {
+    if (typeof window !== 'undefined') {
+      const id = localStorage.getItem('sigma_escola_ativa_id');
+      return id ? Number(id) : null;
+    }
+    return null;
+  },
+
+  setEscolaAtivaId(id: number | null): void {
+    if (typeof window !== 'undefined') {
+      if (id !== null) {
+        localStorage.setItem('sigma_escola_ativa_id', id.toString());
+      } else {
+        localStorage.removeItem('sigma_escola_ativa_id');
+      }
     }
   },
 
