@@ -249,51 +249,41 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         }`}
         aria-label="Menu de Navegação Principal"
       >
-        {/* Topo do Drawer: Brasão de Santo André + Título + Botão de Fechar */}
-        <div className="h-16 px-5 border-b border-slate-200/90 dark:border-slate-800/90 flex items-center justify-between bg-slate-50/70 dark:bg-[#0E1424]/70">
-          <div className="flex items-center gap-3">
+        {/* Topo do Drawer: Brasão de Santo André + Nome da Escola Ativa + Botão de Fechar */}
+        <div className="h-16 px-4 sm:px-5 border-b border-slate-200/90 dark:border-slate-800/90 flex items-center justify-between bg-slate-50/70 dark:bg-[#0E1424]/70">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
             <Image
               src="/logo_santo_andre.png"
               alt="Brasão Oficial de Santo André"
               width={28}
               height={40}
-              className="h-8 w-auto object-contain drop-shadow-xs dark:brightness-110"
+              className="h-8 w-auto object-contain drop-shadow-xs dark:brightness-110 shrink-0"
               priority
             />
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-bold tracking-wider text-slate-900 dark:text-white uppercase font-sans leading-none">
-                A CASA
+            <div className="flex flex-col text-left min-w-0">
+              <span className="text-xs sm:text-sm font-extrabold tracking-tight text-slate-900 dark:text-white truncate leading-snug">
+                {escolaAtualObj ? escolaAtualObj.nome : 'Escolas Livres'}
               </span>
-              <span className="text-[9px] font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase font-mono mt-1 leading-none">
-                Módulos do Sistema
-              </span>
+              {escolaAtualObj && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${badgeStyle.dot} shrink-0`} />
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono tracking-wider leading-none">
+                    {escolaAtualObj.sigla} • Santo André
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
           <button
             onClick={() => setMenuAberto(false)}
             type="button"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer shrink-0"
             title="Fechar menu"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Card de Contexto da Unidade Ativa */}
-        {escolaAtualObj && (
-          <div className="p-3.5 mx-4 mt-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                Unidade em Operação
-              </span>
-              <span className={`w-2 h-2 rounded-full ${badgeStyle.dot}`} />
-            </div>
-            <p className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
-              {escolaAtualObj.sigla} — {escolaAtualObj.nome}
-            </p>
-          </div>
-        )}
 
         {/* Lista Vertical dos 8 Módulos */}
         <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
