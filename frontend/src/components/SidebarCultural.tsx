@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ShieldCheck,
   CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { Escola, LoginResponse } from '@/lib/api';
 

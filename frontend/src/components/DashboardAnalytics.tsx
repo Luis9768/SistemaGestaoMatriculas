@@ -626,31 +626,6 @@ export function DashboardAnalytics({ escolaId, turmas, onOpenPerfilAluno, usuari
     return true;
   }) || [];
 
-  if (!usuarioLogado && !api.getUsuarioSalvo()) {
-    return (
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-xs max-w-xl mx-auto my-12 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-200">
-          <ShieldAlert className="w-7 h-7" />
-        </div>
-        <h3 className="text-xl font-bold text-slate-800">Acesso Restrito da Secretaria (LGPD)</h3>
-        <p className="text-xs text-slate-500 mt-2 max-w-md mx-auto leading-relaxed">
-          Os dados analíticos de matrículas nominais, evasões e taxas de frequência contêm informações confidenciais protegidas pela Lei Geral de Proteção de Dados.
-        </p>
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-          {onOpenLogin && (
-            <button
-              onClick={onOpenLogin}
-              className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Lock className="w-4 h-4" />
-              <span>Fazer Login da Secretaria / Coordenação</span>
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
 

@@ -6,7 +6,7 @@ Sistema web completo para gerenciamento automatizado de matrículas de alunos em
 
 - **Backend:** Java 21, Spring Boot 3 / 4, Spring Data JPA, Flyway, Apache POI (leitura de Excel/CSV), Lombok.
 - **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS, Lucide Icons.
-- **Banco de Dados:** MySQL 8.0 (via Docker Compose).
+- **Banco de Dados:** PostgreSQL 16 (via Docker Compose ou local na porta 5432).
 
 ## 📂 Estrutura do Projeto
 
@@ -14,17 +14,17 @@ Sistema web completo para gerenciamento automatizado de matrículas de alunos em
 gestao-matriculas/
 ├── backend/          # API REST Spring Boot
 ├── frontend/         # Interface Web Next.js
-├── docker-compose.yml # Infraestrutura do MySQL 8.0
+├── docker-compose.yml # Infraestrutura PostgreSQL 16
 └── README.md
 ```
 
 ## ⚙️ Como Executar
 
-### 1. Iniciar o Banco de Dados (MySQL)
+### 1. Iniciar o Banco de Dados (PostgreSQL)
 ```bash
 docker compose up -d
 ```
-*O MySQL subirá na porta local `3307` (banco: `gestao_matriculas`).*
+*O PostgreSQL subirá na porta padrão `5432` (banco: `gestao_matriculas`, usuário: `matriculas_user`, senha: `matriculas_pass`).*
 
 ### 2. Iniciar o Backend (Spring Boot)
 ```bash

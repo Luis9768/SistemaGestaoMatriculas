@@ -11,6 +11,13 @@ frontend/build/
 frontend/.env*.local
 **/node_modules/
 
+# Variáveis de Ambiente e Segredos
+.env
+.env.*
+*.env
+*.pem
+*.key
+
 # IDEs e Editores
 .idea/
 .vscode/

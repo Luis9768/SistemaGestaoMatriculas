@@ -23,6 +23,7 @@ interface InscricaoPublicaViewProps {
   alunoMenorDeIdade: boolean;
   onSubmeterInscricao: (payload: InscricaoExternaPayload) => Promise<void>;
   onOpenLgpd: (aba: 'geral' | 'alunos') => void;
+  onVoltarLogin?: () => void;
 }
 
 export function InscricaoPublicaView({
@@ -31,6 +32,7 @@ export function InscricaoPublicaView({
   alunoMenorDeIdade,
   onSubmeterInscricao,
   onOpenLgpd,
+  onVoltarLogin,
 }: InscricaoPublicaViewProps) {
   const [turmaId, setTurmaId] = useState<number>(turmaPreSelecionadaId || (turmas[0]?.id || 0));
   const [nome, setNome] = useState('');
@@ -123,16 +125,29 @@ export function InscricaoPublicaView({
     <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-200">
       {/* Header Acolhedor */}
       <div className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] rounded-3xl p-8 text-white border border-slate-800 shadow-xl relative overflow-hidden">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Educação Pública Municipal e Acolhimento</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Educação Pública Municipal e Acolhimento</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white">
+              Ficha de Inscrição — Escolas Livres de Santo André
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl leading-relaxed">
+              Preencha os dados cadastrais para ingressar nos cursos gratuitos de Teatro, Dança, Cinema e Iniciação Artística da Prefeitura Municipal de Santo André.
+            </p>
+          </div>
+          {onVoltarLogin && (
+            <button
+              type="button"
+              onClick={onVoltarLogin}
+              className="self-start sm:self-center px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition cursor-pointer shrink-0"
+            >
+              ← Acesso da Secretaria
+            </button>
+          )}
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black text-white">
-          Ficha de Inscrição — Escolas Livres de Santo André
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl leading-relaxed">
-          Preencha os dados cadastrais para ingressar nos cursos gratuitos de Teatro, Dança, Cinema e Iniciação Artística da Prefeitura Municipal de Santo André.
-        </p>
       </div>
 
       {erro && (

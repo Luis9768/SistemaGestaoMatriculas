@@ -32,6 +32,19 @@ export interface LoginResponse {
   escolaSigla?: string;
 }
 
+export interface RecuperacaoResposta {
+  mensagem: string;
+  email: string;
+  emailMascarado: string;
+}
+
+export interface RedefinirSenhaPayload {
+  email: string;
+  codigo: string;
+  novaSenha: string;
+  confirmacaoSenha: string;
+}
+
 export interface Responsavel {
   id?: number;
   nome: string;
@@ -326,6 +339,7 @@ export const api = {
     if (typeof window !== 'undefined') {
       localStorage.setItem('sigma_jwt_token', data.token);
       localStorage.setItem('sigma_user', JSON.stringify(data));
+      localStorage.setItem('sigma_token_timestamp', Date.now().toString());
     }
     return data;
   },
@@ -334,11 +348,65 @@ export const api = {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('sigma_jwt_token');
       localStorage.removeItem('sigma_user');
+      localStorage.removeItem('sigma_token_timestamp');
     }
+  },
+
+  async solicitarRecuperacaoSenha(email: string): Promise<RecuperacaoResposta> {
+    const res = await fetch(`${API_BASE}/auth/esqueci-senha`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao solicitar código de recuperação' }));
+      throw new Error(err.message || 'Erro ao solicitar código de recuperação');
+    }
+    return res.json();
+  },
+
+  async validarCodigoRecuperacao(email: string, codigo: string): Promise<{ valido: boolean; mensagem: string }> {
+    const res = await fetch(`${API_BASE}/auth/validar-codigo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, codigo }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Código de verificação incorreto ou expirado' }));
+      throw new Error(err.message || 'Código de verificação incorreto ou expirado');
+    }
+    return res.json();
+  },
+
+  async redefinirSenha(payload: RedefinirSenhaPayload): Promise<{ sucesso: boolean; mensagem: string }> {
+    const res = await fetch(`${API_BASE}/auth/redefinir-senha`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao redefinir senha' }));
+      throw new Error(err.message || 'Erro ao redefinir senha');
+    }
+    return res.json();
   },
 
   getUsuarioSalvo(): LoginResponse | null {
     if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('sigma_jwt_token');
+      const timestamp = localStorage.getItem('sigma_token_timestamp');
+      if (!token) return null;
+
+      // Validação estrita de expiração: máximo de 2 horas (7.200.000 ms)
+      const MAX_DURACAO_MS = 2 * 60 * 60 * 1000;
+      if (timestamp) {
+        const idadeMs = Date.now() - Number(timestamp);
+        if (idadeMs > MAX_DURACAO_MS) {
+          this.logout();
+          return null;
+        }
+      }
+
       const raw = localStorage.getItem('sigma_user');
       if (raw) {
         try {
@@ -349,6 +417,19 @@ export const api = {
       }
     }
     return null;
+  },
+
+  getTempoRestanteSessao(): { minutos: number; expirado: boolean } {
+    if (typeof window !== 'undefined') {
+      const timestamp = localStorage.getItem('sigma_token_timestamp');
+      if (!timestamp) return { minutos: 0, expirado: true };
+      const MAX_DURACAO_MS = 2 * 60 * 60 * 1000;
+      const passado = Date.now() - Number(timestamp);
+      const restante = MAX_DURACAO_MS - passado;
+      if (restante <= 0) return { minutos: 0, expirado: true };
+      return { minutos: Math.floor(restante / 60000), expirado: false };
+    }
+    return { minutos: 0, expirado: true };
   },
 
   // Escolas

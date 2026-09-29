@@ -24,6 +24,7 @@ import { ImportacaoLoteView } from '@/components/ImportacaoLoteView';
 import { DashboardAnalytics } from '@/components/DashboardAnalytics';
 import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 import { LgpdModal } from '@/components/LgpdModal';
+import { LoginCulturalView } from '@/components/LoginCulturalView';
 import {
   Lock,
   RefreshCw,
@@ -34,6 +35,7 @@ import {
   AlertCircle,
   Menu,
   Building2,
+  Clock,
 } from 'lucide-react';
 
 export default function Home() {
@@ -45,11 +47,6 @@ export default function Home() {
 
   // Usuário Autenticado da Secretaria
   const [usuarioLogado, setUsuarioLogado] = useState<LoginResponse | null>(null);
-  const [showModalLogin, setShowModalLogin] = useState(false);
-  const [emailLogin, setEmailLogin] = useState('');
-  const [senhaLogin, setSenhaLogin] = useState('');
-  const [loginErro, setLoginErro] = useState<string | null>(null);
-  const [loggingIn, setLoggingIn] = useState(false);
 
   // Estados de Dados Centrais
   const [cursos, setCursos] = useState<Curso[]>([]);
@@ -98,32 +95,42 @@ export default function Home() {
   const [showModalLgpd, setShowModalLgpd] = useState(false);
   const [lgpdAbaInicial, setLgpdAbaInicial] = useState<'geral' | 'alunos'>('geral');
 
-  // Menu móvel
+  // Menu móvel e tempo de sessão
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tempoRestanteMin, setTempoRestanteMin] = useState<number>(120);
 
   useEffect(() => {
+    // Validação estrita: se não houver token ou se tiver expirado (>2h), exige login
     const user = api.getUsuarioSalvo();
     if (user) {
       setUsuarioLogado(user);
       if (user.role === 'ROLE_ENCARREGADA' && user.escolaId) {
         setEscolaSelecionada(user.escolaId);
       }
+      const { minutos } = api.getTempoRestanteSessao();
+      setTempoRestanteMin(minutos);
       carregarDadosIniciais(user);
     } else {
-      // Auto-autenticação para ambiente local/desenvolvimento
-      autoLoginDefault();
+      setUsuarioLogado(null);
+      setLoading(false);
     }
   }, []);
 
-  const autoLoginDefault = async () => {
-    try {
-      const resp = await api.login('admin@santoandre.sp.gov.br', 'admin123');
-      setUsuarioLogado(resp);
-      await carregarDadosIniciais(resp);
-    } catch {
-      await carregarDadosIniciais(null);
-    }
-  };
+  // Monitoramento ativo da expiração de 2 horas da sessão JWT
+  useEffect(() => {
+    if (!usuarioLogado) return;
+    const interval = setInterval(() => {
+      const user = api.getUsuarioSalvo();
+      if (!user) {
+        handleLogout();
+        mostrarFeedback('erro', 'Sua sessão expirou (limite máximo de 2 horas). Por favor, realize login novamente.');
+      } else {
+        const { minutos } = api.getTempoRestanteSessao();
+        setTempoRestanteMin(minutos);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [usuarioLogado]);
 
   useEffect(() => {
     carregarDadosEscola();
@@ -211,34 +218,23 @@ export default function Home() {
     setTimeout(() => setFeedbackMsg(null), 6000);
   };
 
-  // Login da Secretaria
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoggingIn(true);
-    setLoginErro(null);
-    try {
-      const resp = await api.login(emailLogin, senhaLogin);
-      setUsuarioLogado(resp);
-      setShowModalLogin(false);
-      setEmailLogin('');
-      setSenhaLogin('');
-      mostrarFeedback('sucesso', `Bem-vinda(o), ${resp.nome}! Login autenticado com sucesso.`);
-      if (resp.role === 'ROLE_ENCARREGADA' && resp.escolaId) {
-        setEscolaSelecionada(resp.escolaId);
-      }
-      await carregarDadosEscola();
-      await carregarAlunosPaginados(0);
-    } catch (err: any) {
-      setLoginErro(err.message || 'Falha ao autenticar.');
-    } finally {
-      setLoggingIn(false);
+  const handleLoginSucesso = async (resp: LoginResponse) => {
+    setUsuarioLogado(resp);
+    const { minutos } = api.getTempoRestanteSessao();
+    setTempoRestanteMin(minutos);
+    mostrarFeedback('sucesso', `Bem-vinda(o), ${resp.nome}! Sessão iniciada com sucesso.`);
+    if (resp.role === 'ROLE_ENCARREGADA' && resp.escolaId) {
+      setEscolaSelecionada(resp.escolaId);
     }
+    await carregarDadosEscola();
+    await carregarAlunosPaginados(0);
   };
 
   const handleLogout = () => {
     api.logout();
     setUsuarioLogado(null);
     setEscolaSelecionada(null);
+    setCurrentScreen('panorama');
     mostrarFeedback('sucesso', 'Sessão encerrada com segurança.');
   };
 
@@ -327,6 +323,15 @@ export default function Home() {
     }
   };
 
+  // Mandatório: Se o usuário não estiver autenticado, exibe a Tela de Login Cultural em tela cheia!
+  if (!usuarioLogado) {
+    return (
+      <LoginCulturalView
+        onLoginSucesso={handleLoginSucesso}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex font-sans">
       {/* Sidebar Cultural Fixa */}
@@ -338,7 +343,7 @@ export default function Home() {
           escolaSelecionada={escolaSelecionada}
           onSelectEscola={setEscolaSelecionada}
           usuarioLogado={usuarioLogado}
-          onOpenLogin={() => setShowModalLogin(true)}
+          onOpenLogin={handleLogout}
           onLogout={handleLogout}
           onOpenLgpd={(aba) => {
             setLgpdAbaInicial(aba);
@@ -440,7 +445,7 @@ export default function Home() {
               escolaId={escolaSelecionada}
               turmas={turmas}
               usuarioLogado={usuarioLogado}
-              onOpenLogin={() => setShowModalLogin(true)}
+              onOpenLogin={handleLogout}
               onOpenPerfilAluno={(id) => {
                 setPerfilAlunoId(id);
                 setShowModalPerfil(true);
@@ -513,7 +518,7 @@ export default function Home() {
               escolaId={escolaSelecionada}
               turmas={turmas}
               usuarioLogado={usuarioLogado}
-              onOpenLogin={() => setShowModalLogin(true)}
+              onOpenLogin={handleLogout}
               onOpenPerfilAluno={(id) => {
                 setPerfilAlunoId(id);
                 setShowModalPerfil(true);
@@ -739,126 +744,6 @@ export default function Home() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL LOGIN SECRETARIA & PROFESSORAS */}
-      {showModalLogin && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl border border-slate-200">
-            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <h3 className="font-black text-sm text-slate-900">Acesso da Secretaria</h3>
-              </div>
-              <button
-                onClick={() => setShowModalLogin(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {loginErro && (
-              <div className="p-3 mb-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200">
-                {loginErro}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">E-mail Institucional</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="admin@santoandre.sp.gov.br"
-                  value={emailLogin}
-                  onChange={(e) => setEmailLogin(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Senha</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={senhaLogin}
-                  onChange={(e) => setSenhaLogin(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loggingIn}
-                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-sm transition cursor-pointer mt-2"
-              >
-                {loggingIn ? 'Autenticando...' : 'Entrar no Sistema'}
-              </button>
-            </form>
-
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                Atalhos Rápidos (Demonstração):
-              </span>
-              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailLogin('admin@santoandre.sp.gov.br');
-                    setSenhaLogin('admin123');
-                  }}
-                  className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-left font-semibold text-slate-800"
-                >
-                  Coordenação Geral
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailLogin('encarregada.elt@santoandre.sp.gov.br');
-                    setSenhaLogin('elt123');
-                  }}
-                  className="p-1.5 bg-violet-50 hover:bg-violet-100 text-violet-900 rounded-lg text-left font-semibold"
-                >
-                  Secretaria ELT
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailLogin('encarregada.elcv@santoandre.sp.gov.br');
-                    setSenhaLogin('elcv123');
-                  }}
-                  className="p-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-900 rounded-lg text-left font-semibold"
-                >
-                  Secretaria ELCV
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailLogin('encarregada.eld@santoandre.sp.gov.br');
-                    setSenhaLogin('eld123');
-                  }}
-                  className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-900 rounded-lg text-left font-semibold"
-                >
-                  Secretaria ELD
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailLogin('encarregada.elia@santoandre.sp.gov.br');
-                    setSenhaLogin('elia123');
-                  }}
-                  className="col-span-2 p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-lg text-left font-semibold"
-                >
-                  Secretaria ELIA (Iniciação)
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

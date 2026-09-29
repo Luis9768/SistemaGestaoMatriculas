@@ -27,6 +27,17 @@ public class DataInitializer implements CommandLineRunner {
     private final RegistroPresencaRepository registroPresencaRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${app.initial.password:${INITIAL_USER_PASSWORD:}}")
+    private String initialConfiguredPassword;
+
+    private String resolveInitialPassword() {
+        if (initialConfiguredPassword != null && !initialConfiguredPassword.trim().isEmpty()) {
+            return initialConfiguredPassword.trim();
+        }
+        // Gera senha inicial dinâmica sem armazenar qualquer string estática no código-fonte
+        return java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    }
+
     @Override
     public void run(String... args) {
         if (escolaRepository.count() == 0) {
@@ -65,11 +76,14 @@ public class DataInitializer implements CommandLineRunner {
                     .ativa(true)
                     .build());
 
-            // 2. Usuários da Secretaria (Admin e Encarregadas)
+            // 2. Usuários da Secretaria (Admin e Encarregadas) com senhas seguras (sem strings hardcoded)
+            String defaultInitialPass = resolveInitialPassword();
+            String encodedPass = passwordEncoder.encode(defaultInitialPass);
+
             usuarioRepository.save(Usuario.builder()
                     .nome("Coordenação Geral")
                     .email("admin@santoandre.sp.gov.br")
-                    .senha(passwordEncoder.encode("admin123"))
+                    .senha(encodedPass)
                     .role(Role.ROLE_ADMIN)
                     .escola(null) // Acesso global
                     .ativo(true)
@@ -78,7 +92,7 @@ public class DataInitializer implements CommandLineRunner {
             usuarioRepository.save(Usuario.builder()
                     .nome("Encarregada ELT")
                     .email("encarregada.elt@santoandre.sp.gov.br")
-                    .senha(passwordEncoder.encode("elt123"))
+                    .senha(encodedPass)
                     .role(Role.ROLE_ENCARREGADA)
                     .escola(elt)
                     .ativo(true)
@@ -87,7 +101,7 @@ public class DataInitializer implements CommandLineRunner {
             usuarioRepository.save(Usuario.builder()
                     .nome("Encarregada ELD")
                     .email("encarregada.eld@santoandre.sp.gov.br")
-                    .senha(passwordEncoder.encode("eld123"))
+                    .senha(encodedPass)
                     .role(Role.ROLE_ENCARREGADA)
                     .escola(eld)
                     .ativo(true)
@@ -96,7 +110,7 @@ public class DataInitializer implements CommandLineRunner {
             usuarioRepository.save(Usuario.builder()
                     .nome("Encarregada ELCV")
                     .email("encarregada.elcv@santoandre.sp.gov.br")
-                    .senha(passwordEncoder.encode("elcv123"))
+                    .senha(encodedPass)
                     .role(Role.ROLE_ENCARREGADA)
                     .escola(elcv)
                     .ativo(true)
@@ -105,11 +119,16 @@ public class DataInitializer implements CommandLineRunner {
             usuarioRepository.save(Usuario.builder()
                     .nome("Encarregada ELIA")
                     .email("encarregada.elia@santoandre.sp.gov.br")
-                    .senha(passwordEncoder.encode("elia123"))
+                    .senha(encodedPass)
                     .role(Role.ROLE_ENCARREGADA)
                     .escola(elia)
                     .ativo(true)
                     .build());
+
+            log.info("================================================================================");
+            log.info("[SEGURANÇA] Usuários institucionais cadastrados com sucesso.");
+            log.info("[SEGURANÇA] Utilize a variável de ambiente INITIAL_USER_PASSWORD ou a recuperação de senha via e-mail.");
+            log.info("================================================================================");
 
             // 3. Cursos de cada Escola
             // ELT
