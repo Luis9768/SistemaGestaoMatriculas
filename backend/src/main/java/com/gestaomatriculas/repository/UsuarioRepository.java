@@ -12,4 +12,5 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
     boolean existsByEmail(String email);
     List<Usuario> findByEscolaId(Long escolaId);
+    List<Usuario> findByRoleOrderByNomeAsc(com.gestaomatriculas.model.enums.Role role);
 }

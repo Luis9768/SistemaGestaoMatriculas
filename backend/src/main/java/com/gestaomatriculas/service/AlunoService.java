@@ -236,6 +236,34 @@ public class AlunoService {
     }
 
     @Transactional
+    public AlunoDTO atualizarContato(Long id, AtualizarContatoDTO dto) {
+        Aluno aluno = alunoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado com id: " + id));
+
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            aluno.setEmail(dto.getEmail().trim());
+        }
+        if (dto.getTelefone() != null) {
+            aluno.setTelefone(dto.getTelefone().trim());
+        }
+        if (aluno.getResponsavel() != null) {
+            Responsavel r = aluno.getResponsavel();
+            if (dto.getResponsavelNome() != null && !dto.getResponsavelNome().isBlank()) {
+                r.setNome(dto.getResponsavelNome().trim());
+            }
+            if (dto.getResponsavelTelefone() != null) {
+                r.setTelefone(dto.getResponsavelTelefone().trim());
+            }
+            if (dto.getResponsavelEmail() != null) {
+                r.setEmail(dto.getResponsavelEmail().trim());
+            }
+            responsavelRepository.save(r);
+        }
+
+        return toDTO(alunoRepository.save(aluno));
+    }
+
+    @Transactional
     public Aluno obterOuCriar(String nome, String cpf, String email, String telefone, LocalDate dataNascimento,
                               String respNome, String respCpf, String respTelefone, String respEmail, String respParentesco) {
         String cpfLimpo = limparCpf(cpf);

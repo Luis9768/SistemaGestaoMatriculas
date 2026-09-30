@@ -17,4 +17,6 @@ public class UsuarioDTO {
     private String escolaNome;
     private String escolaSigla;
     private Boolean ativo;
+    private java.util.List<Long> turmaIds;
+    private java.util.List<String> turmasNomes;
 }

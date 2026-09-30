@@ -57,6 +57,9 @@ interface AppContextType {
   abrirModalNovaTurma: (cursoId?: number) => void;
   abrirModalPerfil: (alunoId: number) => void;
   abrirModalLgpd: (aba?: 'geral' | 'alunos') => void;
+  showModalPerfil: boolean;
+  setShowModalPerfil: (show: boolean) => void;
+  perfilAlunoId: number | null;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -395,6 +398,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         abrirModalNovaTurma,
         abrirModalPerfil,
         abrirModalLgpd,
+        showModalPerfil,
+        setShowModalPerfil,
+        perfilAlunoId,
       }}
     >
       {children}

@@ -1,17 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Calendar,
-  PlusCircle,
-  Users,
-  Clock,
-  Sparkles,
-  ArrowRight,
-  Filter,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
+import { Search, Plus, X, ArrowRight } from 'lucide-react';
 import { Turma, Curso, Escola } from '@/lib/api';
 
 interface TurmasOfertasViewProps {
@@ -23,6 +13,77 @@ interface TurmasOfertasViewProps {
   onMatricularNaTurma: (turmaId: number) => void;
 }
 
+interface EscolaTheme {
+  sigla: string;
+  nome: string;
+  accentBar: string;
+  tagStyle: string;
+  progressColor: string;
+  btnAtivo: string;
+}
+
+const ESCOLAS_THEME: Record<string, EscolaTheme> = {
+  ELT: {
+    sigla: 'ELT',
+    nome: 'Escola Livre de Teatro',
+    accentBar: 'bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-600',
+    tagStyle:
+      'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-300 dark:border-violet-800/60',
+    progressColor: 'bg-violet-600 dark:bg-violet-500',
+    btnAtivo:
+      'bg-violet-700 hover:bg-violet-800 active:bg-violet-900 text-white dark:bg-violet-600 dark:hover:bg-violet-500 shadow-violet-500/20',
+  },
+  ELD: {
+    sigla: 'ELD',
+    nome: 'Escola Livre de Dança',
+    accentBar: 'bg-gradient-to-r from-rose-600 via-pink-500 to-red-500',
+    tagStyle:
+      'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/60',
+    progressColor: 'bg-rose-600 dark:bg-rose-500',
+    btnAtivo:
+      'bg-rose-700 hover:bg-rose-800 active:bg-rose-900 text-white dark:bg-rose-600 dark:hover:bg-rose-500 shadow-rose-500/20',
+  },
+  ELCV: {
+    sigla: 'ELCV',
+    nome: 'Escola Livre de Cinema e Vídeo',
+    accentBar: 'bg-gradient-to-r from-sky-600 via-cyan-500 to-blue-600',
+    tagStyle:
+      'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/60',
+    progressColor: 'bg-sky-600 dark:bg-sky-500',
+    btnAtivo:
+      'bg-sky-700 hover:bg-sky-800 active:bg-sky-900 text-white dark:bg-sky-600 dark:hover:bg-sky-500 shadow-sky-500/20',
+  },
+  ELIA: {
+    sigla: 'ELIA',
+    nome: 'Escola Livre de Iniciação Artística',
+    accentBar: 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500',
+    tagStyle:
+      'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60',
+    progressColor: 'bg-amber-600 dark:bg-amber-500',
+    btnAtivo:
+      'bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white dark:bg-amber-600 dark:hover:bg-amber-500 shadow-amber-500/20',
+  },
+};
+
+const DEFAULT_THEME: EscolaTheme = {
+  sigla: 'GERAL',
+  nome: 'Secretaria de Cultura',
+  accentBar: 'bg-slate-500 dark:bg-slate-600',
+  tagStyle:
+    'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  progressColor: 'bg-blue-600 dark:bg-blue-500',
+  btnAtivo: 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-500',
+};
+
+const formatarDataBr = (dataStr?: string) => {
+  if (!dataStr) return 'Não definida';
+  const partes = dataStr.split('-');
+  if (partes.length === 3) {
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+  return dataStr;
+};
+
 export function TurmasOfertasView({
   turmas,
   cursos,
@@ -31,176 +92,240 @@ export function TurmasOfertasView({
   onAbrirModalTurma,
   onMatricularNaTurma,
 }: TurmasOfertasViewProps) {
-  const [filtroAbertas, setFiltroAbertas] = useState<'todas' | 'abertas'>('todas');
+  const [filtroAbertas, setFiltroAbertas] = useState<'todas' | 'abertas' | 'fechadas'>('todas');
   const [buscaCodigo, setBuscaCodigo] = useState('');
+
+  const getEscolaSigla = (t: Turma): string => {
+    if (t.escolaSigla) return t.escolaSigla.toUpperCase();
+    if (t.cursoId) {
+      const curso = cursos.find((c) => c.id === t.cursoId);
+      if (curso?.escolaSigla) return curso.escolaSigla.toUpperCase();
+      if (curso?.escolaId) {
+        const escola = escolas.find((e) => e.id === curso.escolaId);
+        if (escola?.sigla) return escola.sigla.toUpperCase();
+      }
+    }
+    if (t.codigo) {
+      const prefix = t.codigo.split('-')[0]?.toUpperCase();
+      if (['ELT', 'ELD', 'ELCV', 'ELIA'].includes(prefix)) {
+        return prefix;
+      }
+    }
+    if (escolaSelecionada) {
+      const escola = escolas.find((e) => e.id === escolaSelecionada);
+      if (escola?.sigla) return escola.sigla.toUpperCase();
+    }
+    return 'GERAL';
+  };
 
   const turmasFiltradas = turmas.filter((t) => {
     if (filtroAbertas === 'abertas' && !t.matriculaAberta) return false;
+    if (filtroAbertas === 'fechadas' && t.matriculaAberta) return false;
     if (buscaCodigo.trim()) {
       const q = buscaCodigo.toLowerCase();
       const matchCodigo = t.codigo.toLowerCase().includes(q);
       const matchCurso = t.cursoNome?.toLowerCase().includes(q);
-      if (!matchCodigo && !matchCurso) return false;
+      const sigla = getEscolaSigla(t).toLowerCase();
+      const matchSigla = sigla.includes(q);
+      if (!matchCodigo && !matchCurso && !matchSigla) return false;
     }
     return true;
   });
 
-  const getEscolaBadgeColor = (sigla?: string) => {
-    switch (sigla) {
-      case 'ELT':
-        return 'bg-violet-100 text-violet-900 border-violet-300';
-      case 'ELD':
-        return 'bg-rose-100 text-rose-900 border-rose-300';
-      case 'ELCV':
-        return 'bg-cyan-100 text-cyan-900 border-cyan-300';
-      case 'ELIA':
-        return 'bg-amber-100 text-amber-900 border-amber-300';
-      default:
-        return 'bg-slate-100 text-slate-800 border-slate-300';
-    }
-  };
+  const abertasCount = turmas.filter((t) => t.matriculaAberta).length;
+  const fechadasCount = turmas.filter((t) => !t.matriculaAberta).length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Header */}
+      {/* Cabeçalho da Seção */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center space-x-2">
-            <span>Turmas & Ofertas Letivas</span>
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            Turmas & Ofertas Letivas
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Acompanhe períodos de inscrição, tolerância de suplência e taxa de ocupação de vagas por turma.
           </p>
         </div>
 
         <button
           onClick={onAbrirModalTurma}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer self-start sm:self-auto active:scale-98"
         >
-          <PlusCircle className="w-4 h-4" />
+          <Plus className="w-4 h-4" />
           <span>Abrir Nova Turma</span>
         </button>
       </div>
 
       {/* Controles de Filtragem e Busca */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center space-x-2 w-full md:w-auto">
+      <div className="bg-white dark:bg-[#0D121F] p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+        {/* Filtros em Abas Segmentadas */}
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
           <button
             type="button"
             onClick={() => setFiltroAbertas('todas')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
               filtroAbertas === 'todas'
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/80 border border-slate-200/60 dark:border-slate-700/60'
             }`}
           >
-            Todas as Turmas ({turmas.length})
+            Todas ({turmas.length})
           </button>
+
           <button
             type="button"
             onClick={() => setFiltroAbertas('abertas')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
               filtroAbertas === 'abertas'
-                ? 'bg-emerald-700 text-white font-bold'
-                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/80 border border-slate-200/60 dark:border-slate-700/60'
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Abertas Agora ({turmas.filter((t) => t.matriculaAberta).length})</span>
+            Inscrições Abertas ({abertasCount})
           </button>
+
+          {fechadasCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setFiltroAbertas('fechadas')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                filtroAbertas === 'fechadas'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/80 border border-slate-200/60 dark:border-slate-700/60'
+              }`}
+            >
+              Período Fechado ({fechadasCount})
+            </button>
+          )}
         </div>
 
-        <div className="w-full md:w-72">
+        {/* Campo de Busca */}
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
           <input
             type="text"
-            placeholder="Buscar por código ou nome do curso..."
+            placeholder="Buscar por código, curso ou escola..."
             value={buscaCodigo}
             onChange={(e) => setBuscaCodigo(e.target.value)}
-            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 transition"
+            className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition"
           />
+          {buscaCodigo && (
+            <button
+              type="button"
+              onClick={() => setBuscaCodigo('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+              title="Limpar busca"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Grid de Turmas */}
+      {/* Grid de Turmas por Escola */}
       {turmasFiltradas.length === 0 ? (
-        <div className="p-12 text-center text-slate-400 bg-white rounded-3xl border border-slate-200 text-xs">
-          Nenhuma turma encontrada com os filtros selecionados.
+        <div className="p-12 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0D121F] rounded-2xl border border-slate-200/90 dark:border-slate-800 text-xs">
+          <p className="font-medium">Nenhuma turma encontrada com os filtros selecionados.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {turmasFiltradas.map((t) => {
+            const sigla = getEscolaSigla(t);
+            const theme = ESCOLAS_THEME[sigla] || DEFAULT_THEME;
             const ocupacao = t.vagasTotais > 0 ? ((t.vagasOcupadas ?? 0) / t.vagasTotais) * 100 : 0;
+            const vagasRestantes = Math.max(0, t.vagasTotais - (t.vagasOcupadas ?? 0));
+
             return (
               <div
                 key={t.id}
-                className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:border-slate-300 transition-all p-6 flex flex-col justify-between space-y-4"
+                className="relative bg-white dark:bg-[#0D121F] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 p-5 sm:p-6 flex flex-col justify-between overflow-hidden group"
               >
+                {/* Linha Superior com Cor Institucional da Escola */}
+                <div className={`absolute top-0 left-0 right-0 h-1.5 ${theme.accentBar}`} />
+
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black border uppercase ${getEscolaBadgeColor(t.escolaSigla)}`}>
-                      {t.escolaSigla || 'GERAL'}
+                  {/* Topo do Card: Sigla da Escola e Status da Inscrição */}
+                  <div className="flex items-center justify-between gap-2 mb-3 pt-0.5">
+                    <span
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border uppercase tracking-wider ${theme.tagStyle}`}
+                    >
+                      {sigla}
                     </span>
+
                     {t.matriculaAberta ? (
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50">
                         Inscrições Abertas
                       </span>
                     ) : (
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                      <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/80 dark:bg-slate-800/80 dark:text-slate-400 dark:border-slate-700/60">
                         Período Fechado
                       </span>
                     )}
                   </div>
 
-                  <h3 className="font-extrabold text-base text-slate-900">{t.codigo}</h3>
-                  <p className="text-xs text-slate-600 font-medium mt-0.5 line-clamp-1">{t.cursoNome}</p>
+                  {/* Código da Turma e Nome do Curso */}
+                  <h3 className="font-mono font-bold text-base text-slate-900 dark:text-white tracking-tight leading-snug">
+                    {t.codigo}
+                  </h3>
+                  <p
+                    className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 line-clamp-1"
+                    title={t.cursoNome}
+                  >
+                    {t.cursoNome}
+                  </p>
 
-                  <div className="mt-4 space-y-2 text-xs text-slate-600">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Faixa Etária:</span>
-                      <span className="font-bold text-slate-800">
+                  {/* Metadados da Turma */}
+                  <div className="mt-4 space-y-2 text-xs">
+                    <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
+                      <span className="text-slate-400 dark:text-slate-500">Faixa Etária:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {t.idadeMinima ? `${t.idadeMinima} a ${t.idadeMaxima || 99} anos` : 'Idade Livre'}
                       </span>
                     </div>
 
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Inscrições:</span>
-                      <span className="font-medium text-slate-700">
-                        {t.dataAberturaMatricula} até {t.dataFechamentoMatricula}
+                    <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
+                      <span className="text-slate-400 dark:text-slate-500">Inscrições:</span>
+                      <span className="font-mono text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                        {formatarDataBr(t.dataAberturaMatricula)} a {formatarDataBr(t.dataFechamentoMatricula)}
                       </span>
                     </div>
 
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Aulas:</span>
-                      <span className="font-medium text-slate-700">
-                        {t.dataInicioAulas} até {t.dataFimAulas}
+                    <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
+                      <span className="text-slate-400 dark:text-slate-500">Aulas:</span>
+                      <span className="font-mono text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                        {formatarDataBr(t.dataInicioAulas)} a {formatarDataBr(t.dataFimAulas)}
                       </span>
                     </div>
 
                     {t.diasToleranciaSuplencia && (
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-400">Prazo Suplência:</span>
-                        <span className="text-amber-800 font-semibold">
+                      <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
+                        <span className="text-slate-400 dark:text-slate-500">Prazo Suplência:</span>
+                        <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
                           Até {t.diasToleranciaSuplencia} dias após início
                         </span>
                       </div>
                     )}
 
-                    {/* Barra Visual de Ocupação */}
+                    {/* Barra Visual de Ocupação de Vagas */}
                     <div className="pt-2">
-                      <div className="flex justify-between text-[11px] mb-1 font-semibold">
-                        <span className="text-slate-500">Ocupação de Vagas:</span>
-                        <span className="text-slate-900">
-                          {t.vagasOcupadas ?? 0} / {t.vagasTotais} ({Math.round(ocupacao)}%)
+                      <div className="flex justify-between text-[11px] mb-1.5 font-medium">
+                        <span className="text-slate-500 dark:text-slate-400">Ocupação de Vagas</span>
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                          {t.vagasOcupadas ?? 0} / {t.vagasTotais}{' '}
+                          <span className="text-slate-400 dark:text-slate-500 font-normal">
+                            ({Math.round(ocupacao)}%)
+                          </span>
                         </span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/50">
+                      <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-1.5 overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
                         <div
-                          className={`h-2 rounded-full transition-all duration-300 ${
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
                             ocupacao >= 100
-                              ? 'bg-rose-500'
+                              ? 'bg-rose-500 dark:bg-rose-400'
                               : ocupacao >= 80
-                              ? 'bg-amber-500'
-                              : 'bg-emerald-500'
+                              ? 'bg-amber-500 dark:bg-amber-400'
+                              : theme.progressColor
                           }`}
                           style={{ width: `${Math.min(100, Math.round(ocupacao))}%` }}
                         />
@@ -209,18 +334,34 @@ export function TurmasOfertasView({
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
-                  <button
-                    disabled={!t.matriculaAberta}
-                    onClick={() => onMatricularNaTurma(t.id!)}
-                    className={`text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer ${
-                      t.matriculaAberta
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {t.matriculaAberta ? 'Matricular Aluno →' : 'Fora do Prazo'}
-                  </button>
+                {/* Rodapé do Card com Ação */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 mt-4">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {vagasRestantes > 0 ? (
+                      <span>
+                        <strong className="font-semibold text-slate-700 dark:text-slate-300">
+                          {vagasRestantes}
+                        </strong>{' '}
+                        {vagasRestantes === 1 ? 'vaga restante' : 'vagas'}
+                      </span>
+                    ) : (
+                      <span className="text-rose-600 dark:text-rose-400 font-medium">Vagas esgotadas</span>
+                    )}
+                  </div>
+
+                  {t.matriculaAberta ? (
+                    <button
+                      onClick={() => onMatricularNaTurma(t.id!)}
+                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs active:scale-98 ${theme.btnAtivo}`}
+                    >
+                      <span>Matricular Aluno</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <span className="text-xs font-medium px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-700/50 cursor-not-allowed">
+                      Inscrições Encerradas
+                    </span>
+                  )}
                 </div>
               </div>
             );

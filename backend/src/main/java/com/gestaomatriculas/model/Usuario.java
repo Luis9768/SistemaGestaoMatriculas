@@ -50,6 +50,19 @@ public class Usuario {
     @JoinColumn(name = "escola_id")
     private Escola escola;
 
+    /**
+     * Se for ROLE_PROFESSOR, relaciona às turmas atribuídas ao professor.
+     * Permite atuação multidisciplinar em turmas de diferentes escolas.
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "professor_turmas",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "turma_id")
+    )
+    @Builder.Default
+    private java.util.Set<Turma> turmas = new java.util.HashSet<>();
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean ativo = true;

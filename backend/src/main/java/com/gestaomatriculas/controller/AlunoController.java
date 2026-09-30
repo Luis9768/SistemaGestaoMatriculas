@@ -1,6 +1,7 @@
 package com.gestaomatriculas.controller;
 
 import com.gestaomatriculas.dto.AlunoDTO;
+import com.gestaomatriculas.dto.AtualizarContatoDTO;
 import com.gestaomatriculas.service.AlunoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -68,5 +69,12 @@ public class AlunoController {
     @PostMapping
     public ResponseEntity<AlunoDTO> criar(@Valid @RequestBody AlunoDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(alunoService.criar(dto));
+    }
+
+    @PutMapping("/{id}/contato")
+    public ResponseEntity<AlunoDTO> atualizarContato(
+            @PathVariable Long id,
+            @Valid @RequestBody AtualizarContatoDTO dto) {
+        return ResponseEntity.ok(alunoService.atualizarContato(id, dto));
     }
 }

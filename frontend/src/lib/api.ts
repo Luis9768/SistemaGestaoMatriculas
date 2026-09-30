@@ -13,11 +13,30 @@ export interface Usuario {
   id: number;
   nome: string;
   email: string;
-  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA';
+  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA' | 'ROLE_PROFESSOR';
   escolaId?: number;
   escolaNome?: string;
   escolaSigla?: string;
   ativo?: boolean;
+  turmaIds?: number[];
+  turmasNomes?: string[];
+}
+
+export interface CadastrarUsuarioPayload {
+  nome: string;
+  email: string;
+  senha: string;
+  role: 'ROLE_PROFESSOR' | 'ROLE_ENCARREGADA';
+  escolaId?: number;
+  turmaIds?: number[];
+}
+
+export interface AtualizarContatoPayload {
+  email?: string;
+  telefone?: string;
+  responsavelNome?: string;
+  responsavelTelefone?: string;
+  responsavelEmail?: string;
 }
 
 export interface LoginResponse {
@@ -26,7 +45,7 @@ export interface LoginResponse {
   id: number;
   nome: string;
   email: string;
-  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA';
+  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA' | 'ROLE_PROFESSOR';
   escolaId?: number;
   escolaNome?: string;
   escolaSigla?: string;
@@ -363,9 +382,24 @@ export const aplicarMascaraTelefone = (valor: string): string => {
   const digits = valor.replace(/\D/g, '').slice(0, 11);
   if (digits.length === 0) return '';
   if (digits.length <= 2) return `(${digits}`;
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+export const formatarTelefone = (valor?: string): string => {
+  if (!valor) return 'Não informado';
+  const digits = valor.replace(/\D/g, '');
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length > 2 && digits.length < 10) {
+    return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+  }
+  return valor;
 };
 
 const getAuthHeaders = (): Record<string, string> => {
@@ -736,6 +770,22 @@ export const api = {
     return res.json();
   },
 
+  async atualizarContatoAluno(
+    alunoId: number,
+    dados: AtualizarContatoPayload
+  ): Promise<Aluno> {
+    const res = await fetch(`${API_BASE}/alunos/${alunoId}/contato`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(dados),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao atualizar dados de contato do aluno' }));
+      throw new Error(err.message || 'Erro ao atualizar dados de contato do aluno');
+    }
+    return res.json();
+  },
+
   async registrarPresenca(matriculaId: number, presenca: Partial<RegistroPresenca>): Promise<RegistroPresenca> {
     const res = await fetch(`${API_BASE}/alunos/matriculas/${matriculaId}/presencas`, {
       method: 'POST',
@@ -772,6 +822,52 @@ export const api = {
       }
       const err = await res.json().catch(() => ({ message: 'Erro ao carregar dashboard da turma' }));
       throw new Error(err.message || 'Erro ao carregar dashboard da turma');
+    }
+    return res.json();
+  },
+
+  // Gestão de Usuários (Professores e Encarregadas)
+  async getUsuarios(role?: string): Promise<Usuario[]> {
+    const params = new URLSearchParams();
+    if (role) params.append('role', role);
+    const res = await fetch(`${API_BASE}/usuarios?${params.toString()}`, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao buscar usuários' }));
+      throw new Error(err.message || 'Erro ao buscar usuários');
+    }
+    return res.json();
+  },
+
+  async cadastrarUsuario(payload: CadastrarUsuarioPayload): Promise<Usuario> {
+    const res = await fetch(`${API_BASE}/usuarios`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao cadastrar usuário' }));
+      throw new Error(err.message || 'Erro ao cadastrar usuário');
+    }
+    return res.json();
+  },
+
+  async alternarStatusUsuario(id: number): Promise<Usuario> {
+    const res = await fetch(`${API_BASE}/usuarios/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao alterar status do usuário' }));
+      throw new Error(err.message || 'Erro ao alterar status do usuário');
+    }
+    return res.json();
+  },
+
+  async getTurmasDoProfessor(): Promise<Turma[]> {
+    const res = await fetch(`${API_BASE}/usuarios/me/turmas`, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao buscar turmas do professor' }));
+      throw new Error(err.message || 'Erro ao buscar turmas do professor');
     }
     return res.json();
   },

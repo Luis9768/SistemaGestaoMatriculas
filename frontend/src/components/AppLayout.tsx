@@ -19,9 +19,11 @@ import {
   AlertCircle,
   Menu,
   X,
+  Users2,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 
 const NAV_TABS = [
   { href: '/turmas', label: 'Turmas & Ofertas', icon: Calendar },
@@ -29,6 +31,7 @@ const NAV_TABS = [
   { href: '/frequencia', label: 'Diário & Frequência', icon: Layers },
   { href: '/cursos', label: 'Matriz Curricular & Cursos', icon: BookOpen },
   { href: '/alunos', label: 'Cadastro de Alunos', icon: Search },
+  { href: '/usuarios', label: 'Equipe & Docentes', icon: Users2, adminOnly: true },
   { href: '/importacao', label: 'Importação em Lote', icon: FileSpreadsheet },
   { href: '/panorama', label: 'Panorama & Métricas', icon: Activity },
   { href: '/inscricao', label: 'Inscrição Pública', icon: Send },
@@ -53,6 +56,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     setNovaTurma,
     cursos,
     handleCriarTurma,
+    showModalPerfil,
+    setShowModalPerfil,
+    perfilAlunoId,
+    carregarMatriculas,
   } = useApp();
 
   const [menuAberto, setMenuAberto] = useState(false);
@@ -110,39 +117,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const getEscolaBadgeStyle = (sigla?: string) => {
-    switch (sigla?.toUpperCase()) {
-      case 'ELT':
-        return {
-          pill: 'bg-violet-100 text-violet-800 dark:bg-violet-950/70 dark:text-violet-300 border-violet-300 dark:border-violet-800',
-          dot: 'bg-violet-600',
-        };
-      case 'ELD':
-        return {
-          pill: 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-300 dark:border-rose-800',
-          dot: 'bg-rose-600',
-        };
-      case 'ELCV':
-        return {
-          pill: 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 border-sky-300 dark:border-sky-800',
-          dot: 'bg-sky-600',
-        };
-      case 'ELIA':
-        return {
-          pill: 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300 dark:border-amber-800',
-          dot: 'bg-amber-600',
-        };
-      default:
-        return {
-          pill: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700',
-          dot: 'bg-slate-500',
-        };
-    }
-  };
-
-  const badgeStyle = getEscolaBadgeStyle(escolaAtualObj?.sigla);
-  const tabAtiva = NAV_TABS.find((t) => t.href === pathname);
-
   const handleVoltar = () => {
     if (pathname === '/turmas') {
       router.push('/direcionamento');
@@ -156,8 +130,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Topbar Superior Integrada — Linha única, limpa e espaçosa */}
       <header className="bg-white/95 dark:bg-[#0D1322]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-3">
-          {/* Lado Esquerdo: Botão 3 Barrinhas + Setinha Voltar + Escola Ativa + Módulo Atual */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {/* Lado Esquerdo: Setinha Voltar + Botão 3 Barrinhas */}
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            {/* Setinha para Escolha de Turmas / Voltar (à esquerda das 3 barrinhas) */}
+            <button
+              onClick={handleVoltar}
+              type="button"
+              aria-label={pathname === '/turmas' ? 'Voltar para escolha de escolas' : 'Ir para escolha de turmas'}
+              title={pathname === '/turmas' ? 'Voltar para escolha de escolas (Hub)' : 'Ir para escolha de turmas (/turmas)'}
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer active:scale-95 shadow-xs flex items-center justify-center shrink-0"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+
             {/* Botão de 3 Barrinhas (Menu Lateral) */}
             <button
               onClick={() => setMenuAberto((prev) => !prev)}
@@ -169,54 +154,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             >
               <Menu className="w-5 h-5" />
             </button>
-
-            {/* Setinha para Escolha de Turmas / Voltar */}
-            <button
-              onClick={handleVoltar}
-              type="button"
-              aria-label={pathname === '/turmas' ? 'Voltar para escolha de escolas' : 'Ir para escolha de turmas'}
-              title={pathname === '/turmas' ? 'Voltar para escolha de escolas (Hub)' : 'Ir para escolha de turmas (/turmas)'}
-              className="p-2 sm:p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer active:scale-95 shadow-xs flex items-center justify-center shrink-0"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-
-            {/* Badge da Escola Ativa */}
-            {escolaAtualObj && (
-              <div
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border ${badgeStyle.pill} truncate`}
-              >
-                <span className={`w-2 h-2 rounded-full ${badgeStyle.dot} shrink-0`} />
-                <span className="font-extrabold">{escolaAtualObj.sigla}</span>
-                <span className="hidden md:inline font-medium text-slate-600 dark:text-slate-300 truncate">
-                  — {escolaAtualObj.nome}
-                </span>
-              </div>
-            )}
-
-            {/* Identificação do Módulo Atual */}
-            {tabAtiva && (
-              <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200">
-                <tabAtiva.icon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>{tabAtiva.label}</span>
-              </div>
-            )}
           </div>
 
           {/* Ações da Direita */}
           <div className="flex items-center gap-2.5 sm:gap-3">
             {/* Botão de Modo Claro e Escuro */}
             <ThemeToggle showLabel={false} />
-
-            {/* Perfil do Usuário */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-rose-600 flex items-center justify-center text-white text-[11px] font-black">
-                {usuarioLogado.nome.charAt(0).toUpperCase()}
-              </div>
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[140px]">
-                {usuarioLogado.nome}
-              </span>
-            </div>
 
             {/* Botão Sair */}
             <button
@@ -265,8 +208,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {escolaAtualObj ? escolaAtualObj.nome : 'Escolas Livres'}
               </span>
               {escolaAtualObj && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${badgeStyle.dot} shrink-0`} />
+                <div className="mt-0.5">
                   <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono tracking-wider leading-none">
                     {escolaAtualObj.sigla} • Santo André
                   </span>
@@ -290,7 +232,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <span className="block px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold">
             Módulos de Gestão
           </span>
-          {NAV_TABS.map((tab) => {
+          {NAV_TABS.filter((tab) => !tab.adminOnly || usuarioLogado?.role === 'ROLE_ADMIN').map((tab) => {
             const TabIcon = tab.icon;
             const active = pathname === tab.href;
 
@@ -315,9 +257,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Rodapé do Menu com Informações do Usuário */}
         <div className="p-4 border-t border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-[#0E1424]/50">
           <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
-            <span className="truncate max-w-[170px]">{usuarioLogado.email}</span>
+            <span className="truncate max-w-[170px]">{usuarioLogado?.email}</span>
             <span className="font-mono text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">
-              {usuarioLogado.role === 'ROLE_ADMIN' ? 'Admin' : 'Encarregada'}
+              {usuarioLogado?.role === 'ROLE_ADMIN'
+                ? 'Admin'
+                : usuarioLogado?.role === 'ROLE_PROFESSOR'
+                ? 'Professor'
+                : 'Encarregada'}
             </span>
           </div>
         </div>
@@ -520,6 +466,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* MODAL PERFIL DO ESTUDANTE */}
+      {showModalPerfil && perfilAlunoId && (
+        <PerfilAlunoModal
+          alunoId={perfilAlunoId}
+          isOpen={showModalPerfil}
+          onClose={() => setShowModalPerfil(false)}
+          onUpdate={() => {
+            carregarMatriculas();
+          }}
+        />
       )}
     </div>
   );

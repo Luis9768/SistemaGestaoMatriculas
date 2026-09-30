@@ -74,6 +74,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/alunos/**").authenticated()
                         .requestMatchers("/api/dashboard/**").authenticated()
                         .requestMatchers("/api/importacao/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/api/usuarios/**").authenticated()
 
                         // 3. Qualquer outra requisição deve ser autenticada

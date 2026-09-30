@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Users,
 } from 'lucide-react';
-import { Aluno, PageResponse, formatarCpfMascara, Escola } from '@/lib/api';
+import { Aluno, PageResponse, formatarCpfMascara, formatarTelefone, Escola } from '@/lib/api';
 
 interface AlunosPesquisaViewProps {
   paginaAlunos: PageResponse<Aluno>;
@@ -154,7 +154,7 @@ export function AlunosPesquisaView({
                       </td>
                       <td className="px-5 py-4">
                         <div className="text-slate-900 font-medium">{aluno.email}</div>
-                        <div className="text-[11px] text-slate-400">{aluno.telefone || '-'}</div>
+                        <div className="text-[11px] text-slate-400 font-mono">{formatarTelefone(aluno.telefone)}</div>
                       </td>
                       <td className="px-5 py-4 text-slate-600">
                         {aluno.dataNascimento ? aluno.dataNascimento : 'Não informada'}
@@ -167,7 +167,7 @@ export function AlunosPesquisaView({
                               {aluno.responsavel.grauParentesco} • CPF: {formatarCpfMascara(aluno.responsavel.cpf)}
                             </div>
                             {aluno.responsavel.telefone && (
-                              <div className="text-[10px] text-slate-400">Tel: {aluno.responsavel.telefone}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">Tel: {formatarTelefone(aluno.responsavel.telefone)}</div>
                             )}
                           </div>
                         ) : (
