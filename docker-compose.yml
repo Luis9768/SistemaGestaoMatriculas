@@ -1,7 +1,8 @@
 services:
+  # 1. Banco de Dados Relacional PostgreSQL 16
   postgres:
     image: postgres:16-alpine
-    container_name: gestao_matriculas_db
+    container_name: sigma_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: gestao_matriculas
@@ -16,6 +17,54 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - sigma_network
+
+  # 2. Backend REST API (Java 21 / Spring Boot 3)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sigma_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gestao_matriculas
+      SPRING_DATASOURCE_USERNAME: matriculas_user
+      SPRING_DATASOURCE_PASSWORD: matriculas_pass
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-onboarding@resend.dev}
+    ports:
+      - "8080:8080"
+    networks:
+      - sigma_network
+
+  # 3. Frontend Web UI (Next.js 16)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api
+    container_name: sigma_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    networks:
+      - sigma_network
 
 volumes:
   postgres_data:
+    driver: local
+
+networks:
+  sigma_network:
+    driver: bridge
