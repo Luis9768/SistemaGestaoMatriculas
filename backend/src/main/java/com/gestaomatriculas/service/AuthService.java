@@ -30,6 +30,7 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailService emailService;
 
     // Estrutura em memória para códigos de recuperação (NÃO é salvo no banco de dados)
     private record CodigoRecuperacaoInfo(String codigo, LocalDateTime expiracao) {}
@@ -109,6 +110,9 @@ public class AuthService {
         // Registro seguro de auditoria do envio de e-mail institucional (com exibição no console local)
         log.info("[RECUPERAÇÃO DE SENHA] Código institucional de 7 dígitos gerado para o e-mail: {} [CÓDIGO: {}]", mascarado, codigo);
         log.info("[RECUPERAÇÃO DE SENHA] Expiração em 10 minutos (até {}). Armazenamento exclusivamente em memória.", expiracao.toLocalTime());
+
+        // Disparo real via Resend
+        emailService.enviarCodigoRecuperacao(emailNorm, codigo);
 
         return RecuperacaoRespostaDTO.builder()
                 .mensagem("Código de verificação de 7 dígitos enviado com sucesso para o seu e-mail institucional.")
