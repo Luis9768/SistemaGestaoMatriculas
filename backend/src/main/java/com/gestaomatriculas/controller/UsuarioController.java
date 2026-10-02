@@ -1,7 +1,6 @@
 package com.gestaomatriculas.controller;
 
 import com.gestaomatriculas.dto.CadastrarUsuarioDTO;
-import com.gestaomatriculas.dto.TurmaDTO;
 import com.gestaomatriculas.dto.UsuarioDTO;
 import com.gestaomatriculas.model.enums.Role;
 import com.gestaomatriculas.service.UsuarioService;
@@ -44,11 +43,5 @@ public class UsuarioController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UsuarioDTO> alternarStatus(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.alternarStatus(id));
-    }
-
-    @GetMapping("/me/turmas")
-    @PreAuthorize("hasRole('PROFESSOR')")
-    public ResponseEntity<List<TurmaDTO>> obterTurmasDoProfessor(@AuthenticationPrincipal String email) {
-        return ResponseEntity.ok(usuarioService.obterTurmasDoProfessorLogado(email));
     }
 }

@@ -25,16 +25,11 @@ public class CadastrarUsuarioDTO {
     @NotBlank(message = "A senha provisória/inicial é obrigatória")
     private String senha;
 
-    @NotNull(message = "O papel (Role) é obrigatório: ROLE_PROFESSOR ou ROLE_ENCARREGADA")
+    @NotNull(message = "O papel (Role) é obrigatório: ROLE_ENCARREGADA ou ROLE_ADMIN")
     private Role role;
 
     /**
      * Obrigatório se role == ROLE_ENCARREGADA
      */
     private Long escolaId;
-
-    /**
-     * Turmas associadas ao professor (pode ser 1 ou mais turmas, inclusive de escolas diferentes)
-     */
-    private List<Long> turmaIds;
 }

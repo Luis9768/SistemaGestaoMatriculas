@@ -12,7 +12,6 @@ import {
   Search,
   FileSpreadsheet,
   Activity,
-  Send,
   ArrowLeft,
   LogOut,
   CheckCircle2,
@@ -29,13 +28,12 @@ import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 const NAV_TABS: Array<{ href: string; label: string; icon: any; adminOnly?: boolean; allowedRoles?: string[] }> = [
   { href: '/turmas', label: 'Turmas & Ofertas', icon: Calendar },
   { href: '/matriculas', label: 'Matrículas & Fila', icon: Users },
-  { href: '/frequencia', label: 'Diário de Chamadas', icon: Layers, allowedRoles: ['ROLE_ADMIN', 'ROLE_PROFESSOR'] },
+  { href: '/frequencia', label: 'Diário de Chamadas', icon: Layers, allowedRoles: ['ROLE_ADMIN', 'ROLE_ENCARREGADA'] },
   { href: '/cursos', label: 'Matriz Curricular & Cursos', icon: BookOpen },
   { href: '/alunos', label: 'Cadastro de Alunos', icon: Search },
-  { href: '/usuarios', label: 'Equipe & Docentes', icon: Users2, adminOnly: true },
+  { href: '/usuarios', label: 'Equipe da Secretaria', icon: Users2, adminOnly: true },
   { href: '/importacao', label: 'Importação em Lote', icon: FileSpreadsheet },
   { href: '/panorama', label: 'Panorama & Métricas', icon: Activity },
-  { href: '/inscricao', label: 'Inscrição Pública', icon: Send },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -292,11 +290,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
             <span className="truncate max-w-[170px]">{usuarioLogado?.email}</span>
             <span className="font-mono text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">
-              {usuarioLogado?.role === 'ROLE_ADMIN'
-                ? 'Admin'
-                : usuarioLogado?.role === 'ROLE_PROFESSOR'
-                ? 'Professor'
-                : 'Encarregada'}
+              {usuarioLogado?.role === 'ROLE_ADMIN' ? 'Admin' : 'Encarregada'}
             </span>
           </div>
         </div>

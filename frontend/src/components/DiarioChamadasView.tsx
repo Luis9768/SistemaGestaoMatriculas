@@ -48,10 +48,10 @@ export function DiarioChamadasView({
   turmas,
   usuarioLogado,
 }: DiarioChamadasViewProps) {
-  // Verificação estrita de permissão (apenas ADMIN e PROFESSOR)
+  // Verificação estrita de permissão (apenas ADMIN e ENCARREGADA da Secretaria)
   const temPermissao =
     usuarioLogado?.role === 'ROLE_ADMIN' ||
-    usuarioLogado?.role === 'ROLE_PROFESSOR';
+    usuarioLogado?.role === 'ROLE_ENCARREGADA';
 
   // Filtrar turmas da escola ativa
   const turmasEscola = useMemo(() => {
@@ -336,7 +336,7 @@ export function DiarioChamadasView({
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-lg mx-auto">
             Por normas institucionais e diretrizes da Secretaria de Cultura, apenas
-            <strong> Administradores</strong> e <strong>Professores</strong> possuem
+            <strong> Administradores</strong> e <strong>Encarregadas</strong> possuem
             permissão para realizar ou auditar as chamadas das turmas.
           </p>
         </div>

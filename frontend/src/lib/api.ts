@@ -13,22 +13,19 @@ export interface Usuario {
   id: number;
   nome: string;
   email: string;
-  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA' | 'ROLE_PROFESSOR';
+  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA';
   escolaId?: number;
   escolaNome?: string;
   escolaSigla?: string;
   ativo?: boolean;
-  turmaIds?: number[];
-  turmasNomes?: string[];
 }
 
 export interface CadastrarUsuarioPayload {
   nome: string;
   email: string;
   senha: string;
-  role: 'ROLE_PROFESSOR' | 'ROLE_ENCARREGADA';
+  role: 'ROLE_ENCARREGADA';
   escolaId?: number;
-  turmaIds?: number[];
 }
 
 export interface AtualizarContatoPayload {
@@ -45,7 +42,7 @@ export interface LoginResponse {
   id: number;
   nome: string;
   email: string;
-  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA' | 'ROLE_PROFESSOR';
+  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA';
   escolaId?: number;
   escolaNome?: string;
   escolaSigla?: string;
@@ -924,15 +921,6 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Erro ao alterar status do usuário' }));
       throw new Error(err.message || 'Erro ao alterar status do usuário');
-    }
-    return res.json();
-  },
-
-  async getTurmasDoProfessor(): Promise<Turma[]> {
-    const res = await fetch(`${API_BASE}/usuarios/me/turmas`, { headers: getAuthHeaders() });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Erro ao buscar turmas do professor' }));
-      throw new Error(err.message || 'Erro ao buscar turmas do professor');
     }
     return res.json();
   },

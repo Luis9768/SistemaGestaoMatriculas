@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/chamadas")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'ENCARREGADA')")
 public class ChamadaController {
 
     private final ChamadaService chamadaService;

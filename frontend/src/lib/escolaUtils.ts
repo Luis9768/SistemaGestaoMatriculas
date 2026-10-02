@@ -15,6 +15,7 @@ export const getCorTemaEscola = (siglaOuCor?: string): string => {
     case 'BLUE':
       return 'bg-sky-50 text-sky-700 border-sky-200/70 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800/40';
     case 'ELIA':
+    case 'EMIA':
     case 'AMBER':
       return 'bg-amber-50 text-amber-700 border-amber-200/70 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/40';
     default:

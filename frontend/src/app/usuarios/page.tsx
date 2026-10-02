@@ -23,7 +23,7 @@ export default function UsuariosPage() {
   const { usuarioLogado } = useApp();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtroRole, setFiltroRole] = useState<'TODOS' | 'ROLE_PROFESSOR' | 'ROLE_ENCARREGADA'>('TODOS');
+  const [filtroRole, setFiltroRole] = useState<'TODOS' | 'ROLE_ADMIN' | 'ROLE_ENCARREGADA'>('TODOS');
   const [modalAberto, setModalAberto] = useState(false);
   const [atualizandoStatusId, setAtualizandoStatusId] = useState<number | null>(null);
 
@@ -66,7 +66,7 @@ export default function UsuariosPage() {
     return u.role === filtroRole;
   });
 
-  const totalProfessores = usuarios.filter((u) => u.role === 'ROLE_PROFESSOR').length;
+  const totalAdmins = usuarios.filter((u) => u.role === 'ROLE_ADMIN').length;
   const totalEncarregadas = usuarios.filter((u) => u.role === 'ROLE_ENCARREGADA').length;
 
   if (usuarioLogado && usuarioLogado.role !== 'ROLE_ADMIN') {
@@ -128,17 +128,17 @@ export default function UsuariosPage() {
             </button>
 
             <button
-              onClick={() => setFiltroRole('ROLE_PROFESSOR')}
+              onClick={() => setFiltroRole('ROLE_ADMIN')}
               className={`px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
-                filtroRole === 'ROLE_PROFESSOR'
+                filtroRole === 'ROLE_ADMIN'
                   ? 'bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white shadow-2xs font-semibold'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
-              <GraduationCap className="w-3.5 h-3.5" />
-              <span>Professores</span>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Administradores</span>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
-                {totalProfessores}
+                {totalAdmins}
               </span>
             </button>
 
@@ -150,7 +150,7 @@ export default function UsuariosPage() {
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
+              <Users2 className="w-3.5 h-3.5" />
               <span>Encarregadas</span>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
                 {totalEncarregadas}
@@ -180,13 +180,12 @@ export default function UsuariosPage() {
               Nenhum usuário encontrado com os filtros atuais.
             </div>
             <p className="text-[11px] max-w-sm mx-auto text-slate-400">
-              Utilize o botão acima para cadastrar novos professores ou encarregadas das Escolas Livres.
+              Utilize o botão acima para cadastrar novas encarregadas das Escolas Livres.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {usuariosFiltrados.map((u) => {
-              const isProfessor = u.role === 'ROLE_PROFESSOR';
               const isEncarregada = u.role === 'ROLE_ENCARREGADA';
               const isAdmin = u.role === 'ROLE_ADMIN';
 
@@ -214,11 +213,6 @@ export default function UsuariosPage() {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {isProfessor && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200/60 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800/40">
-                            Professor(a)
-                          </span>
-                        )}
                         {isEncarregada && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200/60 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800/40">
                             Encarregada
@@ -241,33 +235,6 @@ export default function UsuariosPage() {
                         <span className="font-medium text-slate-800 dark:text-slate-200">
                           {u.escolaNome ? `[${u.escolaSigla}] ${u.escolaNome}` : 'Geral'}
                         </span>
-                      </div>
-                    )}
-
-                    {/* Vínculo Multidisciplinar do Professor */}
-                    {isProfessor && (
-                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#070A11] border border-slate-200/70 dark:border-slate-800/70 space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                          <span>Turmas Atribuídas</span>
-                          <span>{u.turmasNomes?.length || 0} turma(s)</span>
-                        </div>
-
-                        {u.turmasNomes && u.turmasNomes.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5 pt-0.5">
-                            {u.turmasNomes.map((tn, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono text-[11px]"
-                              >
-                                {tn}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 italic text-[11px] block">
-                            Nenhuma turma atribuída no momento.
-                          </span>
-                        )}
                       </div>
                     )}
                   </div>

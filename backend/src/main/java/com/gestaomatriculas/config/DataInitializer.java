@@ -68,15 +68,15 @@ public class DataInitializer implements CommandLineRunner {
                     .ativa(true)
                     .build());
 
-            Escola elia = escolaRepository.save(Escola.builder()
-                    .nome("Escola Livre de Iniciação Artística")
-                    .sigla("ELIA")
+            Escola emia = escolaRepository.save(Escola.builder()
+                    .nome("Escola Municipal de Iniciação Artística")
+                    .sigla("EMIA")
                     .descricao("Desenvolvimento de sensibilidade artística infantil e jovem dividida por faixas etárias.")
                     .corTema("amber")
                     .ativa(true)
                     .build());
 
-            // 2. Usuários da Secretaria (Admin e Encarregadas) com senhas seguras (sem strings hardcoded)
+            // 2. Usuários da Secretaria (Admin e Encarregadas)
             String defaultInitialPass = resolveInitialPassword();
             String encodedPass = passwordEncoder.encode(defaultInitialPass);
 
@@ -84,6 +84,15 @@ public class DataInitializer implements CommandLineRunner {
                     .nome("Coordenação Geral")
                     .email("admin@santoandre.sp.gov.br")
                     .senha(encodedPass)
+                    .role(Role.ROLE_ADMIN)
+                    .escola(null) // Acesso global
+                    .ativo(true)
+                    .build());
+
+            usuarioRepository.save(Usuario.builder()
+                    .nome("Luis Miguel")
+                    .email("luis@email.com")
+                    .senha(passwordEncoder.encode("12346"))
                     .role(Role.ROLE_ADMIN)
                     .escola(null) // Acesso global
                     .ativo(true)
@@ -117,11 +126,11 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
 
             usuarioRepository.save(Usuario.builder()
-                    .nome("Encarregada ELIA")
-                    .email("encarregada.elia@santoandre.sp.gov.br")
+                    .nome("Encarregada EMIA")
+                    .email("encarregada.emia@santoandre.sp.gov.br")
                     .senha(encodedPass)
                     .role(Role.ROLE_ENCARREGADA)
-                    .escola(elia)
+                    .escola(emia)
                     .ativo(true)
                     .build());
 
@@ -200,9 +209,9 @@ public class DataInitializer implements CommandLineRunner {
                     .ativo(true)
                     .build());
 
-            // ELIA - Cursos por Faixa Etária
+            // EMIA - Cursos por Faixa Etária
             Curso eliaKids = cursoRepository.save(Curso.builder()
-                    .escola(elia)
+                    .escola(emia)
                     .nome("Iniciação Artística Lúdica (5 a 6 anos)")
                     .descricao("Desenvolvimento corporal e visual através da brincadeira.")
                     .tipo(TipoCurso.OFICINA)
@@ -213,7 +222,7 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
 
             Curso eliaInfantil = cursoRepository.save(Curso.builder()
-                    .escola(elia)
+                    .escola(emia)
                     .nome("Práticas Artísticas Integradas (6 a 10 anos)")
                     .descricao("Teatro de formas animadas, desenho e música para crianças.")
                     .tipo(TipoCurso.OFICINA)
@@ -224,7 +233,7 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
 
             Curso eliaJuvenil = cursoRepository.save(Curso.builder()
-                    .escola(elia)
+                    .escola(emia)
                     .nome("Ateliê Jovem de Expressão (11 a 16 anos)")
                     .descricao("Experimentação criativa em artes visuais, teatro e corpo.")
                     .tipo(TipoCurso.OFICINA)
