@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { api } from '@/lib/api';
 import { DirecionamentoEscolasView } from '@/components/DirecionamentoEscolasView';
+import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 
 export default function DirecionamentoPage() {
   const router = useRouter();
@@ -17,6 +18,10 @@ export default function DirecionamentoPage() {
     loading,
     setEscolaSelecionada,
     handleLogout,
+    showModalPerfil,
+    setShowModalPerfil,
+    perfilAlunoId,
+    carregarMatriculas,
   } = useApp();
 
   const userEfetivo = usuarioLogado || (typeof window !== 'undefined' ? api.getUsuarioSalvo() : null);
@@ -46,14 +51,28 @@ export default function DirecionamentoPage() {
   };
 
   return (
-    <DirecionamentoEscolasView
-      usuarioLogado={userEfetivo}
-      escolas={escolas}
-      cursos={cursos}
-      turmas={turmas}
-      tempoRestanteMin={tempoRestanteMin}
-      onSelecionarEscola={handleSelecionarEscola}
-      onLogout={handleLogout}
-    />
+    <>
+      <DirecionamentoEscolasView
+        usuarioLogado={userEfetivo}
+        escolas={escolas}
+        cursos={cursos}
+        turmas={turmas}
+        tempoRestanteMin={tempoRestanteMin}
+        onSelecionarEscola={handleSelecionarEscola}
+        onLogout={handleLogout}
+      />
+
+      {/* Modal Dossiê do Estudante acionável pela Central de Notificações */}
+      {showModalPerfil && perfilAlunoId && (
+        <PerfilAlunoModal
+          alunoId={perfilAlunoId}
+          isOpen={showModalPerfil}
+          onClose={() => setShowModalPerfil(false)}
+          onUpdate={() => {
+            carregarMatriculas();
+          }}
+        />
+      )}
+    </>
   );
 }

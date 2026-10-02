@@ -13,6 +13,8 @@ public interface RegistroPresencaRepository extends JpaRepository<RegistroPresen
 
     List<RegistroPresenca> findByMatriculaIdOrderByDataAulaAsc(Long matriculaId);
 
+    List<RegistroPresenca> findByMatriculaIdInOrderByDataAulaAsc(List<Long> matriculaIds);
+
     List<RegistroPresenca> findByMatriculaAlunoIdOrderByDataAulaDesc(Long alunoId);
 
     long countByMatriculaId(Long matriculaId);

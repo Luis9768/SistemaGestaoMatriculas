@@ -24,6 +24,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
+import { NotificacoesPopover } from '@/components/NotificacoesPopover';
 
 const NAV_TABS: Array<{ href: string; label: string; icon: any; adminOnly?: boolean; allowedRoles?: string[] }> = [
   { href: '/turmas', label: 'Turmas & Ofertas', icon: Calendar },
@@ -58,6 +59,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     showModalPerfil,
     setShowModalPerfil,
     perfilAlunoId,
+    autoDeclaracaoMatriculaId,
+    setAutoDeclaracaoMatriculaId,
     carregarMatriculas,
   } = useApp();
 
@@ -185,6 +188,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Ações da Direita */}
           <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Central de Notificações do Sistema */}
+            <NotificacoesPopover escolaId={escolaSelecionada} />
+
             {/* Botão de Modo Claro e Escuro */}
             <ThemeToggle showLabel={false} />
 
@@ -563,7 +569,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <PerfilAlunoModal
           alunoId={perfilAlunoId}
           isOpen={showModalPerfil}
-          onClose={() => setShowModalPerfil(false)}
+          autoAbrirDeclaracaoMatriculaId={autoDeclaracaoMatriculaId}
+          onClose={() => {
+            setShowModalPerfil(false);
+            setAutoDeclaracaoMatriculaId(null);
+          }}
           onUpdate={() => {
             carregarMatriculas();
           }}

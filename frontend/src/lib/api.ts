@@ -24,7 +24,7 @@ export interface CadastrarUsuarioPayload {
   nome: string;
   email: string;
   senha: string;
-  role: 'ROLE_ENCARREGADA';
+  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA';
   escolaId?: number;
 }
 
@@ -437,6 +437,39 @@ export interface DeclaracaoTransporteData {
   textoDeclaracao: string;
   dataEmissaoFormatada: string;
   validadeDeclaracao: string;
+  responsavelSecretaria: string;
+}
+
+export interface DeclaracaoMatriculaData {
+  matriculaId: number;
+  codigoAutenticidade: string;
+  instituicaoEnsino: string;
+  cnpjInstituicao: string;
+  escolaNome: string;
+  escolaSigla: string;
+  escolaEndereco: string;
+  alunoId: number;
+  alunoNome: string;
+  alunoCpf: string;
+  alunoDataNascimento?: string;
+  alunoIdade?: number;
+  alunoEnderecoCompleto: string;
+  alunoNomeResponsavel?: string;
+  alunoCpfResponsavel?: string;
+  cursoNome: string;
+  turmaCodigo: string;
+  modalidadeEnsino: string;
+  dataInicioAulas?: string;
+  dataMatricula?: string;
+  mesAnoInicioExtenso: string;
+  dataInicioExtenso?: string;
+  diasHorarioAulas: string;
+  cargaHorariaTotal: number;
+  porcentagemFrequenciaAtual: number;
+  statusMatricula: string;
+  anoLetivo: number;
+  textoDeclaracao: string;
+  dataEmissaoFormatada: string;
   responsavelSecretaria: string;
 }
 
@@ -1163,4 +1196,45 @@ export const api = {
     }
     return res.json();
   },
+
+  async getDeclaracaoMatricula(matriculaId: number): Promise<DeclaracaoMatriculaData> {
+    const res = await fetch(`${API_BASE}/matriculas/${matriculaId}/declaracao-matricula`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao emitir declaração de matrícula' }));
+      throw new Error(err.message || 'Erro ao emitir declaração de matrícula escolar');
+    }
+    return res.json();
+  },
+
+  async obterNotificacoes(escolaId?: number): Promise<Notificacao[]> {
+    const url = escolaId ? `${API_BASE}/notificacoes?escolaId=${escolaId}` : `${API_BASE}/notificacoes`;
+    const res = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao carregar notificações' }));
+      throw new Error(err.message || 'Erro ao consultar notificações do sistema');
+    }
+    return res.json();
+  },
 };
+
+export interface Notificacao {
+  id: string;
+  tipo: 'RISCO_FALTAS' | 'LIMITE_FALTAS' | 'DECLARACAO_PRONTA' | 'VAGA_SUPLENCIA' | 'AVISO_SISTEMA';
+  nivel: 'URGENTE' | 'ALERTA' | 'INFO';
+  titulo: string;
+  mensagem: string;
+  escolaId?: number;
+  escolaSigla?: string;
+  alunoId?: number;
+  alunoNome?: string;
+  turmaId?: number;
+  turmaNome?: string;
+  matriculaId?: number;
+  acaoRotulo?: string;
+  acaoTipo?: 'ABRIR_PERFIL' | 'ABRIR_TURMA' | 'EMITIR_DECLARACAO';
+  dataHora: string;
+}

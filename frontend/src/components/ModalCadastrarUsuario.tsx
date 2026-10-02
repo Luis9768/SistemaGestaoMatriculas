@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api, Escola, CadastrarUsuarioPayload } from '@/lib/api';
-import { X, ShieldCheck, AlertCircle, Building2, Mail, Lock, User } from 'lucide-react';
+import { X, ShieldCheck, AlertCircle, Building2, Mail, Lock, User, Users2, Sparkles } from 'lucide-react';
 
 interface ModalCadastrarUsuarioProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ export function ModalCadastrarUsuario({
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [role, setRole] = useState<'ROLE_ADMIN' | 'ROLE_ENCARREGADA'>('ROLE_ENCARREGADA');
   const [escolaId, setEscolaId] = useState<number | ''>('');
 
   const [escolas, setEscolas] = useState<Escola[]>([]);
@@ -36,6 +37,7 @@ export function ModalCadastrarUsuario({
     setNome('');
     setEmail('');
     setSenha('');
+    setRole('ROLE_ENCARREGADA');
     setEscolaId('');
     setErro(null);
   };
@@ -64,7 +66,7 @@ export function ModalCadastrarUsuario({
       return;
     }
 
-    if (!escolaId) {
+    if (role === 'ROLE_ENCARREGADA' && !escolaId) {
       setErro('Selecione a escola da qual a encarregada será responsável.');
       return;
     }
@@ -75,8 +77,8 @@ export function ModalCadastrarUsuario({
         nome: nome.trim(),
         email: email.trim().toLowerCase(),
         senha: senha.trim(),
-        role: 'ROLE_ENCARREGADA',
-        escolaId: Number(escolaId),
+        role: role,
+        escolaId: role === 'ROLE_ENCARREGADA' ? Number(escolaId) : undefined,
       };
 
       await api.cadastrarUsuario(payload);
@@ -85,7 +87,7 @@ export function ModalCadastrarUsuario({
       }
       onClose();
     } catch (err: any) {
-      setErro(err.message || 'Falha ao cadastrar encarregada.');
+      setErro(err.message || 'Falha ao cadastrar usuário.');
     } finally {
       setSalvando(false);
     }
@@ -103,15 +105,15 @@ export function ModalCadastrarUsuario({
         {/* Cabeçalho do Modal */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1220] flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                Cadastrar Encarregada
+                Cadastrar Novo Usuário
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Acesso administrativo à secretaria da Escola Livre
+                Defina o perfil institucional (Administrador ou Encarregada)
               </p>
             </div>
           </div>
@@ -133,9 +135,57 @@ export function ModalCadastrarUsuario({
             </div>
           )}
 
+          {/* Seleção do Perfil de Acesso */}
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+              Perfil de Acesso *
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setRole('ROLE_ENCARREGADA')}
+                className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
+                  role === 'ROLE_ENCARREGADA'
+                    ? 'border-sky-500 bg-sky-50/60 dark:bg-sky-950/30 ring-1 ring-sky-500/50'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`font-bold text-xs ${role === 'ROLE_ENCARREGADA' ? 'text-sky-900 dark:text-sky-300' : 'text-slate-800 dark:text-slate-200'}`}>
+                    Encarregada
+                  </span>
+                  <Users2 className={`w-4 h-4 ${role === 'ROLE_ENCARREGADA' ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400'}`} />
+                </div>
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Secretaria de escola livre específica
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRole('ROLE_ADMIN')}
+                className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
+                  role === 'ROLE_ADMIN'
+                    ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 ring-1 ring-amber-500/50'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`font-bold text-xs ${role === 'ROLE_ADMIN' ? 'text-amber-900 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'}`}>
+                    Administrador
+                  </span>
+                  <ShieldCheck className={`w-4 h-4 ${role === 'ROLE_ADMIN' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
+                </div>
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Coordenação Geral (Acesso Global)
+                </p>
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-              Nome Completo
+              Nome Completo *
             </label>
             <div className="relative">
               <User className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
@@ -152,7 +202,7 @@ export function ModalCadastrarUsuario({
 
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-              E-mail Institucional
+              E-mail Institucional *
             </label>
             <div className="relative">
               <Mail className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
@@ -161,7 +211,7 @@ export function ModalCadastrarUsuario({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="encarregada@santoandre.sp.gov.br"
+                placeholder={role === 'ROLE_ADMIN' ? 'coord.geral@santoandre.sp.gov.br' : 'encarregada@santoandre.sp.gov.br'}
                 className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
               />
             </div>
@@ -169,7 +219,7 @@ export function ModalCadastrarUsuario({
 
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-              Senha Provisória
+              Senha Provisória *
             </label>
             <div className="relative">
               <Lock className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
@@ -185,27 +235,37 @@ export function ModalCadastrarUsuario({
             </div>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-              Escola de Lotação
-            </label>
-            <div className="relative">
-              <Building2 className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
-              <select
-                value={escolaId}
-                onChange={(e) => setEscolaId(Number(e.target.value))}
-                required
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
-              >
-                <option value="">Selecione uma Escola Livre...</option>
-                {escolas.map((esc) => (
-                  <option key={esc.id} value={esc.id}>
-                    [{esc.sigla}] {esc.nome}
-                  </option>
-                ))}
-              </select>
+          {/* Seleção de Escola (apenas para Encarregada) */}
+          {role === 'ROLE_ENCARREGADA' ? (
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                Escola de Lotação *
+              </label>
+              <div className="relative">
+                <Building2 className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+                <select
+                  value={escolaId}
+                  onChange={(e) => setEscolaId(Number(e.target.value))}
+                  required
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
+                >
+                  <option value="">Selecione uma Escola Livre...</option>
+                  {escolas.map((esc) => (
+                    <option key={esc.id} value={esc.id}>
+                      [{esc.sigla}] {esc.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/60 flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-[11px] text-amber-900 dark:text-amber-200 leading-tight">
+                <strong>Acesso Global / Coordenação:</strong> Usuários com perfil Administrador têm acesso unificado a todas as 4 escolas (ELT, ELD, ELCV e EMIA) e controle total de turmas e matrículas.
+              </div>
+            </div>
+          )}
 
           {/* Botões de Ação */}
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-2">
@@ -221,7 +281,11 @@ export function ModalCadastrarUsuario({
               disabled={salvando || loadingDados}
               className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white font-medium transition cursor-pointer disabled:opacity-50 text-xs shadow-xs"
             >
-              {salvando ? 'Salvando...' : 'Cadastrar Encarregada'}
+              {salvando
+                ? 'Salvando...'
+                : role === 'ROLE_ADMIN'
+                ? 'Cadastrar Administrador'
+                : 'Cadastrar Encarregada'}
             </button>
           </div>
         </form>

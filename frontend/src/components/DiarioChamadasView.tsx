@@ -11,6 +11,7 @@ import {
   api,
   formatarCpfMascara,
 } from '@/lib/api';
+import Link from 'next/link';
 import {
   Calendar,
   BookOpen,
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  AlertTriangle,
   Plus,
   ArrowLeft,
   Search,
@@ -30,6 +32,7 @@ import {
   ChevronRight,
   Edit3,
   Users,
+  UserPlus,
   Eye,
   Info,
   CalendarDays,
@@ -96,7 +99,7 @@ export function DiarioChamadasView({
 
   // Feedback do sistema
   const [mensagemFeedback, setMensagemFeedback] = useState<{
-    tipo: 'sucesso' | 'erro';
+    tipo: 'sucesso' | 'erro' | 'aviso';
     texto: string;
   } | null>(null);
 
@@ -197,11 +200,13 @@ export function DiarioChamadasView({
         dataAlvo
       );
       setItensChamada(alunos);
+      if (alunos.length === 0) {
+        setMensagemFeedback(null);
+      }
     } catch (err: any) {
-      setMensagemFeedback({
-        tipo: 'erro',
-        texto: err.message || 'Erro ao carregar lista de alunos.',
-      });
+      console.warn('Erro ao carregar lista de alunos para chamada:', err);
+      setItensChamada([]);
+      setMensagemFeedback(null);
     } finally {
       setLoadingItens(false);
     }
@@ -271,8 +276,8 @@ export function DiarioChamadasView({
 
     if (itensChamada.length === 0) {
       setMensagemFeedback({
-        tipo: 'erro',
-        texto: 'Não há alunos matriculados nesta turma para registrar chamada.',
+        tipo: 'aviso',
+        texto: 'Atenção: Não é possível registrar chamada em uma turma sem alunos cadastrados. Confirme matrículas na turma antes de continuar.',
       });
       return;
     }
@@ -362,11 +367,15 @@ export function DiarioChamadasView({
           className={`p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-3 shadow-md animate-in fade-in duration-200 ${
             mensagemFeedback.tipo === 'sucesso'
               ? 'bg-emerald-50 border border-emerald-300 text-emerald-900 dark:bg-emerald-950/80 dark:border-emerald-700 dark:text-emerald-200'
+              : mensagemFeedback.tipo === 'aviso'
+              ? 'bg-amber-50 border border-amber-300 text-amber-900 dark:bg-amber-950/80 dark:border-amber-700 dark:text-amber-200'
               : 'bg-rose-50 border border-rose-300 text-rose-900 dark:bg-rose-950/80 dark:border-rose-700 dark:text-rose-200'
           }`}
         >
           {mensagemFeedback.tipo === 'sucesso' ? (
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          ) : mensagemFeedback.tipo === 'aviso' ? (
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
           ) : (
             <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
           )}
@@ -693,13 +702,19 @@ export function DiarioChamadasView({
               </button>
               <button
                 type="submit"
-                disabled={salvando || !responsavelNome.trim()}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                disabled={salvando || !responsavelNome.trim() || itensChamada.length === 0}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 text-white font-bold text-xs shadow-xs transition cursor-pointer disabled:cursor-not-allowed"
+                title={itensChamada.length === 0 ? 'Não há alunos cadastrados nesta turma' : undefined}
               >
                 {salvando ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Salvando...</span>
+                  </>
+                ) : itensChamada.length === 0 ? (
+                  <>
+                    <Users className="w-4 h-4 opacity-70" />
+                    <span>Sem Alunos na Turma</span>
                   </>
                 ) : (
                   <>
@@ -802,47 +817,49 @@ export function DiarioChamadasView({
             </div>
           </div>
 
-          {/* Barra de Ações em Massa e Métricas em Tempo Real */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Ações Rápidas:
-              </span>
-              <button
-                type="button"
-                onClick={() => handleMarcarTodos('PRESENTE')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
-              >
-                <CheckCheck className="w-3.5 h-3.5" />
-                <span>Todos Presentes</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMarcarTodos('FALTA')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer"
-              >
-                <UserX className="w-3.5 h-3.5" />
-                <span>Todos Faltaram</span>
-              </button>
-            </div>
+          {/* Barra de Ações em Massa e Métricas em Tempo Real (Apenas se houver alunos) */}
+          {itensChamada.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Ações Rápidas:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleMarcarTodos('PRESENTE')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  <span>Todos Presentes</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMarcarTodos('FALTA')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  <UserX className="w-3.5 h-3.5" />
+                  <span>Todos Faltaram</span>
+                </button>
+              </div>
 
-            <div className="flex items-center gap-3 text-xs font-mono font-bold">
-              <span className="text-slate-600 dark:text-slate-400">
-                Total: {totalAlunosForm}
-              </span>
-              <span className="text-emerald-700 dark:text-emerald-400">
-                Presentes: {presentesForm}
-              </span>
-              <span className="text-rose-700 dark:text-rose-400">
-                Faltas: {faltasForm}
-              </span>
-              <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                {pctPresencaForm}% freq.
-              </span>
+              <div className="flex items-center gap-3 text-xs font-mono font-bold">
+                <span className="text-slate-600 dark:text-slate-400">
+                  Total: {totalAlunosForm}
+                </span>
+                <span className="text-emerald-700 dark:text-emerald-400">
+                  Presentes: {presentesForm}
+                </span>
+                <span className="text-rose-700 dark:text-rose-400">
+                  Faltas: {faltasForm}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  {pctPresencaForm}% freq.
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Lista de Alunos da Chamada */}
+          {/* Lista de Alunos da Chamada / Aviso Amigável de Turma Sem Alunos */}
           {loadingItens ? (
             <div className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-8 text-center">
               <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -851,11 +868,43 @@ export function DiarioChamadasView({
               </p>
             </div>
           ) : itensChamada.length === 0 ? (
-            <div className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-8 text-center">
-              <Users className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold">
-                Nenhum aluno ativo encontrado para esta turma.
-              </p>
+            <div className="bg-amber-50/70 dark:bg-amber-950/20 border-2 border-dashed border-amber-300/80 dark:border-amber-800/70 rounded-2xl p-8 sm:p-12 text-center space-y-4 shadow-xs animate-in fade-in duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center mx-auto shadow-xs">
+                <Users className="w-7 h-7" />
+              </div>
+              <div className="max-w-md mx-auto space-y-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Turma Sem Alunos Matriculados</span>
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                  Nenhum estudante cadastrado nesta turma
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  A turma <strong className="text-slate-900 dark:text-white">{turmaAtual?.codigo}</strong> ainda não possui alunos matriculados para a matéria <strong className="text-slate-900 dark:text-white">{materiaAtual?.nome}</strong>.
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Para realizar a chamada e registrar presenças, é necessário confirmar as matrículas dos alunos primeiro.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
+                <Link
+                  href="/matriculas"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs shadow-sm transition"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Ir para Matrículas & Fila</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setModo('lista')}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 active:scale-95 text-xs font-bold transition cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Voltar ao Histórico</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800/80 shadow-xs overflow-hidden">
@@ -948,8 +997,9 @@ export function DiarioChamadasView({
             </button>
             <button
               type="submit"
-              disabled={salvando || !responsavelNome.trim()}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+              disabled={salvando || !responsavelNome.trim() || itensChamada.length === 0}
+              title={itensChamada.length === 0 ? 'Não há alunos nesta turma para registrar chamada' : undefined}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs shadow-xs transition cursor-pointer"
             >
               {salvando ? (
                 <>

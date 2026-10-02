@@ -10,6 +10,8 @@ interface TurmasOfertasViewProps {
   cursos: Curso[];
   escolas: Escola[];
   escolaSelecionada: number | null;
+  termoBuscaInicial?: string;
+  destacarTurmaId?: number | null;
   onAbrirModalTurma: () => void;
   onMatricularNaTurma: (turmaId: number) => void;
   onTurmasAtualizadas?: () => void;
@@ -101,13 +103,35 @@ export function TurmasOfertasView({
   cursos,
   escolas,
   escolaSelecionada,
+  termoBuscaInicial,
+  destacarTurmaId,
   onAbrirModalTurma,
   onMatricularNaTurma,
   onTurmasAtualizadas,
 }: TurmasOfertasViewProps) {
   const [filtroAbertas, setFiltroAbertas] = useState<'todas' | 'abertas' | 'fechadas'>('todas');
-  const [buscaCodigo, setBuscaCodigo] = useState('');
+  const [buscaCodigo, setBuscaCodigo] = useState(termoBuscaInicial || '');
   const [turmaGerenciarMaterias, setTurmaGerenciarMaterias] = useState<Turma | null>(null);
+  const [destaqueId, setDestaqueId] = useState<number | null>(destacarTurmaId || null);
+
+  React.useEffect(() => {
+    if (termoBuscaInicial) {
+      setBuscaCodigo(termoBuscaInicial);
+    }
+  }, [termoBuscaInicial]);
+
+  React.useEffect(() => {
+    if (destacarTurmaId) {
+      setDestaqueId(destacarTurmaId);
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`turma-card-${destacarTurmaId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [destacarTurmaId, turmas]);
 
   const getEscolaSigla = (t: Turma): string => {
     if (t.escolaSigla) return t.escolaSigla.toUpperCase();
@@ -227,7 +251,10 @@ export function TurmasOfertasView({
           {buscaCodigo && (
             <button
               type="button"
-              onClick={() => setBuscaCodigo('')}
+              onClick={() => {
+                setBuscaCodigo('');
+                setDestaqueId(null);
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
               title="Limpar busca"
             >
@@ -250,15 +277,33 @@ export function TurmasOfertasView({
             const ocupacao = t.vagasTotais > 0 ? ((t.vagasOcupadas ?? 0) / t.vagasTotais) * 100 : 0;
             const vagasRestantes = Math.max(0, t.vagasTotais - (t.vagasOcupadas ?? 0));
 
+            const isDestacada = destaqueId === t.id;
+
             return (
               <div
                 key={t.id}
-                className="relative bg-white dark:bg-[#0D121F] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 p-5 sm:p-6 flex flex-col justify-between overflow-hidden group"
+                id={`turma-card-${t.id}`}
+                className={`relative bg-white dark:bg-[#0D121F] rounded-2xl border transition-all duration-300 p-5 sm:p-6 flex flex-col justify-between overflow-hidden group ${
+                  isDestacada
+                    ? 'ring-4 ring-emerald-500/80 shadow-[0_0_35px_rgba(16,185,129,0.3)] border-emerald-400 dark:border-emerald-500 bg-emerald-50/15 dark:bg-emerald-950/20'
+                    : 'border-slate-200/90 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
               >
                 {/* Linha Superior com Cor Institucional da Escola */}
                 <div className={`absolute top-0 left-0 right-0 h-1.5 ${theme.accentBar}`} />
 
                 <div>
+                  {/* Badge de Destaque da Notificação */}
+                  {isDestacada && (
+                    <div className="mb-3 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-between animate-pulse">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                        Turma Selecionada na Notificação
+                      </span>
+                      <span className="text-[11px] font-mono">{vagasRestantes} vagas disponíveis</span>
+                    </div>
+                  )}
+
                   {/* Topo do Card: Sigla da Escola e Status da Inscrição */}
                   <div className="flex items-center justify-between gap-2 mb-3 pt-0.5">
                     <span

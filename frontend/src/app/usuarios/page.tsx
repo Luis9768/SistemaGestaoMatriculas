@@ -29,7 +29,7 @@ export default function UsuariosPage() {
 
   useEffect(() => {
     if (usuarioLogado && usuarioLogado.role !== 'ROLE_ADMIN') {
-      router.replace('/panorama');
+      router.replace('/turmas');
     }
   }, [usuarioLogado, router]);
 
@@ -69,11 +69,11 @@ export default function UsuariosPage() {
   const totalAdmins = usuarios.filter((u) => u.role === 'ROLE_ADMIN').length;
   const totalEncarregadas = usuarios.filter((u) => u.role === 'ROLE_ENCARREGADA').length;
 
-  if (usuarioLogado && usuarioLogado.role !== 'ROLE_ADMIN') {
+  if (!usuarioLogado || usuarioLogado.role !== 'ROLE_ADMIN') {
     return (
       <AppLayout>
-        <div className="py-20 text-center text-xs text-slate-500">
-          Redirecionando... Acesso restrito à Coordenação Geral.
+        <div className="py-24 text-center text-xs text-slate-500">
+          Redirecionando... Acesso exclusivo à Coordenação Geral (Administrador).
         </div>
       </AppLayout>
     );
@@ -88,14 +88,14 @@ export default function UsuariosPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Equipe & Docentes
+                Equipe da Secretaria & Acessos
               </h1>
               <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                 {usuarios.length} cadastrado(s)
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Gerencie os professores com atribuição multidisciplinar de turmas e as encarregadas das Escolas Livres
+              Gerencie os administradores da Coordenação Geral e as encarregadas das secretarias escolares
             </p>
           </div>
 
@@ -171,7 +171,7 @@ export default function UsuariosPage() {
         {loading ? (
           <div className="py-20 text-center text-slate-400 dark:text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
             <RefreshCw className="w-5 h-5 animate-spin text-slate-400" />
-            <span>Carregando equipe escolar...</span>
+            <span>Carregando equipe da secretaria...</span>
           </div>
         ) : usuariosFiltrados.length === 0 ? (
           <div className="py-16 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0B0F19] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs space-y-3">
@@ -180,7 +180,7 @@ export default function UsuariosPage() {
               Nenhum usuário encontrado com os filtros atuais.
             </div>
             <p className="text-[11px] max-w-sm mx-auto text-slate-400">
-              Utilize o botão acima para cadastrar novas encarregadas das Escolas Livres.
+              Utilize o botão acima para cadastrar novos administradores ou encarregadas das Escolas Livres.
             </p>
           </div>
         ) : (
@@ -219,7 +219,7 @@ export default function UsuariosPage() {
                           </span>
                         )}
                         {isAdmin && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/40">
                             Administrador
                           </span>
                         )}
@@ -234,6 +234,18 @@ export default function UsuariosPage() {
                         </strong>
                         <span className="font-medium text-slate-800 dark:text-slate-200">
                           {u.escolaNome ? `[${u.escolaSigla}] ${u.escolaNome}` : 'Geral'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Escopo de Administrador */}
+                    {isAdmin && (
+                      <div className="p-2.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200">
+                        <strong className="text-amber-600 dark:text-amber-400 block text-[10px] uppercase tracking-wider mb-0.5">
+                          Escopo Institucional
+                        </strong>
+                        <span className="font-medium text-amber-950 dark:text-amber-200">
+                          Coordenação Geral • Acesso Unificado a Todas as Escolas
                         </span>
                       </div>
                     )}

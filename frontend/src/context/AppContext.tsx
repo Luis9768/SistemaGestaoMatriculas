@@ -55,11 +55,13 @@ interface AppContextType {
   turmaCursoPreSelecionadoId: number | null;
   setTurmaCursoPreSelecionadoId: (id: number | null) => void;
   abrirModalNovaTurma: (cursoId?: number) => void;
-  abrirModalPerfil: (alunoId: number) => void;
+  abrirModalPerfil: (alunoId: number, autoDeclaracaoMatriculaId?: number | null) => void;
   abrirModalLgpd: (aba?: 'geral' | 'alunos') => void;
   showModalPerfil: boolean;
   setShowModalPerfil: (show: boolean) => void;
   perfilAlunoId: number | null;
+  autoDeclaracaoMatriculaId: number | null;
+  setAutoDeclaracaoMatriculaId: (id: number | null) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -114,6 +116,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Modal Perfil & LGPD
   const [perfilAlunoId, setPerfilAlunoId] = useState<number | null>(null);
+  const [autoDeclaracaoMatriculaId, setAutoDeclaracaoMatriculaId] = useState<number | null>(null);
   const [showModalPerfil, setShowModalPerfil] = useState(false);
   const [showModalLgpd, setShowModalLgpd] = useState(false);
   const [lgpdAbaInicial, setLgpdAbaInicial] = useState<'geral' | 'alunos'>('geral');
@@ -364,8 +367,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShowModalTurma(true);
   };
 
-  const abrirModalPerfil = (alunoId: number) => {
+  const abrirModalPerfil = (alunoId: number, autoDecId?: number | null) => {
     setPerfilAlunoId(alunoId);
+    setAutoDeclaracaoMatriculaId(autoDecId || null);
     setShowModalPerfil(true);
   };
 
@@ -421,6 +425,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         showModalPerfil,
         setShowModalPerfil,
         perfilAlunoId,
+        autoDeclaracaoMatriculaId,
+        setAutoDeclaracaoMatriculaId,
       }}
     >
       {children}

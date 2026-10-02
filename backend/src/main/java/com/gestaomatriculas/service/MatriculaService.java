@@ -503,4 +503,116 @@ public class MatriculaService {
                 .responsavelSecretaria("Secretaria Escolar Central das Escolas Livres de Santo André")
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public DeclaracaoMatriculaDTO gerarDeclaracaoMatricula(Long id) {
+        Matricula matricula = matriculaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Matrícula não encontrada com id: " + id));
+
+        Turma turma = matricula.getTurma();
+        Curso curso = turma != null ? turma.getCurso() : null;
+        Escola escola = curso != null ? curso.getEscola() : null;
+        Aluno aluno = matricula.getAluno();
+
+        LocalDate hoje = LocalDate.now();
+        LocalDate dataInicio = (turma != null && turma.getDataInicioAulas() != null)
+                ? turma.getDataInicioAulas()
+                : (matricula.getDataMatricula() != null ? matricula.getDataMatricula().toLocalDate() : hoje);
+
+        LocalDate dataMatr = matricula.getDataMatricula() != null ? matricula.getDataMatricula().toLocalDate() : dataInicio;
+
+        List<RegistroPresenca> presencas = registroPresencaRepository.findByMatriculaIdOrderByDataAulaAsc(id);
+        long totalAulas = presencas.size();
+        long presencasValidas = presencas.stream()
+                .filter(p -> p.getStatus() == StatusPresenca.PRESENTE || p.getStatus() == StatusPresenca.JUSTIFICADA)
+                .count();
+        double pct = totalAulas > 0 ? ((double) presencasValidas / totalAulas) * 100.0 : 100.0;
+        double pctArredondada = Math.round(pct * 10.0) / 10.0;
+
+        DateTimeFormatter dtfExtenso = DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR"));
+        DateTimeFormatter dtfMesAno = DateTimeFormatter.ofPattern("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR"));
+
+        String mesAnoInicio = dataInicio.format(dtfMesAno);
+        String dataInicioFormatada = dataInicio.format(dtfExtenso);
+
+        Integer idade = null;
+        if (aluno.getDataNascimento() != null) {
+            idade = Period.between(aluno.getDataNascimento(), hoje).getYears();
+        }
+
+        String enderecoCompleto = "";
+        if (aluno.getEndereco() != null && !aluno.getEndereco().isBlank()) {
+            enderecoCompleto = aluno.getEndereco();
+            if (aluno.getBairro() != null && !aluno.getBairro().isBlank()) enderecoCompleto += ", " + aluno.getBairro();
+            if (aluno.getCidade() != null && !aluno.getCidade().isBlank()) enderecoCompleto += " — " + aluno.getCidade() + "/SP";
+        } else {
+            enderecoCompleto = "Residência declarada no Grande ABC / Santo André - SP";
+        }
+
+        String escolaEndereco = switch (escola != null && escola.getSigla() != null ? escola.getSigla().toUpperCase() : "") {
+            case "ELD" -> "Centro de Dança de Santo André • Rua Dr. Eduardo Monteiro, 410 - Jardim Bela Vista, Santo André - SP";
+            case "ELT" -> "Escola Livre de Teatro • Praça Rui Barbosa, 12 - Santa Teresinha, Santo André - SP";
+            case "ELCV" -> "Escola Livre de Cinema e Vídeo • Av. Utinga, 136 - Vila Metalúrgica, Santo André - SP";
+            case "EMIA" -> "Escola Municipal de Iniciação Artística • Parque Regional da Criança, Av. Itamarati, 536 - Jaçatuba, Santo André - SP";
+            default -> "Secretaria de Cultura • Praça IV Centenário, 01 - Centro, Santo André - SP";
+        };
+
+        String codigoAutenticidade = String.format("DECL-%d-%s-%05d",
+                hoje.getYear(),
+                escola != null ? escola.getSigla() : "SA",
+                matricula.getId());
+
+        int cargaHorariaTotal = curso != null && curso.getCargaHoraria() != null ? curso.getCargaHoraria() : 80;
+
+        String horarioAulas = turma != null && turma.getDiasHorariosLocal() != null && !turma.getDiasHorariosLocal().isBlank()
+                ? turma.getDiasHorariosLocal()
+                : "Aulas Regulares Presenciais";
+
+        String modalidade = curso != null && curso.getModalidade() != null
+                ? curso.getModalidade().name()
+                : "Formação Artística Regular";
+
+        String texto = String.format(
+                "Declaramos, para os devidos fins de direito e comprovação a que se fizer necessário, a pedido da parte interessada, que o(a) estudante %s, inscrito(a) no Cadastro de Pessoas Físicas (CPF) sob o nº %s, encontra-se REGULARMENTE MATRICULADO(A) e com FREQUÊNCIA ATIVA nesta instituição pública de ensino no ano letivo de %d, cursando o programa de %s (Turma %s) desde %s.",
+                aluno.getNome(),
+                aluno.getCpf(),
+                hoje.getYear(),
+                curso != null ? curso.getNome() : "Curso Regular",
+                turma != null ? turma.getCodigo() : "Geral",
+                mesAnoInicio
+        );
+
+        return DeclaracaoMatriculaDTO.builder()
+                .matriculaId(matricula.getId())
+                .codigoAutenticidade(codigoAutenticidade)
+                .instituicaoEnsino("Prefeitura Municipal de Santo André • Secretaria de Cultura")
+                .cnpjInstituicao("46.522.942/0001-30")
+                .escolaNome(escola != null ? escola.getNome() : "Escolas Livres de Santo André")
+                .escolaSigla(escola != null ? escola.getSigla() : "EL")
+                .escolaEndereco(escolaEndereco)
+                .alunoId(aluno.getId())
+                .alunoNome(aluno.getNome())
+                .alunoCpf(aluno.getCpf())
+                .alunoDataNascimento(aluno.getDataNascimento())
+                .alunoIdade(idade)
+                .alunoEnderecoCompleto(enderecoCompleto)
+                .alunoNomeResponsavel(aluno.getResponsavel() != null ? aluno.getResponsavel().getNome() : null)
+                .alunoCpfResponsavel(aluno.getResponsavel() != null ? aluno.getResponsavel().getCpf() : null)
+                .cursoNome(curso != null ? curso.getNome() : "Curso Regular")
+                .turmaCodigo(turma != null ? turma.getCodigo() : "")
+                .modalidadeEnsino(modalidade)
+                .dataInicioAulas(dataInicio)
+                .dataMatricula(dataMatr)
+                .mesAnoInicioExtenso(mesAnoInicio)
+                .dataInicioExtenso(dataInicioFormatada)
+                .diasHorarioAulas(horarioAulas)
+                .cargaHorariaTotal(cargaHorariaTotal)
+                .porcentagemFrequenciaAtual(pctArredondada)
+                .statusMatricula("REGULARMENTE MATRICULADO(A) E ATIVO(A)")
+                .anoLetivo(hoje.getYear())
+                .textoDeclaracao(texto)
+                .dataEmissaoFormatada(hoje.format(dtfExtenso))
+                .responsavelSecretaria("Secretaria Acadêmica • Rede de Escolas Livres de Santo André")
+                .build();
+    }
 }

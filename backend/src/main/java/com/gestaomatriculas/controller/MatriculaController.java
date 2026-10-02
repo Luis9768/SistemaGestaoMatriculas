@@ -69,12 +69,20 @@ public class MatriculaController {
     }
 
     @GetMapping("/{id}/certificado")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'ENCARREGADA')")
     public ResponseEntity<com.gestaomatriculas.dto.CertificadoDTO> obterCertificado(@PathVariable Long id) {
         return ResponseEntity.ok(matriculaService.gerarCertificado(id));
     }
 
     @GetMapping("/{id}/declaracao-transporte")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'ENCARREGADA')")
     public ResponseEntity<com.gestaomatriculas.dto.DeclaracaoTransporteDTO> obterDeclaracaoTransporte(@PathVariable Long id) {
         return ResponseEntity.ok(matriculaService.gerarDeclaracaoTransporte(id));
+    }
+
+    @GetMapping("/{id}/declaracao-matricula")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'ENCARREGADA')")
+    public ResponseEntity<com.gestaomatriculas.dto.DeclaracaoMatriculaDTO> obterDeclaracaoMatricula(@PathVariable Long id) {
+        return ResponseEntity.ok(matriculaService.gerarDeclaracaoMatricula(id));
     }
 }

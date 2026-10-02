@@ -7,7 +7,6 @@ import {
   Music,
   Film,
   Palette,
-  Lock,
   ArrowRight,
   Building2,
   ShieldCheck,
@@ -115,18 +114,6 @@ export function DirecionamentoEscolasView({
   const [modalLgpdAberto, setModalLgpdAberto] = useState(false);
   const isAdmin = usuarioLogado.role === 'ROLE_ADMIN';
 
-  const isEscolaLiberada = (escola: Escola): boolean => {
-    if (isAdmin) return true;
-    if (usuarioLogado.escolaId && escola.id === usuarioLogado.escolaId) return true;
-    if (
-      usuarioLogado.escolaSigla &&
-      escola.sigla &&
-      usuarioLogado.escolaSigla.toUpperCase() === escola.sigla.toUpperCase()
-    ) {
-      return true;
-    }
-    return false;
-  };
 
   const escolasRender =
     escolas.length >= 4
@@ -204,7 +191,6 @@ export function DirecionamentoEscolasView({
             };
 
             const IconeComponent = config.icone;
-            const liberada = isEscolaLiberada(escola);
 
             const cursosCount = cursos.filter(
               (c) => c.escolaId === escola.id || c.escolaSigla?.toUpperCase() === siglaUpper
@@ -218,11 +204,7 @@ export function DirecionamentoEscolasView({
             return (
               <div
                 key={escola.id}
-                className={`group relative rounded-3xl p-5 sm:p-5.5 flex flex-col justify-between transition-all duration-300 overflow-hidden border ${
-                  liberada
-                    ? `bg-white dark:bg-[#0D121F] border-slate-200/90 dark:border-slate-800 shadow-md hover:-translate-y-1.5 ${config.hoverGlow}`
-                    : 'bg-slate-50/70 dark:bg-[#0D121F]/60 border-slate-200/70 dark:border-slate-800/60 opacity-75 select-none'
-                }`}
+                className={`group relative rounded-3xl p-5 sm:p-5.5 flex flex-col justify-between transition-all duration-300 overflow-hidden border bg-white dark:bg-[#0D121F] border-slate-200/90 dark:border-slate-800 shadow-md hover:-translate-y-1.5 ${config.hoverGlow}`}
               >
                 {/* Linha Superior com Cor de Destaque da Escola */}
                 <div className={`absolute top-0 left-0 right-0 h-1.5 ${config.accentBar}`} />
@@ -250,62 +232,44 @@ export function DirecionamentoEscolasView({
                   </p>
 
                   {/* Mini-Indicadores Operacionais Compactos */}
-                  {liberada ? (
-                    <div className="grid grid-cols-3 gap-1.5 py-2 px-3 rounded-2xl bg-slate-50 dark:bg-[#070A11] border border-slate-200/80 dark:border-slate-800/80 mb-4 text-center">
-                      <div>
-                        <span className="block text-xs font-black text-slate-900 dark:text-slate-100 font-mono">
-                          {cursosCount || 2}
-                        </span>
-                        <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
-                          Cursos
-                        </span>
-                      </div>
-                      <div className="border-x border-slate-200 dark:border-slate-800">
-                        <span className="block text-xs font-black text-slate-900 dark:text-slate-100 font-mono">
-                          {turmasCount || 4}
-                        </span>
-                        <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
-                          Turmas
-                        </span>
-                      </div>
-                      <div>
-                        <span className="block text-xs font-black text-slate-900 dark:text-slate-100 font-mono">
-                          {vagasCount}
-                        </span>
-                        <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
-                          Vagas
-                        </span>
-                      </div>
+                  <div className="grid grid-cols-3 gap-1.5 py-2 px-3 rounded-2xl bg-slate-50 dark:bg-[#070A11] border border-slate-200/80 dark:border-slate-800/80 mb-4 text-center">
+                    <div>
+                      <span className="block text-xs font-black text-slate-900 dark:text-slate-100 font-mono">
+                        {cursosCount || 2}
+                      </span>
+                      <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
+                        Cursos
+                      </span>
                     </div>
-                  ) : (
-                    <div className="py-2.5 px-3 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 mb-4 flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs">
-                      <Lock className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                      <span className="truncate">Acesso reservado à encarregada</span>
+                    <div className="border-x border-slate-200 dark:border-slate-800">
+                      <span className="block text-xs font-black text-slate-900 dark:text-slate-100 font-mono">
+                        {turmasCount || 4}
+                      </span>
+                      <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
+                        Turmas
+                      </span>
                     </div>
-                  )}
+                    <div>
+                      <span className="block text-xs font-black text-slate-900 dark:text-slate-100 font-mono">
+                        {vagasCount}
+                      </span>
+                      <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
+                        Vagas
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Botão de Ação / Entrada na Escola */}
                 <div className="pt-1">
-                  {liberada ? (
-                    <button
-                      type="button"
-                      onClick={() => onSelecionarEscola(escola.id)}
-                      className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-98 ${config.btnAtivo}`}
-                    >
-                      <span>Acessar {config.sigla}</span>
-                      <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className="w-full py-2.5 px-4 rounded-xl bg-slate-200/70 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 text-xs font-medium border border-slate-300/50 dark:border-slate-700/60 flex items-center justify-center gap-1.5 cursor-not-allowed"
-                    >
-                      <Lock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Restrito à Unidade</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => onSelecionarEscola(escola.id)}
+                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-98 ${config.btnAtivo}`}
+                  >
+                    <span>Acessar {config.sigla}</span>
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                  </button>
                 </div>
               </div>
             );

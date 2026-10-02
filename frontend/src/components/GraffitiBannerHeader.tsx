@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificacoesPopover } from '@/components/NotificacoesPopover';
 import { LogOut } from 'lucide-react';
 
 interface GraffitiBannerHeaderProps {
@@ -33,8 +34,9 @@ export function GraffitiBannerHeader({ onLogout }: GraffitiBannerHeaderProps) {
           </div>
         </div>
 
-        {/* Controles: Tema + Logout */}
+        {/* Controles: Notificações + Tema + Logout */}
         <div className="flex items-center gap-2.5 sm:gap-3">
+          <NotificacoesPopover />
           <ThemeToggle showLabel={false} />
 
           {onLogout && (
