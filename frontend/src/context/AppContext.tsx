@@ -109,6 +109,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     idadeMinima: undefined,
     idadeMaxima: undefined,
     diasToleranciaSuplencia: 60,
+    materiasNomes: [],
   });
 
   // Modal Perfil & LGPD
@@ -287,8 +288,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!confirm(`Deseja promover o suplente ${alunoNome} para vaga efetiva nesta turma?`)) return;
     try {
       await api.promoverSuplente(matriculaId);
+      setMatriculas((prev) =>
+        prev.map((m) => (m.id === matriculaId ? { ...m, status: 'CONFIRMADA' } : m))
+      );
       mostrarFeedback('sucesso', `Suplente ${alunoNome} promovido com sucesso para vaga efetiva!`);
-      await carregarDadosEscola();
+      await Promise.all([carregarMatriculas(), carregarDadosEscola()]);
     } catch (e: any) {
       mostrarFeedback('erro', e.message || 'Erro ao promover suplente.');
     }
@@ -298,8 +302,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!confirm('Deseja realmente cancelar esta matrícula? A vaga será liberada imediatamente para o próximo da fila de espera.')) return;
     try {
       await api.cancelarMatricula(matriculaId);
+      setMatriculas((prev) =>
+        prev.map((m) => (m.id === matriculaId ? { ...m, status: 'CANCELADA' } : m))
+      );
       mostrarFeedback('sucesso', 'Matrícula cancelada e vaga disponibilizada para a fila de espera.');
-      await carregarDadosEscola();
+      await Promise.all([carregarMatriculas(), carregarDadosEscola()]);
     } catch (e: any) {
       mostrarFeedback('erro', e.message || 'Erro ao cancelar matrícula.');
     }
@@ -316,6 +323,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       await api.createTurma(novaTurma);
       setShowModalTurma(false);
+      setNovaTurma({
+        cursoId: cursos[0]?.id || 0,
+        codigo: '',
+        dataAberturaMatricula: '',
+        dataFechamentoMatricula: '',
+        dataInicioAulas: '',
+        dataFimAulas: '',
+        vagasTotais: 30,
+        idadeMinima: undefined,
+        idadeMaxima: undefined,
+        diasToleranciaSuplencia: 60,
+        materiasNomes: [],
+      });
       mostrarFeedback('sucesso', `Turma ${novaTurma.codigo} aberta com sucesso!`);
       await carregarDadosEscola();
     } catch (e: any) {

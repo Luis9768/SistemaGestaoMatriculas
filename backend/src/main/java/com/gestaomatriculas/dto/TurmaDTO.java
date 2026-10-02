@@ -51,5 +51,8 @@ public class TurmaDTO {
     private Integer vagasOcupadas;
     private StatusTurma status;
     private Boolean matriculaAberta;
+
+    private java.util.List<TurmaMateriaDTO> materias;
+    private java.util.List<String> materiasNomes;
 }
 

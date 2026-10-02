@@ -73,6 +73,11 @@ public class Turma {
     @Column(name = "dias_tolerancia_suplencia")
     private Integer diasToleranciaSuplencia = 60; // Conforme acordado: prazo padrão de até 2 meses (60 dias) para chamar suplentes
 
+    @Builder.Default
+    @OneToMany(mappedBy = "turma", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("ordem ASC, id ASC")
+    private java.util.List<TurmaMateria> materias = new java.util.ArrayList<>();
+
     @Version
     private Long version;
 

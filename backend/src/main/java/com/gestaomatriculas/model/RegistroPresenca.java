@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "registros_presenca", indexes = {
-    @Index(name = "idx_presenca_matricula_data", columnList = "matricula_id, data_aula")
+    @Index(name = "idx_presenca_matricula_data", columnList = "matricula_id, data_aula"),
+    @Index(name = "idx_presenca_materia_data", columnList = "materia_id, data_aula")
 })
 @Getter
 @Setter
@@ -30,6 +31,10 @@ public class RegistroPresenca {
     @JoinColumn(name = "matricula_id", nullable = false)
     private Matricula matricula;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "materia_id")
+    private TurmaMateria materia;
+
     @NotNull
     @Column(name = "data_aula", nullable = false)
     private LocalDate dataAula;
@@ -44,6 +49,9 @@ public class RegistroPresenca {
 
     @Column(name = "conteudo_ministrado", length = 500)
     private String conteudoMinistrado;
+
+    @Column(name = "responsavel_registro", length = 150)
+    private String responsavelRegistro;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

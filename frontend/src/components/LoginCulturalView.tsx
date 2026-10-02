@@ -180,12 +180,12 @@ export function LoginCulturalView({ onLoginSucesso }: LoginCulturalViewProps) {
         </div>
       </div>
 
-      <div className="w-full max-w-4xl flex flex-col items-center justify-center h-full max-h-[calc(100vh-20px)]">
+      <div className="w-full max-w-4xl lg:max-w-[940px] xl:max-w-[1020px] 2xl:max-w-[1060px] flex flex-col items-center justify-center h-full max-h-[calc(100vh-20px)]">
         {/* Container Principal — Divisão 50/50 Exata */}
-        <div className="w-full bg-white rounded-3xl border border-[#EAEAEA] shadow-[0_8px_40px_rgba(0,0,0,0.04)] overflow-hidden grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-80px)] max-h-[570px] min-h-[460px]">
+        <div className="w-full bg-white rounded-3xl border border-[#EAEAEA] shadow-[0_8px_40px_rgba(0,0,0,0.04)] overflow-hidden grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-80px)] min-h-[470px] max-h-[570px] lg:max-h-[600px] xl:max-h-[640px] transition-all duration-300">
           
           {/* PAINEL ESQUERDO: Fundo Artístico com Degradê Enriquecido e Cores Mais Vivas */}
-          <div className="lg:col-span-6 relative flex flex-col justify-center items-center p-6 sm:p-10 overflow-hidden bg-gradient-to-br from-[#99E8E8] via-[#FBCFE8] to-[#FED7AA]">
+          <div className="lg:col-span-6 relative flex flex-col justify-center items-center p-6 sm:p-8 lg:p-10 xl:p-12 overflow-hidden bg-gradient-to-br from-[#99E8E8] via-[#FBCFE8] to-[#FED7AA]">
             {/* Efeitos de Iluminação e Atmosfera Artística no Fundo com Cores Mais Fortes */}
             <div
               className="absolute -top-12 -left-12 w-72 h-72 rounded-full bg-[#0D9488]/45 blur-3xl pointer-events-none"
@@ -204,29 +204,29 @@ export function LoginCulturalView({ onLoginSucesso }: LoginCulturalViewProps) {
               aria-hidden="true"
             />
 
-            <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-[340px]">
+            <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-[340px] xl:max-w-[370px]">
               {/* Ilustração Vetorial SVG Sem Fundo Branco e em Tamanho Ampliado */}
-              <div className="relative w-60 h-60 sm:w-68 sm:h-68 max-h-[250px] flex items-center justify-center transition-transform duration-300 hover:scale-105">
+              <div className="relative w-60 h-60 sm:w-68 sm:h-68 xl:w-76 xl:h-76 max-h-[250px] xl:max-h-[275px] flex items-center justify-center transition-transform duration-300 hover:scale-105">
                 <Image
                   src="/arte_escolas_livres.svg"
                   alt="Expressão artística — Escolas Livres de Santo André"
                   fill
                   priority
                   className="object-contain drop-shadow-sm select-none pointer-events-none"
-                  sizes="(max-width: 768px) 240px, 272px"
+                  sizes="(max-width: 768px) 240px, (max-width: 1280px) 272px, 304px"
                 />
               </div>
 
               {/* Slogan Tipográfico: Crie. Inspire. Transcenda. */}
               <div className="mt-4 sm:mt-5 text-left w-full pl-1">
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#18181B] tracking-tight leading-[1.15]">
+                <h1 className="text-3xl sm:text-4xl xl:text-[40px] font-extrabold text-[#18181B] tracking-tight leading-[1.12]">
                   Crie.<br />
                   <span className="bg-gradient-to-r from-[#0D9488] via-[#7C3AED] to-[#E11D48] bg-clip-text text-transparent">
                     Inspire.
                   </span><br />
                   Transcenda.
                 </h1>
-                <p className="text-xs sm:text-sm text-[#71717A] mt-1.5 font-medium tracking-wide">
+                <p className="text-xs sm:text-sm xl:text-[14.5px] text-[#71717A] mt-1.5 font-medium tracking-wide">
                   O seu centro de desenvolvimento artístico.
                 </p>
               </div>
@@ -234,8 +234,8 @@ export function LoginCulturalView({ onLoginSucesso }: LoginCulturalViewProps) {
           </div>
 
           {/* PAINEL DIREITO: Formulário de Login OU Fluxo de Redefinição de Senha */}
-          <div className="lg:col-span-6 p-6 sm:p-10 flex flex-col justify-center items-center bg-white h-full overflow-hidden">
-            <div className="w-full max-w-xs sm:max-w-sm flex flex-col">
+          <div className="lg:col-span-6 p-6 sm:p-8 lg:p-10 xl:p-12 flex flex-col justify-center items-center bg-white h-full overflow-hidden">
+            <div className="w-full max-w-xs sm:max-w-sm xl:max-w-[360px] flex flex-col">
               
               {/* MODO 1: LOGIN PRINCIPAL */}
               {modo === 'login' && (
@@ -246,7 +246,7 @@ export function LoginCulturalView({ onLoginSucesso }: LoginCulturalViewProps) {
                   </div>
 
                   {/* Título: Apenas Portal de Acesso */}
-                  <h2 className="font-fighter text-3xl sm:text-4xl font-normal text-[#18181B] tracking-wide text-center mb-4">
+                  <h2 className="font-fighter text-3xl sm:text-4xl xl:text-[42px] font-normal text-[#18181B] tracking-wide text-center mb-4 xl:mb-5">
                     Portal de Acesso
                   </h2>
 

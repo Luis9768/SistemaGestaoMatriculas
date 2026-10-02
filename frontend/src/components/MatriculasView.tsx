@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Plus, X, User } from 'lucide-react';
 import { Matricula, formatarCpfMascara } from '@/lib/api';
 
@@ -25,10 +25,22 @@ export function MatriculasView({
   const [filtroCanal, setFiltroCanal] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
 
+  const contagens = useMemo(() => {
+    return {
+      total: matriculas.length,
+      confirmada: matriculas.filter((m) => m.status === 'CONFIRMADA').length,
+      inscrito: matriculas.filter((m) => m.status === 'INSCRITO').length,
+      fila: matriculas.filter((m) => m.status === 'FILA_ESPERA').length,
+      cancelada: matriculas.filter((m) => m.status === 'CANCELADA').length,
+      desistente: matriculas.filter((m) => m.status === 'DESISTENTE_FALTAS').length,
+      concluida: matriculas.filter((m) => m.status === 'CONCLUIDA').length,
+    };
+  }, [matriculas]);
+
   const matriculasFiltradas = matriculas.filter((m) => {
     if (busca.trim()) {
       const q = busca.toLowerCase();
-      const matchNome = m.alunoNome.toLowerCase().includes(q);
+      const matchNome = m.alunoNome?.toLowerCase().includes(q);
       const matchCpf = m.alunoCpf?.toLowerCase().includes(q);
       const matchTurma = m.turmaCodigo?.toLowerCase().includes(q);
       const matchCurso = m.cursoNome?.toLowerCase().includes(q);
@@ -84,7 +96,13 @@ export function MatriculasView({
         return {
           label: 'Cancelada',
           style:
-            'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
+            'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50',
+        };
+      case 'CONCLUIDA':
+        return {
+          label: 'Concluída',
+          style:
+            'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50',
         };
       default:
         return {
@@ -183,6 +201,7 @@ export function MatriculasView({
             <option value="FILA_ESPERA">Fila de Espera (Suplente)</option>
             <option value="CANCELADA">Cancelada</option>
             <option value="DESISTENTE_FALTAS">Desistente (3 Faltas)</option>
+            <option value="CONCLUIDA">Concluída (Formado)</option>
           </select>
 
           {temFiltroAtivo && (
@@ -196,6 +215,72 @@ export function MatriculasView({
               title="Limpar todos os filtros"
             >
               Limpar
+            </button>
+          )}
+        </div>
+
+        {/* Pills Rápidas de Filtragem por Status com Contagens em Tempo Real */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mr-1 uppercase font-mono">
+            Filtrar:
+          </span>
+          <button
+            type="button"
+            onClick={() => setFiltroStatus('')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+              filtroStatus === ''
+                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs font-bold'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            Todos ({contagens.total})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroStatus('CONFIRMADA')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+              filtroStatus === 'CONFIRMADA'
+                ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                : 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-100'
+            }`}
+          >
+            Confirmadas ({contagens.confirmada})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroStatus('CANCELADA')}
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+              filtroStatus === 'CANCELADA'
+                ? 'bg-rose-600 text-white shadow-xs font-bold ring-2 ring-rose-500/40'
+                : 'bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 hover:bg-rose-100'
+            }`}
+          >
+            Canceladas ({contagens.cancelada})
+          </button>
+          {contagens.fila > 0 && (
+            <button
+              type="button"
+              onClick={() => setFiltroStatus('FILA_ESPERA')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                filtroStatus === 'FILA_ESPERA'
+                  ? 'bg-amber-600 text-white shadow-xs font-bold'
+                  : 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-100'
+              }`}
+            >
+              Fila de Espera ({contagens.fila})
+            </button>
+          )}
+          {contagens.concluida > 0 && (
+            <button
+              type="button"
+              onClick={() => setFiltroStatus('CONCLUIDA')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                filtroStatus === 'CONCLUIDA'
+                  ? 'bg-purple-600 text-white shadow-xs font-bold'
+                  : 'bg-purple-50 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 hover:bg-purple-100'
+              }`}
+            >
+              Concluídas ({contagens.concluida})
             </button>
           )}
         </div>

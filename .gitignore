@@ -40,3 +40,6 @@ backend/data/
 # Sistema Operacional
 .DS_Store
 Thumbs.db
+
+# Agent Skills
+.agents/

@@ -97,6 +97,14 @@ export interface Curso {
   disciplinas?: Disciplina[];
 }
 
+export interface TurmaMateria {
+  id?: number;
+  turmaId?: number;
+  nome: string;
+  duracaoEstimada?: string;
+  ordem?: number;
+}
+
 export interface Turma {
   id?: number;
   cursoId: number;
@@ -117,6 +125,8 @@ export interface Turma {
   suplenciaAberta?: boolean;
   status?: 'ABERTA' | 'FECHADA' | 'EM_ANDAMENTO' | 'CONCLUIDA';
   matriculaAberta?: boolean;
+  materias?: TurmaMateria[];
+  materiasNomes?: string[];
 }
 
 export interface Aluno {
@@ -161,7 +171,7 @@ export interface Matricula {
   responsavelTelefone?: string;
   dataMatricula: string;
   canalOrigem: 'PRESENCIAL' | 'FORMS' | 'SITE' | 'PLANILHA' | 'CULTURA_AZ';
-  status: 'PENDENTE' | 'INSCRITO' | 'EM_SELECAO' | 'APROVADO' | 'CONFIRMADA' | 'CANCELADA' | 'DESISTENTE_FALTAS' | 'FILA_ESPERA';
+  status: 'PENDENTE' | 'INSCRITO' | 'EM_SELECAO' | 'APROVADO' | 'CONFIRMADA' | 'CANCELADA' | 'DESISTENTE_FALTAS' | 'FILA_ESPERA' | 'CONCLUIDA';
   observacoes?: string;
 }
 
@@ -176,10 +186,62 @@ export interface ImportacaoResultado {
 export interface RegistroPresenca {
   id?: number;
   matriculaId: number;
+  materiaId?: number;
   dataAula: string;
   status: 'PRESENTE' | 'FALTA' | 'JUSTIFICADA';
   justificativa?: string;
   conteudoMinistrado?: string;
+  responsavelRegistro?: string;
+}
+
+export interface ChamadaItem {
+  alunoId: number;
+  alunoNome: string;
+  alunoCpf?: string;
+  matriculaId: number;
+  status: 'PRESENTE' | 'FALTA' | 'JUSTIFICADA';
+  justificativa?: string;
+}
+
+export interface SalvarChamadaPayload {
+  turmaId: number;
+  materiaId: number;
+  dataAula: string;
+  responsavelRegistro: string;
+  conteudoMinistrado?: string;
+  itens: ChamadaItem[];
+}
+
+export interface ChamadaResumo {
+  turmaId: number;
+  turmaCodigo: string;
+  materiaId: number;
+  materiaNome: string;
+  dataAula: string;
+  responsavelRegistro: string;
+  conteudoMinistrado?: string;
+  totalAlunos: number;
+  totalPresentes: number;
+  totalFaltas: number;
+  totalJustificadas: number;
+  percentualPresenca: number;
+}
+
+export interface ChamadaDetalhe {
+  turmaId: number;
+  turmaCodigo: string;
+  cursoNome?: string;
+  materiaId: number;
+  materiaNome: string;
+  dataAula: string;
+  responsavelRegistro: string;
+  conteudoMinistrado?: string;
+  totalAlunos: number;
+  totalPresentes: number;
+  totalFaltas: number;
+  totalJustificadas: number;
+  percentualPresenca: number;
+  itens: ChamadaItem[];
 }
 
 export interface ResumoFrequencia {
@@ -680,7 +742,10 @@ export const api = {
     if (escolaId) params.append('escolaId', escolaId.toString());
     if (canal) params.append('canal', canal);
     if (status) params.append('status', status);
-    const res = await fetch(`${API_BASE}/matriculas?${params.toString()}`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/matriculas?${params.toString()}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (!res.ok) throw new Error('Erro ao buscar matrículas');
     return res.json();
   },
@@ -868,6 +933,54 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Erro ao buscar turmas do professor' }));
       throw new Error(err.message || 'Erro ao buscar turmas do professor');
+    }
+    return res.json();
+  },
+
+  // Módulo de Diário de Classe & Chamadas
+  async obterAlunosParaChamada(turmaId: number, materiaId: number, data?: string): Promise<ChamadaItem[]> {
+    const url = data
+      ? `${API_BASE}/chamadas/turma/${turmaId}/materia/${materiaId}/alunos?data=${data}`
+      : `${API_BASE}/chamadas/turma/${turmaId}/materia/${materiaId}/alunos`;
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao carregar lista de alunos' }));
+      throw new Error(err.message || 'Erro ao carregar lista de alunos para a chamada');
+    }
+    return res.json();
+  },
+
+  async listarChamadas(turmaId: number, materiaId: number): Promise<ChamadaResumo[]> {
+    const res = await fetch(`${API_BASE}/chamadas/turma/${turmaId}/materia/${materiaId}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao listar chamadas' }));
+      throw new Error(err.message || 'Erro ao listar histórico de chamadas da matéria');
+    }
+    return res.json();
+  },
+
+  async obterDetalheChamada(materiaId: number, data: string): Promise<ChamadaDetalhe> {
+    const res = await fetch(`${API_BASE}/chamadas/materia/${materiaId}/detalhe?data=${data}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao buscar detalhe da chamada' }));
+      throw new Error(err.message || 'Erro ao carregar detalhe da chamada do dia selecionado');
+    }
+    return res.json();
+  },
+
+  async salvarChamada(payload: SalvarChamadaPayload): Promise<ChamadaDetalhe> {
+    const res = await fetch(`${API_BASE}/chamadas`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao registrar chamada' }));
+      throw new Error(err.message || 'Erro ao salvar chamada da turma');
     }
     return res.json();
   },

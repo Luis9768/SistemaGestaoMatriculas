@@ -331,6 +331,47 @@ export function TurmasOfertasView({
                         />
                       </div>
                     </div>
+
+                    {/* Matérias da Turma */}
+                    {t.materias && t.materias.length > 0 ? (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                        <div className="flex items-center justify-between text-[11px] mb-1.5 font-medium">
+                          <span className="text-slate-500 dark:text-slate-400">Matérias ({t.materias.length})</span>
+                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold font-mono">
+                            Modular
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {t.materias.map((m, idx) => (
+                            <span
+                              key={m.id || idx}
+                              className="px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-800/50 text-[10px] font-semibold"
+                            >
+                              {m.nome}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : t.materiasNomes && t.materiasNomes.length > 0 ? (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                        <div className="flex items-center justify-between text-[11px] mb-1.5 font-medium">
+                          <span className="text-slate-500 dark:text-slate-400">Matérias ({t.materiasNomes.length})</span>
+                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold font-mono">
+                            Modular
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {t.materiasNomes.map((nome, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-800/50 text-[10px] font-semibold"
+                            >
+                              {nome}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 

@@ -20,15 +20,16 @@ import {
   Menu,
   X,
   Users2,
+  Plus,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 
-const NAV_TABS = [
+const NAV_TABS: Array<{ href: string; label: string; icon: any; adminOnly?: boolean; allowedRoles?: string[] }> = [
   { href: '/turmas', label: 'Turmas & Ofertas', icon: Calendar },
   { href: '/matriculas', label: 'Matrículas & Fila', icon: Users },
-  { href: '/frequencia', label: 'Diário & Frequência', icon: Layers },
+  { href: '/frequencia', label: 'Diário de Chamadas', icon: Layers, allowedRoles: ['ROLE_ADMIN', 'ROLE_PROFESSOR'] },
   { href: '/cursos', label: 'Matriz Curricular & Cursos', icon: BookOpen },
   { href: '/alunos', label: 'Cadastro de Alunos', icon: Search },
   { href: '/usuarios', label: 'Equipe & Docentes', icon: Users2, adminOnly: true },
@@ -63,6 +64,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   } = useApp();
 
   const [menuAberto, setMenuAberto] = useState(false);
+  const [inputMateriaTexto, setInputMateriaTexto] = useState('');
+
+  const handleAdicionarMateria = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
+    if (!inputMateriaTexto.trim()) return;
+
+    const partes = inputMateriaTexto
+      .split(/[,;\n]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+
+    const atuais = novaTurma.materiasNomes || [];
+    const novas = partes.filter((p) => !atuais.includes(p));
+
+    setNovaTurma({
+      ...novaTurma,
+      materiasNomes: [...atuais, ...novas],
+    });
+    setInputMateriaTexto('');
+  };
+
+  const handleRemoverMateria = (index: number) => {
+    const atuais = novaTurma.materiasNomes || [];
+    setNovaTurma({
+      ...novaTurma,
+      materiasNomes: atuais.filter((_, i) => i !== index),
+    });
+  };
 
   // Fechar menu ao navegar ou teclar ESC
   useEffect(() => {
@@ -232,7 +261,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <span className="block px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold">
             Módulos de Gestão
           </span>
-          {NAV_TABS.filter((tab) => !tab.adminOnly || usuarioLogado?.role === 'ROLE_ADMIN').map((tab) => {
+          {NAV_TABS.filter((tab) => {
+            if (tab.adminOnly && usuarioLogado?.role !== 'ROLE_ADMIN') return false;
+            if (tab.allowedRoles && !tab.allowedRoles.includes(usuarioLogado?.role || '')) return false;
+            return true;
+          }).map((tab) => {
             const TabIcon = tab.icon;
             const active = pathname === tab.href;
 
@@ -355,6 +388,69 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                   />
                 </div>
+              </div>
+
+              {/* Matérias / Disciplinas da Turma */}
+              <div className="p-3 bg-violet-50/70 dark:bg-violet-950/30 rounded-2xl space-y-2 border border-violet-200 dark:border-violet-800/60">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-violet-900 dark:text-violet-300 block text-[10px] uppercase tracking-wider">
+                    Matérias da Turma (Grade de Disciplinas)
+                  </span>
+                  <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold font-mono">
+                    {(novaTurma.materiasNomes || []).length} matéria(s)
+                  </span>
+                </div>
+
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={inputMateriaTexto}
+                    onChange={(e) => setInputMateriaTexto(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAdicionarMateria(e);
+                      }
+                    }}
+                    placeholder="Ex: Audiovisual, Artes Cênicas, Design..."
+                    className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-violet-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAdicionarMateria}
+                    className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 active:scale-95 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Adicionar</span>
+                  </button>
+                </div>
+
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Digite as matérias individualmente ou separe por vírgula (ex: <i>Audiovisual, Artes Cênicas, Design de Cinema, Máquinas Cinematográficas</i>).
+                </p>
+
+                {/* Chips / Tags das Matérias Cadastradas */}
+                {(novaTurma.materiasNomes || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {(novaTurma.materiasNomes || []).map((materia, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 text-violet-900 dark:text-violet-200 border border-violet-200 dark:border-violet-700 rounded-lg text-xs font-semibold shadow-2xs"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
+                        <span>{materia}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoverMateria(idx)}
+                          className="hover:bg-violet-100 dark:hover:bg-violet-900/50 p-0.5 rounded text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition cursor-pointer"
+                          title="Remover matéria"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Faixa Etária */}
