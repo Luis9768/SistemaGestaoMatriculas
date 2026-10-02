@@ -35,6 +35,17 @@ public class InscricaoExternaDTO {
     private String responsavelEmail;
     private String responsavelParentesco;
 
+    // Ficha Cadastral e Inclusão
+    private String endereco;
+    private String bairro;
+    private String cidade;
+    private String genero;
+    private Boolean neurodiverso;
+    private String neurodiversoDetalhe;
+    private Boolean pcd;
+    private String pcdDetalhe;
+    private String contatoEmergencia;
+
     @NotNull(message = "O ID da turma é obrigatório")
     private Long turmaId;
 
@@ -48,6 +59,9 @@ public class InscricaoExternaDTO {
 
     @Builder.Default
     private Boolean consentimentoLgpdAluno = true;
+
+    @Builder.Default
+    private Boolean consentimentoLgpdDadosSensiveis = true;
 
     @Builder.Default
     private Boolean consentimentoUsoImagem = false;

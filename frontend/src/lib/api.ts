@@ -122,6 +122,8 @@ export interface Turma {
   suplenciaAberta?: boolean;
   status?: 'ABERTA' | 'FECHADA' | 'EM_ANDAMENTO' | 'CONCLUIDA';
   matriculaAberta?: boolean;
+  educadorResponsavel?: string;
+  diasHorariosLocal?: string;
   materias?: TurmaMateria[];
   materiasNomes?: string[];
 }
@@ -135,7 +137,17 @@ export interface Aluno {
   dataNascimento?: string;
   menorDeIdade?: boolean;
   responsavel?: Responsavel;
+  endereco?: string;
+  bairro?: string;
+  cidade?: string;
+  genero?: string;
+  neurodiverso?: boolean;
+  neurodiversoDetalhe?: string;
+  pcd?: boolean;
+  pcdDetalhe?: string;
+  contatoEmergencia?: string;
   consentimentoLgpd?: boolean;
+  consentimentoLgpdDadosSensiveis?: boolean;
   dataConsentimentoLgpd?: string;
   consentimentoUsoImagem?: boolean;
   termoPapelEntregue?: boolean;
@@ -352,6 +364,80 @@ export interface MatriculaItemPerfil {
   desistenteFaltas: boolean;
   frequencia: ResumoFrequencia;
   presencas: RegistroPresenca[];
+
+  // Regras Oficiais de Emissão de Documentos
+  aptoCertificado?: boolean;
+  motivoInaptidaoCertificado?: string;
+  aptoDeclaracaoTransporte?: boolean;
+  dataLiberacaoDeclaracaoTransporte?: string;
+  diasRestantesDeclaracaoTransporte?: number;
+  motivoInaptidaoDeclaracaoTransporte?: string;
+  cargaHorariaTotal?: number;
+  codigoRegistroLivro?: string;
+}
+
+export interface CertificadoData {
+  matriculaId: number;
+  codigoAutenticidade: string;
+  numeroRegistroLivro: string;
+  orgaoExpedidor: string;
+  alunoId: number;
+  alunoNome: string;
+  alunoCpf: string;
+  alunoDataNascimento?: string;
+  escolaNome: string;
+  escolaSigla: string;
+  escolaCorTema?: string;
+  cursoNome: string;
+  cursoModalidade: string;
+  cargaHorariaTotal: number;
+  cargaHorariaExtenso: string;
+  turmaCodigo: string;
+  dataInicioAulas?: string;
+  dataFimAulas?: string;
+  periodoRealizacao: string;
+  porcentagemFrequencia: number;
+  totalAulas: number;
+  presencasConfirmadas: number;
+  materiasConcluidas: TurmaMateria[];
+  amparoLegal: string;
+  dataExpedicaoFormatada: string;
+  cidadeUfExpedicao: string;
+  signatarios: string[];
+}
+
+export interface DeclaracaoTransporteData {
+  matriculaId: number;
+  codigoAutenticidade: string;
+  instituicaoEnsino: string;
+  cnpjInstituicao: string;
+  escolaNome: string;
+  escolaSigla: string;
+  escolaEndereco: string;
+  alunoId: number;
+  alunoNome: string;
+  alunoCpf: string;
+  alunoDataNascimento?: string;
+  alunoEnderecoCompleto: string;
+  alunoNomeResponsavel?: string;
+  cursoNome: string;
+  turmaCodigo: string;
+  modalidadeEnsino: string;
+  diasSemanaAulas: string;
+  horarioTurnoAulas: string;
+  cargaHorariaTotal: number;
+  cargaHorariaSemanal: number;
+  dataInicioAulas?: string;
+  dataPrevisaoTermino?: string;
+  diasCursadosCumpridos: number;
+  porcentagemFrequenciaAtual: number;
+  statusMatricula: string;
+  orgaosDestinatarios: string;
+  finalidade: string;
+  textoDeclaracao: string;
+  dataEmissaoFormatada: string;
+  validadeDeclaracao: string;
+  responsavelSecretaria: string;
 }
 
 export interface PerfilAluno {
@@ -373,10 +459,20 @@ export interface InscricaoExternaPayload {
   responsavelTelefone?: string;
   responsavelEmail?: string;
   responsavelParentesco?: string;
+  endereco?: string;
+  bairro?: string;
+  cidade?: string;
+  genero?: string;
+  neurodiverso?: boolean;
+  neurodiversoDetalhe?: string;
+  pcd?: boolean;
+  pcdDetalhe?: string;
+  contatoEmergencia?: string;
   turmaId: number;
   canalOrigem: 'PRESENCIAL' | 'FORMS' | 'SITE' | 'PLANILHA' | 'CULTURA_AZ';
   observacoes?: string;
   consentimentoLgpd?: boolean;
+  consentimentoLgpdDadosSensiveis?: boolean;
   consentimentoUsoImagem?: boolean;
   termoPapelEntregue?: boolean;
 }
@@ -696,6 +792,53 @@ export const api = {
     return res.json();
   },
 
+  async getMateriasTurma(turmaId: number): Promise<TurmaMateria[]> {
+    const res = await fetch(`${API_BASE}/turmas/${turmaId}/materias`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Erro ao listar matérias da turma');
+    return res.json();
+  },
+
+  async adicionarMateriaTurma(turmaId: number, data: { nome: string; duracaoEstimada?: string; ordem?: number }): Promise<TurmaMateria> {
+    const res = await fetch(`${API_BASE}/turmas/${turmaId}/materias`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao adicionar matéria' }));
+      throw new Error(err.message || 'Erro ao adicionar matéria');
+    }
+    return res.json();
+  },
+
+  async atualizarMateriaTurma(
+    turmaId: number,
+    materiaId: number,
+    data: { nome: string; duracaoEstimada?: string; ordem?: number }
+  ): Promise<TurmaMateria> {
+    const res = await fetch(`${API_BASE}/turmas/${turmaId}/materias/${materiaId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao atualizar matéria' }));
+      throw new Error(err.message || 'Erro ao atualizar matéria');
+    }
+    return res.json();
+  },
+
+  async removerMateriaTurma(turmaId: number, materiaId: number): Promise<void> {
+    const res = await fetch(`${API_BASE}/turmas/${turmaId}/materias/${materiaId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao remover matéria' }));
+      throw new Error(err.message || 'Erro ao remover matéria');
+    }
+  },
+
   // Alunos (Paginado com busca por Nome, E-mail, CPF, Global ou por Escola)
   async getAlunosPaginado(
     page: number = 0,
@@ -828,6 +971,19 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Erro ao carregar perfil do aluno' }));
       throw new Error(err.message || 'Erro ao carregar perfil do aluno');
+    }
+    return res.json();
+  },
+
+  async atualizarAluno(alunoId: number, dados: Partial<Aluno>): Promise<Aluno> {
+    const res = await fetch(`${API_BASE}/alunos/${alunoId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(dados),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao atualizar dados do aluno' }));
+      throw new Error(err.message || 'Erro ao atualizar dados do aluno');
     }
     return res.json();
   },
@@ -969,6 +1125,41 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Erro ao registrar chamada' }));
       throw new Error(err.message || 'Erro ao salvar chamada da turma');
+    }
+    return res.json();
+  },
+
+  // Conclusão de Curso (Formatura) e Emissão de Documentos Oficiais
+  async concluirMatricula(matriculaId: number): Promise<Matricula> {
+    const res = await fetch(`${API_BASE}/matriculas/${matriculaId}/concluir`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao concluir curso do estudante' }));
+      throw new Error(err.message || 'Erro ao homologar formatura do estudante');
+    }
+    return res.json();
+  },
+
+  async getCertificado(matriculaId: number): Promise<CertificadoData> {
+    const res = await fetch(`${API_BASE}/matriculas/${matriculaId}/certificado`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao gerar certificado de conclusão' }));
+      throw new Error(err.message || 'Erro ao emitir certificado oficial de conclusão');
+    }
+    return res.json();
+  },
+
+  async getDeclaracaoTransporte(matriculaId: number): Promise<DeclaracaoTransporteData> {
+    const res = await fetch(`${API_BASE}/matriculas/${matriculaId}/declaracao-transporte`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao emitir declaração de transporte' }));
+      throw new Error(err.message || 'Erro ao emitir declaração para CPTM / SPTrans');
     }
     return res.json();
   },

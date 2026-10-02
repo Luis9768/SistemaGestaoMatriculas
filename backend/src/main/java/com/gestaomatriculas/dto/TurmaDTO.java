@@ -52,6 +52,9 @@ public class TurmaDTO {
     private StatusTurma status;
     private Boolean matriculaAberta;
 
+    private String educadorResponsavel;
+    private String diasHorariosLocal;
+
     private java.util.List<TurmaMateriaDTO> materias;
     private java.util.List<String> materiasNomes;
 }

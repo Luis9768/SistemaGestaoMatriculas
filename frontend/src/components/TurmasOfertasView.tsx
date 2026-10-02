@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Plus, X, ArrowRight } from 'lucide-react';
+import { Search, Plus, X, ArrowRight, Layers, BookOpen } from 'lucide-react';
 import { Turma, Curso, Escola } from '@/lib/api';
+import { ModalGerenciarMaterias } from '@/components/ModalGerenciarMaterias';
 
 interface TurmasOfertasViewProps {
   turmas: Turma[];
@@ -11,6 +12,7 @@ interface TurmasOfertasViewProps {
   escolaSelecionada: number | null;
   onAbrirModalTurma: () => void;
   onMatricularNaTurma: (turmaId: number) => void;
+  onTurmasAtualizadas?: () => void;
 }
 
 interface EscolaTheme {
@@ -53,9 +55,19 @@ const ESCOLAS_THEME: Record<string, EscolaTheme> = {
     btnAtivo:
       'bg-sky-700 hover:bg-sky-800 active:bg-sky-900 text-white dark:bg-sky-600 dark:hover:bg-sky-500 shadow-sky-500/20',
   },
+  EMIA: {
+    sigla: 'EMIA',
+    nome: 'Escola Municipal de Iniciação Artística',
+    accentBar: 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500',
+    tagStyle:
+      'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60',
+    progressColor: 'bg-amber-600 dark:bg-amber-500',
+    btnAtivo:
+      'bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white dark:bg-amber-600 dark:hover:bg-amber-500 shadow-amber-500/20',
+  },
   ELIA: {
-    sigla: 'ELIA',
-    nome: 'Escola Livre de Iniciação Artística',
+    sigla: 'EMIA',
+    nome: 'Escola Municipal de Iniciação Artística',
     accentBar: 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500',
     tagStyle:
       'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60',
@@ -91,9 +103,11 @@ export function TurmasOfertasView({
   escolaSelecionada,
   onAbrirModalTurma,
   onMatricularNaTurma,
+  onTurmasAtualizadas,
 }: TurmasOfertasViewProps) {
   const [filtroAbertas, setFiltroAbertas] = useState<'todas' | 'abertas' | 'fechadas'>('todas');
   const [buscaCodigo, setBuscaCodigo] = useState('');
+  const [turmaGerenciarMaterias, setTurmaGerenciarMaterias] = useState<Turma | null>(null);
 
   const getEscolaSigla = (t: Turma): string => {
     if (t.escolaSigla) return t.escolaSigla.toUpperCase();
@@ -107,8 +121,8 @@ export function TurmasOfertasView({
     }
     if (t.codigo) {
       const prefix = t.codigo.split('-')[0]?.toUpperCase();
-      if (['ELT', 'ELD', 'ELCV', 'ELIA'].includes(prefix)) {
-        return prefix;
+      if (['ELT', 'ELD', 'ELCV', 'ELIA', 'EMIA'].includes(prefix)) {
+        return prefix === 'ELIA' ? 'EMIA' : prefix;
       }
     }
     if (escolaSelecionada) {
@@ -277,6 +291,22 @@ export function TurmasOfertasView({
 
                   {/* Metadados da Turma */}
                   <div className="mt-4 space-y-2 text-xs">
+                    {t.educadorResponsavel && (
+                      <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
+                        <span className="text-slate-400 dark:text-slate-500">Educador(a):</span>
+                        <span className="font-semibold text-violet-700 dark:text-violet-300">
+                          {t.educadorResponsavel}
+                        </span>
+                      </div>
+                    )}
+
+                    {t.diasHorariosLocal && (
+                      <div className="py-1 border-b border-slate-100 dark:border-slate-800/60 text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                        <span className="font-medium text-slate-500 dark:text-slate-400">Horário & Local: </span>
+                        {t.diasHorariosLocal}
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/60">
                       <span className="text-slate-400 dark:text-slate-500">Faixa Etária:</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -333,14 +363,21 @@ export function TurmasOfertasView({
                     </div>
 
                     {/* Matérias da Turma */}
-                    {t.materias && t.materias.length > 0 ? (
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                        <div className="flex items-center justify-between text-[11px] mb-1.5 font-medium">
-                          <span className="text-slate-500 dark:text-slate-400">Matérias ({t.materias.length})</span>
-                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold font-mono">
-                            Modular
-                          </span>
-                        </div>
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="flex items-center justify-between text-[11px] mb-1.5 font-medium">
+                        <span className="text-slate-500 dark:text-slate-400">
+                          Matérias ({t.materias?.length || t.materiasNomes?.length || 0})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setTurmaGerenciarMaterias(t)}
+                          className="text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <BookOpen className="w-3 h-3" />
+                          <span>Gerenciar</span>
+                        </button>
+                      </div>
+                      {t.materias && t.materias.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {t.materias.map((m, idx) => (
                             <span
@@ -351,15 +388,7 @@ export function TurmasOfertasView({
                             </span>
                           ))}
                         </div>
-                      </div>
-                    ) : t.materiasNomes && t.materiasNomes.length > 0 ? (
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                        <div className="flex items-center justify-between text-[11px] mb-1.5 font-medium">
-                          <span className="text-slate-500 dark:text-slate-400">Matérias ({t.materiasNomes.length})</span>
-                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold font-mono">
-                            Modular
-                          </span>
-                        </div>
+                      ) : t.materiasNomes && t.materiasNomes.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {t.materiasNomes.map((nome, idx) => (
                             <span
@@ -370,8 +399,12 @@ export function TurmasOfertasView({
                             </span>
                           ))}
                         </div>
-                      </div>
-                    ) : null}
+                      ) : (
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">
+                          Nenhuma matéria cadastrada.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -390,24 +423,45 @@ export function TurmasOfertasView({
                     )}
                   </div>
 
-                  {t.matriculaAberta ? (
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => onMatricularNaTurma(t.id!)}
-                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs active:scale-98 ${theme.btnAtivo}`}
+                      type="button"
+                      onClick={() => setTurmaGerenciarMaterias(t)}
+                      title="Gerenciar matérias da turma"
+                      className="p-2 rounded-xl text-slate-500 hover:text-violet-700 dark:text-slate-400 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/40 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
                     >
-                      <span>Matricular Aluno</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <BookOpen className="w-4 h-4" />
                     </button>
-                  ) : (
-                    <span className="text-xs font-medium px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-700/50 cursor-not-allowed">
-                      Inscrições Encerradas
-                    </span>
-                  )}
+
+                    {t.matriculaAberta ? (
+                      <button
+                        onClick={() => onMatricularNaTurma(t.id!)}
+                        className={`inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer shadow-xs active:scale-98 ${theme.btnAtivo}`}
+                      >
+                        <span>Matricular Aluno</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      <span className="text-xs font-medium px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-700/50 cursor-not-allowed">
+                        Inscrições Encerradas
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Modal Gerenciar Matérias */}
+      {turmaGerenciarMaterias && (
+        <ModalGerenciarMaterias
+          isOpen={Boolean(turmaGerenciarMaterias)}
+          turma={turmaGerenciarMaterias}
+          onClose={() => setTurmaGerenciarMaterias(null)}
+          onMateriasAtualizadas={onTurmasAtualizadas}
+        />
       )}
     </div>
   );

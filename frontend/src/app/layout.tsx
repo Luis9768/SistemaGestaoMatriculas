@@ -22,7 +22,7 @@ const fighterAttack = localFont({
 
 export const metadata: Metadata = {
   title: "Gestão de Matrículas | Escolas Livres de Santo André",
-  description: "Sistema Integrado de Gestão de Matrículas para ELT, ELD, ELCV e ELIA — Santo André",
+  description: "Sistema Integrado de Gestão de Matrículas para ELT, ELD, ELCV e EMIA — Santo André",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

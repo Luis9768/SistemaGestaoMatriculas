@@ -149,6 +149,7 @@ export function PortalProfessorasView({
       case 'ELCV':
         return 'bg-cyan-100 text-cyan-900 border-cyan-300';
       case 'ELIA':
+      case 'EMIA':
         return 'bg-amber-100 text-amber-900 border-amber-300';
       default:
         return 'bg-slate-100 text-slate-800 border-slate-300';
@@ -157,20 +158,20 @@ export function PortalProfessorasView({
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
-      {/* Banner de Boas-Vindas Pedagógico */}
+      {/* Banner Institucional da Matriz Curricular */}
       <div className="bg-gradient-to-r from-[#1E1B4B] via-[#2E1065] to-[#0F172A] rounded-3xl p-8 text-white shadow-xl border border-violet-900/50 relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Gestão Docente & Projeto Político-Pedagógico</span>
+              <span>Secretaria de Cultura • Matriz Pedagógica</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Portal das Professoras & Matriz Curricular
+              Catálogo de Cursos & Matriz Curricular
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Estruture aqui os cursos das Escolas Livres de Santo André. Defina os nomes dos cursos, cadastre cada disciplina com sua carga horária específica, designe educadoras responsáveis e acompanhe a carga horária consolidada.
+              Estruturação dos cursos das Escolas Livres de Santo André (ELT, ELD, ELCV e EMIA). Acompanhe disciplinas, cargas horárias e organize a grade pedagógica das turmas.
             </p>
           </div>
 

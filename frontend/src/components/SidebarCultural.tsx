@@ -66,6 +66,7 @@ export function SidebarCultural({
       case 'ELCV':
         return 'bg-cyan-900/60 text-cyan-300 border-cyan-500/40';
       case 'ELIA':
+      case 'EMIA':
         return 'bg-amber-900/60 text-amber-300 border-amber-500/40';
       default:
         return 'bg-slate-800 text-slate-300 border-slate-700';
@@ -92,7 +93,7 @@ export function SidebarCultural({
     {
       id: 'escolas',
       label: 'As 4 Casas de Cultura',
-      description: 'ELT, ELD, ELCV e ELIA',
+      description: 'ELT, ELD, ELCV e EMIA',
       icon: Building2,
       section: 'panorama',
       badge: 'Campus',
@@ -103,7 +104,7 @@ export function SidebarCultural({
       description: 'Disciplinas, cargas horárias e ementas',
       icon: BookOpen,
       section: 'pedagogico',
-      badge: 'Professoras',
+      badge: 'Cursos',
       protected: true,
     },
     {

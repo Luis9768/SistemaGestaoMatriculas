@@ -153,6 +153,54 @@ public class AlunoService {
         Curso curso = turma != null ? turma.getCurso() : null;
         Escola escola = curso != null ? curso.getEscola() : null;
 
+        // 1. Regra dos 75% de Presença Mínima para Formatura e Certificado
+        boolean frequenciaMinima75 = freqDTO.getPorcentagemFrequencia() >= 75.0;
+        boolean formado = matricula.getStatus() == StatusMatricula.CONCLUIDA && frequenciaMinima75;
+        boolean aptoCertificado = formado;
+        String motivoInaptidaoCertificado = null;
+
+        if (!aptoCertificado) {
+            if (matricula.getStatus() != StatusMatricula.CONCLUIDA) {
+                motivoInaptidaoCertificado = "Certificado disponível apenas após a conclusão oficial do curso com no mínimo 75% de presença.";
+            } else if (!frequenciaMinima75) {
+                motivoInaptidaoCertificado = String.format(java.util.Locale.US,
+                        "Frequência final de %.1f%% é insuficiente (mínimo obrigatório de 75.0%%).",
+                        freqDTO.getPorcentagemFrequencia());
+            }
+        }
+
+        // 2. Regra dos 2 Meses (60 Dias) de Curso Ativo para Declaração CPTM / SPTrans
+        LocalDate dataRefInicio = (turma != null && turma.getDataInicioAulas() != null)
+                ? turma.getDataInicioAulas()
+                : (matricula.getDataMatricula() != null ? matricula.getDataMatricula().toLocalDate() : LocalDate.now());
+        LocalDate dataLiberacaoTransporte = dataRefInicio.plusDays(60);
+        LocalDate hoje = LocalDate.now();
+        long diasRestantesTransporte = java.time.temporal.ChronoUnit.DAYS.between(hoje, dataLiberacaoTransporte);
+        boolean cursoAtivo = matricula.getStatus() == StatusMatricula.CONFIRMADA || matricula.getStatus() == StatusMatricula.CONCLUIDA;
+        boolean atingiuDoisMeses = !hoje.isBefore(dataLiberacaoTransporte);
+        boolean aptoDeclaracaoTransporte = cursoAtivo && atingiuDoisMeses;
+        String motivoInaptidaoTransporte = null;
+
+        if (!cursoAtivo) {
+            motivoInaptidaoTransporte = "Declaração de transporte indisponível para matrícula inativa, cancelada ou desligada.";
+        } else if (!atingiuDoisMeses) {
+            motivoInaptidaoTransporte = String.format(java.util.Locale.US,
+                    "Disponível apenas após 2 meses (60 dias) de curso para comprovação de vínculo estabilizado (liberação em %s — faltam %d dias).",
+                    dataLiberacaoTransporte.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    Math.max(1, diasRestantesTransporte));
+        }
+
+        Integer cargaHorariaTotal = curso != null ? curso.getCargaHoraria() : null;
+        String codigoRegistroLivro = String.format("Livro %02d, Fls. %03d, Reg. %04d/%d",
+                (matricula.getId() / 100) + 1,
+                (matricula.getId() % 100) + 1,
+                matricula.getId(),
+                dataRefInicio.getYear());
+
+        String horarioFormatado = (turma != null && turma.getDiasHorariosLocal() != null && !turma.getDiasHorariosLocal().isBlank())
+                ? turma.getDiasHorariosLocal()
+                : "Aulas regulares";
+
         return MatriculaItemPerfilDTO.builder()
                 .matriculaId(matricula.getId())
                 .turmaId(turma != null ? turma.getId() : null)
@@ -166,13 +214,21 @@ public class AlunoService {
                 .dataMatricula(matricula.getDataMatricula())
                 .dataInicio(turma != null ? turma.getDataInicioAulas() : null)
                 .dataTermino(turma != null ? turma.getDataFimAulas() : null)
-                .horario("Aulas regulares")
-                .diasSemana("Seg a Sex")
+                .horario(horarioFormatado)
+                .diasSemana("Presencial")
                 .status(matricula.getStatus())
-                .formado(matricula.getStatus() == StatusMatricula.CONCLUIDA)
+                .formado(formado)
                 .desistenteFaltas(matricula.getStatus() == StatusMatricula.DESISTENTE_FALTAS)
                 .frequencia(freqDTO)
                 .presencas(presencasDTO)
+                .aptoCertificado(aptoCertificado)
+                .motivoInaptidaoCertificado(motivoInaptidaoCertificado)
+                .aptoDeclaracaoTransporte(aptoDeclaracaoTransporte)
+                .dataLiberacaoDeclaracaoTransporte(dataLiberacaoTransporte)
+                .diasRestantesDeclaracaoTransporte(Math.max(0, diasRestantesTransporte))
+                .motivoInaptidaoDeclaracaoTransporte(motivoInaptidaoTransporte)
+                .cargaHorariaTotal(cargaHorariaTotal)
+                .codigoRegistroLivro(codigoRegistroLivro)
                 .build();
     }
 
@@ -227,10 +283,69 @@ public class AlunoService {
                 .telefone(dto.getTelefone())
                 .dataNascimento(dto.getDataNascimento())
                 .responsavel(responsavel)
-                .consentimentoLgpd(true)
+                .endereco(dto.getEndereco())
+                .bairro(dto.getBairro())
+                .cidade(dto.getCidade())
+                .genero(dto.getGenero())
+                .neurodiverso(dto.getNeurodiverso() != null ? dto.getNeurodiverso() : false)
+                .neurodiversoDetalhe(dto.getNeurodiversoDetalhe())
+                .pcd(dto.getPcd() != null ? dto.getPcd() : false)
+                .pcdDetalhe(dto.getPcdDetalhe())
+                .contatoEmergencia(dto.getContatoEmergencia())
+                .consentimentoLgpd(dto.getConsentimentoLgpd() != null ? dto.getConsentimentoLgpd() : true)
+                .consentimentoLgpdDadosSensiveis(dto.getConsentimentoLgpdDadosSensiveis() != null ? dto.getConsentimentoLgpdDadosSensiveis() : true)
                 .dataConsentimentoLgpd(java.time.LocalDateTime.now())
                 .consentimentoUsoImagem(dto.getConsentimentoUsoImagem() != null ? dto.getConsentimentoUsoImagem() : false)
+                .termoPapelEntregue(dto.getTermoPapelEntregue() != null ? dto.getTermoPapelEntregue() : true)
                 .build();
+
+        return toDTO(alunoRepository.save(aluno));
+    }
+
+    @Transactional
+    public AlunoDTO atualizar(Long id, AlunoDTO dto) {
+        Aluno aluno = alunoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado com id: " + id));
+
+        if (dto.getNome() != null && !dto.getNome().isBlank()) {
+            aluno.setNome(dto.getNome().trim());
+        }
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            aluno.setEmail(dto.getEmail().trim());
+        }
+        if (dto.getTelefone() != null) {
+            aluno.setTelefone(dto.getTelefone().trim());
+        }
+        if (dto.getDataNascimento() != null) {
+            aluno.setDataNascimento(dto.getDataNascimento());
+        }
+        if (dto.getEndereco() != null) aluno.setEndereco(dto.getEndereco().trim());
+        if (dto.getBairro() != null) aluno.setBairro(dto.getBairro().trim());
+        if (dto.getCidade() != null) aluno.setCidade(dto.getCidade().trim());
+        if (dto.getGenero() != null) aluno.setGenero(dto.getGenero().trim());
+        if (dto.getNeurodiverso() != null) aluno.setNeurodiverso(dto.getNeurodiverso());
+        if (dto.getNeurodiversoDetalhe() != null) aluno.setNeurodiversoDetalhe(dto.getNeurodiversoDetalhe().trim());
+        if (dto.getPcd() != null) aluno.setPcd(dto.getPcd());
+        if (dto.getPcdDetalhe() != null) aluno.setPcdDetalhe(dto.getPcdDetalhe().trim());
+        if (dto.getContatoEmergencia() != null) aluno.setContatoEmergencia(dto.getContatoEmergencia().trim());
+        if (dto.getConsentimentoUsoImagem() != null) aluno.setConsentimentoUsoImagem(dto.getConsentimentoUsoImagem());
+        if (dto.getTermoPapelEntregue() != null) aluno.setTermoPapelEntregue(dto.getTermoPapelEntregue());
+        if (dto.getConsentimentoLgpdDadosSensiveis() != null) aluno.setConsentimentoLgpdDadosSensiveis(dto.getConsentimentoLgpdDadosSensiveis());
+
+        if (dto.getResponsavel() != null && dto.getResponsavel().getNome() != null && !dto.getResponsavel().getNome().isBlank()) {
+            Responsavel r = aluno.getResponsavel();
+            if (r == null) {
+                r = obterOuCriarResponsavel(dto.getResponsavel());
+                aluno.setResponsavel(r);
+            } else {
+                r.setNome(dto.getResponsavel().getNome().trim());
+                if (dto.getResponsavel().getCpf() != null) r.setCpf(limparCpf(dto.getResponsavel().getCpf()));
+                if (dto.getResponsavel().getTelefone() != null) r.setTelefone(dto.getResponsavel().getTelefone().trim());
+                if (dto.getResponsavel().getEmail() != null) r.setEmail(dto.getResponsavel().getEmail().trim());
+                if (dto.getResponsavel().getGrauParentesco() != null) r.setGrauParentesco(dto.getResponsavel().getGrauParentesco().trim());
+                responsavelRepository.save(r);
+            }
+        }
 
         return toDTO(alunoRepository.save(aluno));
     }
@@ -264,40 +379,105 @@ public class AlunoService {
     }
 
     @Transactional
-    public Aluno obterOuCriar(String nome, String cpf, String email, String telefone, LocalDate dataNascimento,
-                              String respNome, String respCpf, String respTelefone, String respEmail, String respParentesco) {
-        String cpfLimpo = limparCpf(cpf);
+    public Aluno obterOuCriar(AlunoDTO dto) {
+        String cpfLimpo = limparCpf(dto.getCpf());
 
-        return alunoRepository.findByCpf(cpfLimpo).orElseGet(() -> {
+        return alunoRepository.findByCpf(cpfLimpo).map(existente -> {
+            if (dto.getEndereco() != null && !dto.getEndereco().isBlank()) existente.setEndereco(dto.getEndereco());
+            if (dto.getBairro() != null && !dto.getBairro().isBlank()) existente.setBairro(dto.getBairro());
+            if (dto.getCidade() != null && !dto.getCidade().isBlank()) existente.setCidade(dto.getCidade());
+            if (dto.getGenero() != null && !dto.getGenero().isBlank()) existente.setGenero(dto.getGenero());
+            if (dto.getNeurodiverso() != null) existente.setNeurodiverso(dto.getNeurodiverso());
+            if (dto.getNeurodiversoDetalhe() != null) existente.setNeurodiversoDetalhe(dto.getNeurodiversoDetalhe());
+            if (dto.getPcd() != null) existente.setPcd(dto.getPcd());
+            if (dto.getPcdDetalhe() != null) existente.setPcdDetalhe(dto.getPcdDetalhe());
+            if (dto.getContatoEmergencia() != null) existente.setContatoEmergencia(dto.getContatoEmergencia());
+            if (dto.getConsentimentoUsoImagem() != null) existente.setConsentimentoUsoImagem(dto.getConsentimentoUsoImagem());
+            if (dto.getTermoPapelEntregue() != null) existente.setTermoPapelEntregue(dto.getTermoPapelEntregue());
+            if (dto.getConsentimentoLgpdDadosSensiveis() != null) existente.setConsentimentoLgpdDadosSensiveis(dto.getConsentimentoLgpdDadosSensiveis());
+            return alunoRepository.save(existente);
+        }).orElseGet(() -> {
             Responsavel responsavel = null;
-            if (isMenor(dataNascimento)) {
-                if (respNome == null || respNome.isBlank() || respCpf == null || respCpf.isBlank()) {
-                    throw new BusinessException("Para alunos menores de 18 anos, o nome e o CPF do responsável legal são obrigatórios.");
+            if (isMenor(dto.getDataNascimento())) {
+                ResponsavelDTO respDTO = dto.getResponsavel();
+                if (respDTO == null || respDTO.getNome() == null || respDTO.getNome().isBlank()
+                        || respDTO.getCpf() == null || respDTO.getCpf().isBlank()) {
+                    throw new BusinessException("Para alunos menores de 18 anos, o nome e o CPF do responsável legal são obrigatórios conforme Art. 14 da LGPD.");
                 }
-                ResponsavelDTO respDTO = ResponsavelDTO.builder()
-                        .nome(respNome.trim())
-                        .cpf(respCpf.trim())
-                        .telefone(respTelefone)
-                        .email(respEmail)
-                        .grauParentesco(respParentesco != null && !respParentesco.isBlank() ? respParentesco : "Responsável Legal")
-                        .build();
                 responsavel = obterOuCriarResponsavel(respDTO);
             }
 
             Aluno novo = Aluno.builder()
-                    .nome(nome)
+                    .nome(dto.getNome())
                     .cpf(cpfLimpo)
-                    .email(email)
-                    .telefone(telefone)
-                    .dataNascimento(dataNascimento)
+                    .email(dto.getEmail())
+                    .telefone(dto.getTelefone())
+                    .dataNascimento(dto.getDataNascimento())
                     .responsavel(responsavel)
+                    .endereco(dto.getEndereco())
+                    .bairro(dto.getBairro())
+                    .cidade(dto.getCidade())
+                    .genero(dto.getGenero())
+                    .neurodiverso(dto.getNeurodiverso() != null ? dto.getNeurodiverso() : false)
+                    .neurodiversoDetalhe(dto.getNeurodiversoDetalhe())
+                    .pcd(dto.getPcd() != null ? dto.getPcd() : false)
+                    .pcdDetalhe(dto.getPcdDetalhe())
+                    .contatoEmergencia(dto.getContatoEmergencia())
                     .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(dto.getConsentimentoLgpdDadosSensiveis() != null ? dto.getConsentimentoLgpdDadosSensiveis() : true)
                     .dataConsentimentoLgpd(java.time.LocalDateTime.now())
-                    .consentimentoUsoImagem(false)
-                    .termoPapelEntregue(true)
+                    .consentimentoUsoImagem(dto.getConsentimentoUsoImagem() != null ? dto.getConsentimentoUsoImagem() : false)
+                    .termoPapelEntregue(dto.getTermoPapelEntregue() != null ? dto.getTermoPapelEntregue() : true)
                     .build();
             return alunoRepository.save(novo);
         });
+    }
+
+    @Transactional
+    public Aluno obterOuCriar(String nome, String cpf, String email, String telefone, LocalDate dataNascimento,
+                              String respNome, String respCpf, String respTelefone, String respEmail, String respParentesco) {
+        return obterOuCriar(nome, cpf, email, telefone, dataNascimento, respNome, respCpf, respTelefone, respEmail, respParentesco,
+                null, null, null, null, false, null, false, null, null, true, false, true);
+    }
+
+    @Transactional
+    public Aluno obterOuCriar(String nome, String cpf, String email, String telefone, LocalDate dataNascimento,
+                              String respNome, String respCpf, String respTelefone, String respEmail, String respParentesco,
+                              String endereco, String bairro, String cidade, String genero,
+                              Boolean neurodiverso, String neurodiversoDetalhe,
+                              Boolean pcd, String pcdDetalhe, String contatoEmergencia,
+                              Boolean consentimentoLgpdDadosSensiveis, Boolean consentimentoUsoImagem, Boolean termoPapelEntregue) {
+        ResponsavelDTO respDTO = null;
+        if (respNome != null || respCpf != null) {
+            respDTO = ResponsavelDTO.builder()
+                    .nome(respNome)
+                    .cpf(respCpf)
+                    .telefone(respTelefone)
+                    .email(respEmail)
+                    .grauParentesco(respParentesco)
+                    .build();
+        }
+        AlunoDTO dto = AlunoDTO.builder()
+                .nome(nome)
+                .cpf(cpf)
+                .email(email)
+                .telefone(telefone)
+                .dataNascimento(dataNascimento)
+                .responsavel(respDTO)
+                .endereco(endereco)
+                .bairro(bairro)
+                .cidade(cidade)
+                .genero(genero)
+                .neurodiverso(neurodiverso)
+                .neurodiversoDetalhe(neurodiversoDetalhe)
+                .pcd(pcd)
+                .pcdDetalhe(pcdDetalhe)
+                .contatoEmergencia(contatoEmergencia)
+                .consentimentoLgpdDadosSensiveis(consentimentoLgpdDadosSensiveis)
+                .consentimentoUsoImagem(consentimentoUsoImagem)
+                .termoPapelEntregue(termoPapelEntregue)
+                .build();
+        return obterOuCriar(dto);
     }
 
     @Transactional
@@ -357,7 +537,17 @@ public class AlunoService {
                 .dataNascimento(aluno.getDataNascimento())
                 .menorDeIdade(aluno.isMenorDeIdade())
                 .responsavel(respDTO)
+                .endereco(aluno.getEndereco())
+                .bairro(aluno.getBairro())
+                .cidade(aluno.getCidade())
+                .genero(aluno.getGenero())
+                .neurodiverso(aluno.getNeurodiverso())
+                .neurodiversoDetalhe(aluno.getNeurodiversoDetalhe())
+                .pcd(aluno.getPcd())
+                .pcdDetalhe(aluno.getPcdDetalhe())
+                .contatoEmergencia(aluno.getContatoEmergencia())
                 .consentimentoLgpd(aluno.getConsentimentoLgpd())
+                .consentimentoLgpdDadosSensiveis(aluno.getConsentimentoLgpdDadosSensiveis())
                 .dataConsentimentoLgpd(aluno.getDataConsentimentoLgpd())
                 .consentimentoUsoImagem(aluno.getConsentimentoUsoImagem())
                 .termoPapelEntregue(aluno.getTermoPapelEntregue() != null ? aluno.getTermoPapelEntregue() : true)

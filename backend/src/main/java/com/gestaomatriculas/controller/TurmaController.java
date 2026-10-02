@@ -1,6 +1,7 @@
 package com.gestaomatriculas.controller;
 
 import com.gestaomatriculas.dto.TurmaDTO;
+import com.gestaomatriculas.dto.TurmaMateriaDTO;
 import com.gestaomatriculas.service.TurmaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,5 +40,33 @@ public class TurmaController {
     @PutMapping("/{id}")
     public ResponseEntity<TurmaDTO> atualizar(@PathVariable Long id, @Valid @RequestBody TurmaDTO dto) {
         return ResponseEntity.ok(turmaService.atualizar(id, dto));
+    }
+
+    @GetMapping("/{turmaId}/materias")
+    public ResponseEntity<List<TurmaMateriaDTO>> listarMaterias(@PathVariable Long turmaId) {
+        return ResponseEntity.ok(turmaService.listarMaterias(turmaId));
+    }
+
+    @PostMapping("/{turmaId}/materias")
+    public ResponseEntity<TurmaMateriaDTO> adicionarMateria(
+            @PathVariable Long turmaId,
+            @Valid @RequestBody TurmaMateriaDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(turmaService.adicionarMateria(turmaId, dto));
+    }
+
+    @PutMapping("/{turmaId}/materias/{materiaId}")
+    public ResponseEntity<TurmaMateriaDTO> atualizarMateria(
+            @PathVariable Long turmaId,
+            @PathVariable Long materiaId,
+            @Valid @RequestBody TurmaMateriaDTO dto) {
+        return ResponseEntity.ok(turmaService.atualizarMateria(turmaId, materiaId, dto));
+    }
+
+    @DeleteMapping("/{turmaId}/materias/{materiaId}")
+    public ResponseEntity<Void> removerMateria(
+            @PathVariable Long turmaId,
+            @PathVariable Long materiaId) {
+        turmaService.removerMateria(turmaId, materiaId);
+        return ResponseEntity.noContent().build();
     }
 }

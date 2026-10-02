@@ -105,7 +105,7 @@ export function LgpdModal({ isOpen, onClose, abaInicial = 'geral' }: LgpdModalPr
                     Controlador Institucional: Prefeitura Municipal de Santo André
                   </h4>
                   <p className="text-blue-800 text-[11px] leading-normal">
-                    Este termo regula a coleta e tratamento de dados pessoais no Sistema de Gestão de Matrículas (SIGMA), operado pela Secretaria de Cultura para viabilizar as inscrições nas 4 Escolas Livres de Cultura (ELT, ELD, ELCV e ELIA) com total transparência e segurança jurídica.
+                    Este termo regula a coleta e tratamento de dados pessoais no Sistema de Gestão de Matrículas (SIGMA), operado pela Secretaria de Cultura para viabilizar as inscrições nas 4 Escolas Livres de Cultura (ELT, ELD, ELCV e EMIA) com total transparência e segurança jurídica.
                   </p>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export function LgpdModal({ isOpen, onClose, abaInicial = 'geral' }: LgpdModalPr
                     Proteção Especial a Menores de 18 Anos — Art. 14 da LGPD
                   </h4>
                   <p className="text-emerald-800 text-[11px] leading-normal">
-                    O cadastro de crianças e adolescentes (especialmente nas oficinas infantis da ELIA e núcleos jovens) é realizado no <strong>melhor interesse do menor</strong> e exige indispensavelmente o consentimento expresso e os dados de pelo menos um dos pais ou responsável legal.
+                    O cadastro de crianças e adolescentes (especialmente nos cursos infantis e juvenis da EMIA) é realizado no <strong>melhor interesse do menor</strong> e exige indispensavelmente o consentimento expresso e os dados de pelo menos um dos pais ou responsável legal.
                   </p>
                 </div>
               </div>
@@ -222,8 +222,8 @@ export function LgpdModal({ isOpen, onClose, abaInicial = 'geral' }: LgpdModalPr
                     <span><strong>2 Faltas Consecutivas:</strong> O sistema notifica a secretaria para realizar acolhimento e buscar o motivo da ausência antes de qualquer desistência;</span>
                   </p>
                   <p className="flex items-start gap-2">
-                    <span className="px-1.5 py-0.5 rounded font-semibold text-[10px] bg-rose-100 text-rose-900 border border-rose-200 shrink-0">Cancelamento</span>
-                    <span><strong>3 Faltas Consecutivas:</strong> Ocorrendo a 3ª falta consecutiva sem justificativa, a vaga é liberada automaticamente para convocação do próximo munícipe na fila de espera.</span>
+                    <span className="px-1.5 py-0.5 rounded font-semibold text-[10px] bg-rose-100 text-rose-900 border border-rose-200 shrink-0">Alerta de Evasão</span>
+                    <span><strong>3 Faltas Consecutivas:</strong> O acúmulo de 3 faltas consecutivas injustificadas ativa um alerta pedagógico de evasão. O desligamento <strong>não é automático</strong>: a secretaria realiza contato prévio (WhatsApp/E-mail) para apoio ao aluno antes de qualquer decisão manual sobre a vaga.</span>
                   </p>
                 </div>
               </div>

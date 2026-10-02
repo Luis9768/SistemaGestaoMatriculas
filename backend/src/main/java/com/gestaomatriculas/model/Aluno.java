@@ -46,9 +46,42 @@ public class Aluno {
     @JoinColumn(name = "responsavel_id")
     private Responsavel responsavel;
 
+    @Column(name = "endereco")
+    private String endereco;
+
+    @Column(name = "bairro")
+    private String bairro;
+
+    @Column(name = "cidade")
+    private String cidade;
+
+    @Column(name = "genero", length = 50)
+    private String genero;
+
+    @Column(name = "neurodiverso")
+    @Builder.Default
+    private Boolean neurodiverso = false;
+
+    @Column(name = "neurodiverso_detalhe")
+    private String neurodiversoDetalhe;
+
+    @Column(name = "pcd")
+    @Builder.Default
+    private Boolean pcd = false;
+
+    @Column(name = "pcd_detalhe")
+    private String pcdDetalhe;
+
+    @Column(name = "contato_emergencia")
+    private String contatoEmergencia;
+
     @Column(name = "consentimento_lgpd")
     @Builder.Default
     private Boolean consentimentoLgpd = true;
+
+    @Column(name = "consentimento_dados_sensiveis")
+    @Builder.Default
+    private Boolean consentimentoLgpdDadosSensiveis = true;
 
     @Column(name = "data_consentimento_lgpd")
     private LocalDateTime dataConsentimentoLgpd;

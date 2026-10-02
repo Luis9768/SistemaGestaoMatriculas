@@ -34,4 +34,6 @@ public interface RegistroPresencaRepository extends JpaRepository<RegistroPresen
     java.util.Optional<RegistroPresenca> findByMatriculaIdAndMateriaIdAndDataAula(Long matriculaId, Long materiaId, java.time.LocalDate dataAula);
 
     List<RegistroPresenca> findByMateriaTurmaIdOrderByDataAulaDesc(Long turmaId);
+
+    long countByMateriaId(Long materiaId);
 }

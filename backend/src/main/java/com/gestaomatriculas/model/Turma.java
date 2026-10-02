@@ -69,6 +69,12 @@ public class Turma {
     @Column(name = "idade_maxima")
     private Integer idadeMaxima;
 
+    @Column(name = "educador_responsavel")
+    private String educadorResponsavel;
+
+    @Column(name = "dias_horarios_local", length = 500)
+    private String diasHorariosLocal;
+
     @Builder.Default
     @Column(name = "dias_tolerancia_suplencia")
     private Integer diasToleranciaSuplencia = 60; // Conforme acordado: prazo padrão de até 2 meses (60 dias) para chamar suplentes
@@ -107,6 +113,10 @@ public class Turma {
     public boolean isChamadaSuplenciaPermitida(LocalDate data) {
         if (diasToleranciaSuplencia == null || dataInicioAulas == null) return true;
         return !data.isAfter(dataInicioAulas.plusDays(diasToleranciaSuplencia));
+    }
+
+    public boolean isChamadaSuplenciaPermitida() {
+        return isChamadaSuplenciaPermitida(LocalDate.now());
     }
 }
 

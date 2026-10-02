@@ -5,10 +5,14 @@ import {
   api,
   PerfilAluno,
   MatriculaItemPerfil,
+  CertificadoData,
+  DeclaracaoTransporteData,
   aplicarMascaraTelefone,
   formatarTelefone,
 } from '@/lib/api';
 import { getCorTemaEscola } from '@/lib/escolaUtils';
+import { ModalCertificado } from './ModalCertificado';
+import { ModalDeclaracaoTransporte } from './ModalDeclaracaoTransporte';
 import {
   X,
   Plus,
@@ -22,6 +26,14 @@ import {
   ChevronRight,
   CheckCircle2,
   BookOpen,
+  ShieldCheck,
+  MapPin,
+  HeartHandshake,
+  Camera,
+  FileCheck,
+  Printer,
+  Award,
+  Bus,
 } from 'lucide-react';
 
 interface PerfilAlunoModalProps {
@@ -65,15 +77,33 @@ export function PerfilAlunoModal({
   const [abaAtiva, setAbaAtiva] = useState<'atuais' | 'frequencia' | 'historico'>('atuais');
   const [matriculaSelecionadaId, setMatriculaSelecionadaId] = useState<number | null>(null);
 
-  // Modo de edição de dados de contato (email, telefone, responsável)
+  // Modo de edição de dados cadastrais, endereço e inclusão
   const [modoEdicao, setModoEdicao] = useState(false);
   const [editEmail, setEditEmail] = useState('');
   const [editTelefone, setEditTelefone] = useState('');
+  const [editEndereco, setEditEndereco] = useState('');
+  const [editBairro, setEditBairro] = useState('');
+  const [editCidade, setEditCidade] = useState('');
+  const [editGenero, setEditGenero] = useState('');
+  const [editNeurodiverso, setEditNeurodiverso] = useState(false);
+  const [editNeurodiversoDetalhe, setEditNeurodiversoDetalhe] = useState('');
+  const [editPcd, setEditPcd] = useState(false);
+  const [editPcdDetalhe, setEditPcdDetalhe] = useState('');
+  const [editContatoEmergencia, setEditContatoEmergencia] = useState('');
+  const [editConsentimentoUsoImagem, setEditConsentimentoUsoImagem] = useState(false);
+  const [editTermoPapelEntregue, setEditTermoPapelEntregue] = useState(true);
   const [editRespTelefone, setEditRespTelefone] = useState('');
   const [editRespEmail, setEditRespEmail] = useState('');
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const [feedbackSalvo, setFeedbackSalvo] = useState<string | null>(null);
 
+  // Estados para emissão de Certificado e Declaração CPTM / SPTrans
+  const [modalCertificadoAberto, setModalCertificadoAberto] = useState(false);
+  const [modalDeclaracaoAberto, setModalDeclaracaoAberto] = useState(false);
+  const [certificadoSelecionado, setCertificadoSelecionado] = useState<CertificadoData | null>(null);
+  const [declaracaoSelecionada, setDeclaracaoSelecionada] = useState<DeclaracaoTransporteData | null>(null);
+  const [carregandoDocumento, setCarregandoDocumento] = useState(false);
+  const [concluindoMatriculaId, setConcluindoMatriculaId] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen && alunoId) {
@@ -103,6 +133,17 @@ export function PerfilAlunoModal({
     if (perfil?.aluno) {
       setEditEmail(perfil.aluno.email || '');
       setEditTelefone(aplicarMascaraTelefone(perfil.aluno.telefone || ''));
+      setEditEndereco(perfil.aluno.endereco || '');
+      setEditBairro(perfil.aluno.bairro || '');
+      setEditCidade(perfil.aluno.cidade || '');
+      setEditGenero(perfil.aluno.genero || '');
+      setEditNeurodiverso(Boolean(perfil.aluno.neurodiverso));
+      setEditNeurodiversoDetalhe(perfil.aluno.neurodiversoDetalhe || '');
+      setEditPcd(Boolean(perfil.aluno.pcd));
+      setEditPcdDetalhe(perfil.aluno.pcdDetalhe || '');
+      setEditContatoEmergencia(perfil.aluno.contatoEmergencia || '');
+      setEditConsentimentoUsoImagem(Boolean(perfil.aluno.consentimentoUsoImagem));
+      setEditTermoPapelEntregue(perfil.aluno.termoPapelEntregue ?? true);
       setEditRespTelefone(aplicarMascaraTelefone(perfil.aluno.responsavel?.telefone || ''));
       setEditRespEmail(perfil.aluno.responsavel?.email || '');
       setModoEdicao(true);
@@ -114,13 +155,31 @@ export function PerfilAlunoModal({
     e.preventDefault();
     try {
       setSalvandoEdicao(true);
-      await api.atualizarContatoAluno(alunoId, {
+      await api.atualizarAluno(alunoId, {
+        nome: perfil?.aluno?.nome,
+        cpf: perfil?.aluno?.cpf,
         email: editEmail.trim(),
-        telefone: editTelefone.trim(),
-        responsavelTelefone: editRespTelefone.trim() || undefined,
-        responsavelEmail: editRespEmail.trim() || undefined,
+        telefone: editTelefone.trim() || undefined,
+        endereco: editEndereco.trim() || undefined,
+        bairro: editBairro.trim() || undefined,
+        cidade: editCidade.trim() || undefined,
+        genero: editGenero || undefined,
+        neurodiverso: editNeurodiverso,
+        neurodiversoDetalhe: editNeurodiverso ? editNeurodiversoDetalhe.trim() || undefined : undefined,
+        pcd: editPcd,
+        pcdDetalhe: editPcd ? editPcdDetalhe.trim() || undefined : undefined,
+        contatoEmergencia: editContatoEmergencia.trim() || undefined,
+        consentimentoUsoImagem: editConsentimentoUsoImagem,
+        termoPapelEntregue: editTermoPapelEntregue,
+        responsavel: perfil?.aluno?.responsavel
+          ? {
+              ...perfil.aluno.responsavel,
+              telefone: editRespTelefone.trim() || undefined,
+              email: editRespEmail.trim() || undefined,
+            }
+          : undefined,
       });
-      setFeedbackSalvo('Dados de contato atualizados com sucesso.');
+      setFeedbackSalvo('Ficha cadastral e conformidade LGPD atualizadas com sucesso.');
       setModoEdicao(false);
       await carregarPerfil();
       if (onUpdate) onUpdate();
@@ -130,6 +189,91 @@ export function PerfilAlunoModal({
     } finally {
       setSalvandoEdicao(false);
     }
+  };
+
+  const handleImprimirFichaTermo = () => {
+    if (!aluno) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ficha Oficial de Matrícula & Termo LGPD - ${aluno.nome}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; color: #1e293b; line-height: 1.5; font-size: 13px; }
+            h1 { font-size: 17px; margin: 0 0 4px; text-transform: uppercase; color: #0f172a; }
+            h2 { font-size: 13px; margin: 0 0 16px; color: #475569; font-weight: normal; }
+            .header { border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 18px; }
+            .section { margin-bottom: 16px; }
+            .section-title { font-weight: bold; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; color: #334155; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+            .field { margin-bottom: 3px; }
+            .field-label { font-weight: 600; color: #475569; }
+            .termo-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; font-size: 11px; margin-top: 15px; }
+            .signatures { margin-top: 45px; display: flex; justify-content: space-between; }
+            .sig-line { width: 45%; border-top: 1px solid #334155; text-align: center; padding-top: 6px; font-size: 11px; }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Prefeitura de Santo André • Secretaria de Cultura</h1>
+            <h2>Escolas Livres de Santo André (ELT • ELD • ELCV • EMIA) — Ficha Oficial de Matrícula</h2>
+          </div>
+          <div class="section">
+            <div class="section-title">1. Dados do Estudante (Matrícula #${aluno.id})</div>
+            <div class="grid">
+              <div class="field"><span class="field-label">Nome Completo:</span> ${aluno.nome}</div>
+              <div class="field"><span class="field-label">CPF:</span> ${aluno.cpf || 'Não informado'}</div>
+              <div class="field"><span class="field-label">Data de Nascimento:</span> ${formatarData(aluno.dataNascimento)}</div>
+              <div class="field"><span class="field-label">Gênero:</span> ${aluno.genero || 'Não informado'}</div>
+              <div class="field"><span class="field-label">E-mail:</span> ${aluno.email}</div>
+              <div class="field"><span class="field-label">Telefone:</span> ${formatarTelefone(aluno.telefone) || 'Não informado'}</div>
+              <div class="field"><span class="field-label">Endereço Residencial:</span> ${aluno.endereco || 'Não informado'}</div>
+              <div class="field"><span class="field-label">Bairro / Município:</span> ${(aluno.bairro || '') + ' - ' + (aluno.cidade || 'Santo André')}</div>
+              <div class="field"><span class="field-label">Contato de Emergência:</span> ${aluno.contatoEmergencia || 'Não informado'}</div>
+            </div>
+          </div>
+          ${aluno.responsavel ? `
+          <div class="section">
+            <div class="section-title">2. Responsável Legal (Art. 14 LGPD - Menor de Idade)</div>
+            <div class="grid">
+              <div class="field"><span class="field-label">Nome do Responsável:</span> ${aluno.responsavel.nome}</div>
+              <div class="field"><span class="field-label">Parentesco:</span> ${aluno.responsavel.grauParentesco || 'Responsável Legal'}</div>
+              <div class="field"><span class="field-label">CPF:</span> ${aluno.responsavel.cpf || 'Não informado'}</div>
+              <div class="field"><span class="field-label">Telefone:</span> ${formatarTelefone(aluno.responsavel.telefone) || 'Não informado'}</div>
+              <div class="field"><span class="field-label">E-mail:</span> ${aluno.responsavel.email || 'Não informado'}</div>
+            </div>
+          </div>` : ''}
+          <div class="section">
+            <div class="section-title">3. Inclusão, Acessibilidade e Imagem (Art. 11 LGPD)</div>
+            <div class="grid">
+              <div class="field"><span class="field-label">Pessoa com Deficiência (PCD):</span> ${aluno.pcd ? `Sim (${aluno.pcdDetalhe || 'Não especificado'})` : 'Não'}</div>
+              <div class="field"><span class="field-label">Neurodivergência:</span> ${aluno.neurodiverso ? `Sim (${aluno.neurodiversoDetalhe || 'Não especificado'})` : 'Não'}</div>
+              <div class="field"><span class="field-label">Uso Institucional de Imagem:</span> ${aluno.consentimentoUsoImagem ? 'Autorizado' : 'Não Autorizado'}</div>
+            </div>
+          </div>
+          <div class="termo-box">
+            <strong>DECLARAÇÃO E TERMO DE COMPROMISSO DE FREQUÊNCIA:</strong><br/>
+            Declaro verídicas as informações prestadas. Estou ciente de que as ausências são acompanhadas pela Secretaria e 3 faltas consecutivas injustificadas geram alerta pedagógico de evasão. Autorizo expressamente o tratamento dos dados pessoais e sensíveis para fins estritamente pedagógicos e de saúde (Art. 7º, 11 e 14 da Lei 13.709/2018 - LGPD).
+          </div>
+          <div class="signatures">
+            <div class="sig-line">Assinatura do(a) Aluno(a) ou Responsável Legal</div>
+            <div class="sig-line">Secretaria da Escola Livre / Santo André<br/>Data: ____/____/2026</div>
+          </div>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
   };
 
 
@@ -148,6 +292,53 @@ export function PerfilAlunoModal({
       if (onUpdate) onUpdate();
     } catch (e: any) {
       alert(e.message || 'Erro ao processar desligamento');
+    }
+  };
+
+  const handleAbrirCertificado = async (matriculaId: number) => {
+    try {
+      setCarregandoDocumento(true);
+      const cert = await api.getCertificado(matriculaId);
+      setCertificadoSelecionado(cert);
+      setModalCertificadoAberto(true);
+    } catch (e: any) {
+      alert(e.message || 'Erro ao emitir certificado de conclusão');
+    } finally {
+      setCarregandoDocumento(false);
+    }
+  };
+
+  const handleAbrirDeclaracao = async (matriculaId: number) => {
+    try {
+      setCarregandoDocumento(true);
+      const dec = await api.getDeclaracaoTransporte(matriculaId);
+      setDeclaracaoSelecionada(dec);
+      setModalDeclaracaoAberto(true);
+    } catch (e: any) {
+      alert(e.message || 'Erro ao emitir declaração de transporte');
+    } finally {
+      setCarregandoDocumento(false);
+    }
+  };
+
+  const handleConcluirMatricula = async (matriculaId: number) => {
+    if (
+      !confirm(
+        'Deseja homologar a conclusão deste curso para o aluno? Requer no mínimo 75% de frequência para aprovação e formatura.'
+      )
+    ) {
+      return;
+    }
+    try {
+      setConcluindoMatriculaId(matriculaId);
+      await api.concluirMatricula(matriculaId);
+      alert('Conclusão de curso e formatura homologadas com sucesso!');
+      await carregarPerfil();
+      if (onUpdate) onUpdate();
+    } catch (e: any) {
+      alert(e.message || 'Erro ao homologar conclusão de curso');
+    } finally {
+      setConcluindoMatriculaId(null);
     }
   };
 
@@ -211,6 +402,15 @@ export function PerfilAlunoModal({
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleImprimirFichaTermo}
+                    title="Imprimir Ficha Cadastral e Termo de Matrícula (PDF)"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-medium transition cursor-pointer shadow-2xs"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <span className="hidden sm:inline">Imprimir Termo (PDF)</span>
+                  </button>
+
                   {!modoEdicao && (
                     <button
                       onClick={iniciarEdicao}
@@ -247,7 +447,7 @@ export function PerfilAlunoModal({
                 >
                   <div className="flex items-center justify-between text-xs border-b border-slate-200/70 dark:border-slate-800/70 pb-2">
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      Atualizar Dados de Contato
+                      Atualizar Ficha Cadastral e Conformidade LGPD
                     </span>
                     <span className="text-[11px] text-slate-500">
                       Alterações refletem imediatamente na ficha
@@ -281,6 +481,140 @@ export function PerfilAlunoModal({
                         maxLength={15}
                         className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
                       />
+                    </div>
+
+                    <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+                      <div className="sm:col-span-3">
+                        <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                          Logradouro e Número
+                        </label>
+                        <input
+                          type="text"
+                          value={editEndereco}
+                          onChange={(e) => setEditEndereco(e.target.value)}
+                          placeholder="Rua, número e complemento"
+                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                          Bairro
+                        </label>
+                        <input
+                          type="text"
+                          value={editBairro}
+                          onChange={(e) => setEditBairro(e.target.value)}
+                          placeholder="Bairro"
+                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                          Cidade
+                        </label>
+                        <input
+                          type="text"
+                          value={editCidade}
+                          onChange={(e) => setEditCidade(e.target.value)}
+                          placeholder="Santo André"
+                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-1">
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                        Identidade de Gênero
+                      </label>
+                      <input
+                        type="text"
+                        value={editGenero}
+                        onChange={(e) => setEditGenero(e.target.value)}
+                        placeholder="Ex: Mulher Cis, Homem Cis, Não-Binário"
+                        className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div className="pt-1">
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                        Contato de Emergência
+                      </label>
+                      <input
+                        type="text"
+                        value={editContatoEmergencia}
+                        onChange={(e) => setEditContatoEmergencia(e.target.value)}
+                        placeholder="Nome e telefone de emergência"
+                        className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    {/* Toggles de Inclusão e LGPD */}
+                    <div className="sm:col-span-2 p-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="edit-pcd"
+                          checked={editPcd}
+                          onChange={(e) => setEditPcd(e.target.checked)}
+                          className="rounded text-violet-600"
+                        />
+                        <label htmlFor="edit-pcd" className="text-xs font-semibold cursor-pointer">
+                          Estudante PCD
+                        </label>
+                      </div>
+                      {editPcd && (
+                        <input
+                          type="text"
+                          value={editPcdDetalhe}
+                          onChange={(e) => setEditPcdDetalhe(e.target.value)}
+                          placeholder="Especifique a deficiência"
+                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"
+                        />
+                      )}
+
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <input
+                          type="checkbox"
+                          id="edit-neuro"
+                          checked={editNeurodiverso}
+                          onChange={(e) => setEditNeurodiverso(e.target.checked)}
+                          className="rounded text-violet-600"
+                        />
+                        <label htmlFor="edit-neuro" className="text-xs font-semibold cursor-pointer">
+                          Estudante Neurodivergente
+                        </label>
+                      </div>
+                      {editNeurodiverso && (
+                        <input
+                          type="text"
+                          value={editNeurodiversoDetalhe}
+                          onChange={(e) => setEditNeurodiversoDetalhe(e.target.value)}
+                          placeholder="Especifique (TEA, TDAH, etc.)"
+                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"
+                        />
+                      )}
+
+                      <div className="flex items-center gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editConsentimentoUsoImagem}
+                            onChange={(e) => setEditConsentimentoUsoImagem(e.target.checked)}
+                            className="rounded text-blue-600"
+                          />
+                          <span>Autorização de Imagem e Voz (LGPD)</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editTermoPapelEntregue}
+                            onChange={(e) => setEditTermoPapelEntregue(e.target.checked)}
+                            className="rounded text-emerald-600"
+                          />
+                          <span>Ficha Física Entregue</span>
+                        </label>
+                      </div>
                     </div>
 
                     {aluno.responsavel && (
@@ -333,43 +667,115 @@ export function PerfilAlunoModal({
                   </div>
                 </form>
               ) : (
-                /* Visualização Clean dos Contatos (SEM CPF) */
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                  <div className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{aluno.email || 'E-mail não cadastrado'}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="font-mono">{formatarTelefone(aluno.telefone)}</span>
-                  </div>
-
-                  {aluno.dataNascimento && (
+                /* Visualização Clean e Completa da Ficha e Conformidade LGPD */
+                <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-300">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>
-                        {formatarData(aluno.dataNascimento)}
-                        {idade !== null && (
-                          <span className="text-slate-400 ml-1">({idade} anos)</span>
-                        )}
-                      </span>
+                      <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{aluno.email || 'E-mail não cadastrado'}</span>
                     </div>
-                  )}
 
-                  {aluno.responsavel && (
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/50">
-                        {aluno.responsavel.grauParentesco || 'Responsável'}
-                      </span>
-                      <strong className="text-slate-700 dark:text-slate-200">
-                        {aluno.responsavel.nome}
-                      </strong>
-                      {aluno.responsavel.telefone && (
-                        <span className="font-mono">{formatarTelefone(aluno.responsavel.telefone)}</span>
-                      )}
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="font-mono">{formatarTelefone(aluno.telefone)}</span>
                     </div>
-                  )}
+
+                    {aluno.dataNascimento && (
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>
+                          {formatarData(aluno.dataNascimento)}
+                          {idade !== null && (
+                            <span className="text-slate-400 ml-1">({idade} anos)</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+
+                    {aluno.genero && (
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <span>Gênero: <strong className="text-slate-700 dark:text-slate-300">{aluno.genero}</strong></span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Endereço e Emergência */}
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600 dark:text-slate-300">
+                    {(aluno.endereco || aluno.bairro || aluno.cidade) && (
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>
+                          {[aluno.endereco, aluno.bairro, aluno.cidade].filter(Boolean).join(' - ')}
+                        </span>
+                      </div>
+                    )}
+
+                    {aluno.contatoEmergencia && (
+                      <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-medium">
+                        <span>🚨 Emergência: {aluno.contatoEmergencia}</span>
+                      </div>
+                    )}
+
+                    {aluno.responsavel && (
+                      <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/50">
+                          {aluno.responsavel.grauParentesco || 'Responsável'}
+                        </span>
+                        <strong className="text-slate-700 dark:text-slate-200">
+                          {aluno.responsavel.nome}
+                        </strong>
+                        {aluno.responsavel.telefone && (
+                          <span className="font-mono">{formatarTelefone(aluno.responsavel.telefone)}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Badges de Inclusão e Conformidade LGPD */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {aluno.pcd && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50 text-[11px] font-semibold">
+                        <HeartHandshake className="w-3 h-3" />
+                        <span>PCD: {aluno.pcdDetalhe || 'Registrado'}</span>
+                      </span>
+                    )}
+
+                    {aluno.neurodiverso && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50 text-[11px] font-semibold">
+                        <span>🧠 Neurodivergente: {aluno.neurodiversoDetalhe || 'Registrado'}</span>
+                      </span>
+                    )}
+
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 text-[11px] font-semibold">
+                      <ShieldCheck className="w-3 h-3" />
+                      <span>LGPD: Consentimento Geral Ativo (Art. 7º)</span>
+                    </span>
+
+                    {(aluno.pcd || aluno.neurodiverso) && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 text-[11px] font-semibold">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>LGPD Dados Sensíveis (Art. 11): Autorizado</span>
+                      </span>
+                    )}
+
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border ${
+                      aluno.consentimentoUsoImagem
+                        ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border-sky-200 dark:border-sky-800/50'
+                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                    }`}>
+                      <Camera className="w-3 h-3" />
+                      <span>Uso de Imagem: {aluno.consentimentoUsoImagem ? 'Autorizado' : 'Não Autorizado'}</span>
+                    </span>
+
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border ${
+                      aluno.termoPapelEntregue
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50'
+                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800/50'
+                    }`}>
+                      <FileCheck className="w-3 h-3" />
+                      <span>{aluno.termoPapelEntregue ? '📄 Termo Físico em Papel (Arquivado)' : '📄 Termo Físico: Pendente'}</span>
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -569,16 +975,78 @@ export function PerfilAlunoModal({
                         </div>
                       )}
 
-                      {/* Link direto para a aba de frequência */}
-                      <div className="pt-1 flex justify-end">
+                      {/* Ações de Documentos Oficiais e Frequência */}
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap items-center justify-between gap-2.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Declaração de Transporte CPTM / SPTrans */}
+                          {curso.aptoDeclaracaoTransporte ? (
+                            <button
+                              type="button"
+                              onClick={() => handleAbrirDeclaracao(curso.matriculaId)}
+                              disabled={carregandoDocumento}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 text-xs font-semibold transition cursor-pointer"
+                              title="Emitir Declaração de Estudante para passe escolar CPTM / SPTrans"
+                            >
+                              <Bus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                              <span>Declaração CPTM / SPTrans</span>
+                            </button>
+                          ) : (
+                            <div
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-800 text-xs cursor-not-allowed"
+                              title={curso.motivoInaptidaoDeclaracaoTransporte || 'Necessário 2 meses de curso'}
+                            >
+                              <Bus className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Declaração CPTM/SPTrans ({curso.diasRestantesDeclaracaoTransporte ?? 60}d restantes)</span>
+                            </div>
+                          )}
+
+                          {/* Homologar Formatura se Ativo */}
+                          {curso.status === 'ATIVA' && (
+                            freq >= 75 ? (
+                              <button
+                                type="button"
+                                onClick={() => handleConcluirMatricula(curso.matriculaId)}
+                                disabled={concluindoMatriculaId === curso.matriculaId}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-2xs transition cursor-pointer"
+                                title="Homologar conclusão com aproveitamento (>=75% de presença)"
+                              >
+                                <GraduationCap className="w-3.5 h-3.5" />
+                                <span>{concluindoMatriculaId === curso.matriculaId ? 'Homologando...' : 'Homologar Formatura (≥75%)'}</span>
+                              </button>
+                            ) : (
+                              <div
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-800 text-xs cursor-not-allowed"
+                                title={`Frequência de ${freq}% é insuficiente para formatura (mínimo exigido: 75%)`}
+                              >
+                                <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
+                                <span>Formatura Bloqueada ({freq}% &lt; 75%)</span>
+                              </div>
+                            )
+                          )}
+
+                          {/* Certificado caso já homologado */}
+                          {curso.aptoCertificado && (
+                            <button
+                              type="button"
+                              onClick={() => handleAbrirCertificado(curso.matriculaId)}
+                              disabled={carregandoDocumento}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-semibold transition cursor-pointer"
+                            >
+                              <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                              <span>Certificado MEC/LDB</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Link direto para a aba de frequência */}
                         <button
                           onClick={() => {
                             setMatriculaSelecionadaId(curso.matriculaId);
                             setAbaAtiva('frequencia');
                           }}
-                          className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition"
+                          className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition sm:ml-auto"
                         >
-                          <span>Ver diário completo de presenças</span>
+                          <span>Ver diário completo</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -801,22 +1269,62 @@ export function PerfilAlunoModal({
                       <span><strong>Período:</strong> {formatarData(curso.dataInicio)} a {formatarData(curso.dataTermino)}</span>
                     </div>
 
-                    {curso.presencas && curso.presencas.length > 0 && (
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                        <span>
-                          Frequência final: <strong className="text-slate-700 dark:text-slate-300">{curso.frequencia?.porcentagemFrequencia}%</strong> ({curso.frequencia?.totalPresencas} de {curso.frequencia?.totalAulas} aulas)
-                        </span>
+                    <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap items-center justify-between gap-2.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Certificado Oficial (LDB 9.394/96) */}
+                        {curso.aptoCertificado || curso.formado ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAbrirCertificado(curso.matriculaId)}
+                            disabled={carregandoDocumento}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-semibold transition cursor-pointer shadow-2xs"
+                            title="Emitir Certificado Oficial de Conclusão com Grade Curricular e Livro de Registro"
+                          >
+                            <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                            <span>📜 Emitir Certificado de Conclusão</span>
+                          </button>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700"
+                            title={curso.motivoInaptidaoCertificado || 'Não apto ao certificado por frequência insuficiente'}
+                          >
+                            <span>Sem certificado ({curso.motivoInaptidaoCertificado || 'frequência < 75%'})</span>
+                          </span>
+                        )}
+
+                        {/* Declaração de Transporte CPTM / SPTrans */}
+                        {curso.aptoDeclaracaoTransporte && (
+                          <button
+                            type="button"
+                            onClick={() => handleAbrirDeclaracao(curso.matriculaId)}
+                            disabled={carregandoDocumento}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 text-xs font-semibold transition cursor-pointer"
+                            title="Emitir Declaração Estudantil para passe escolar CPTM / SPTrans"
+                          >
+                            <Bus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                            <span>Declaração CPTM / SPTrans</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 sm:ml-auto text-xs text-slate-500 dark:text-slate-400">
+                        {curso.frequencia && (
+                          <span>
+                            Frequência: <strong className="text-slate-700 dark:text-slate-300">{curso.frequencia.porcentagemFrequencia}%</strong>
+                          </span>
+                        )}
                         <button
                           onClick={() => {
                             setMatriculaSelecionadaId(curso.matriculaId);
                             setAbaAtiva('frequencia');
                           }}
-                          className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+                          className="font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer flex items-center gap-1"
                         >
-                          Ver diário →
+                          <span>Ver diário</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 ))
               )}
@@ -836,6 +1344,24 @@ export function PerfilAlunoModal({
         </div>
 
       </div>
+
+      {/* Modal de Certificado Oficial de Conclusão */}
+      {modalCertificadoAberto && certificadoSelecionado && (
+        <ModalCertificado
+          certificado={certificadoSelecionado}
+          isOpen={modalCertificadoAberto}
+          onClose={() => setModalCertificadoAberto(false)}
+        />
+      )}
+
+      {/* Modal de Declaração Estudantil CPTM / SPTrans */}
+      {modalDeclaracaoAberto && declaracaoSelecionada && (
+        <ModalDeclaracaoTransporte
+          declaracao={declaracaoSelecionada}
+          isOpen={modalDeclaracaoAberto}
+          onClose={() => setModalDeclaracaoAberto(false)}
+        />
+      )}
     </div>
   );
 }

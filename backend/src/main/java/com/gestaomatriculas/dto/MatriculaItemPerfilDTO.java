@@ -34,6 +34,16 @@ public class MatriculaItemPerfilDTO {
     private boolean desistenteFaltas;
     private ResumoFrequenciaDTO frequencia;
 
+    // Elegibilidade e Padrão de Emissão de Documentos Oficiais
+    private boolean aptoCertificado;
+    private String motivoInaptidaoCertificado;
+    private boolean aptoDeclaracaoTransporte;
+    private LocalDate dataLiberacaoDeclaracaoTransporte;
+    private Long diasRestantesDeclaracaoTransporte;
+    private String motivoInaptidaoDeclaracaoTransporte;
+    private Integer cargaHorariaTotal;
+    private String codigoRegistroLivro;
+
     @Builder.Default
     private List<RegistroPresencaDTO> presencas = new ArrayList<>();
 }

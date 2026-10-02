@@ -71,6 +71,13 @@ public class AlunoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(alunoService.criar(dto));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<AlunoDTO> atualizar(
+            @PathVariable Long id,
+            @RequestBody AlunoDTO dto) {
+        return ResponseEntity.ok(alunoService.atualizar(id, dto));
+    }
+
     @PutMapping("/{id}/contato")
     public ResponseEntity<AlunoDTO> atualizarContato(
             @PathVariable Long id,

@@ -72,8 +72,9 @@ export function EscolasCampusView({
           iconeBg: 'bg-cyan-500/20 text-cyan-300',
         };
       case 'ELIA':
+      case 'EMIA':
         return {
-          nomeCompleto: 'Escola Livre de Iniciação Artística',
+          nomeCompleto: 'Escola Municipal de Iniciação Artística',
           subtitulo: 'Infância, Juventude, Artes Visuais e Música Integrada',
           descricao:
             'Focada na sensibilização estética desde a infância até a juventude através de ateliês de artes visuais, música, jogos dramáticos e experimentação multidisciplinar.',

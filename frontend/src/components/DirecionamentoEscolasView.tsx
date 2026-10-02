@@ -77,9 +77,21 @@ const ESCOLAS_CONFIG: Record<string, EscolaConfig> = {
     hoverGlow: 'hover:border-sky-400/80 dark:hover:border-sky-500/70 hover:shadow-[0_12px_32px_rgba(14,165,233,0.16)]',
     btnAtivo: 'bg-sky-700 hover:bg-sky-800 text-white dark:bg-sky-600 dark:hover:bg-sky-500 shadow-sky-500/25',
   },
+  EMIA: {
+    sigla: 'EMIA',
+    nome: 'Escola Municipal de Iniciação Artística',
+    subtitulo: 'Multidisciplinaridade • Crianças & Jovens',
+    descricao: 'Estímulo à sensibilidade poética e vivências artísticas integradas organizadas por faixas etárias.',
+    icone: Palette,
+    tagline: 'Infância, Juventude & Experimentação Artística',
+    iconeEstilo: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 ring-4 ring-amber-500/10',
+    accentBar: 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500',
+    hoverGlow: 'hover:border-amber-400/80 dark:hover:border-amber-500/70 hover:shadow-[0_12px_32px_rgba(245,158,11,0.16)]',
+    btnAtivo: 'bg-amber-700 hover:bg-amber-800 text-white dark:bg-amber-600 dark:hover:bg-amber-500 shadow-amber-500/25',
+  },
   ELIA: {
-    sigla: 'ELIA',
-    nome: 'Escola Livre de Iniciação Artística',
+    sigla: 'EMIA',
+    nome: 'Escola Municipal de Iniciação Artística',
     subtitulo: 'Multidisciplinaridade • Crianças & Jovens',
     descricao: 'Estímulo à sensibilidade poética e vivências artísticas integradas organizadas por faixas etárias.',
     icone: Palette,
@@ -123,7 +135,7 @@ export function DirecionamentoEscolasView({
           { id: 1, sigla: 'ELT', nome: 'Escola Livre de Teatro', corTema: 'violet' },
           { id: 2, sigla: 'ELD', nome: 'Escola Livre de Dança', corTema: 'rose' },
           { id: 3, sigla: 'ELCV', nome: 'Escola Livre de Cinema e Vídeo', corTema: 'blue' },
-          { id: 4, sigla: 'ELIA', nome: 'Escola Livre de Iniciação Artística', corTema: 'amber' },
+          { id: 4, sigla: 'EMIA', nome: 'Escola Municipal de Iniciação Artística', corTema: 'amber' },
         ];
 
   const primeiroNome = usuarioLogado?.nome ? usuarioLogado.nome.trim().split(/\s+/)[0] : 'Coordenação';
@@ -337,7 +349,7 @@ export function DirecionamentoEscolasView({
                 © {new Date().getFullYear()} Todos os direitos reservados.
               </p>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
-                ELT • ELD • ELCV • ELIA
+                ELT • ELD • ELCV • EMIA
               </p>
             </div>
           </div>

@@ -14,6 +14,7 @@ export default function TurmasPage() {
     escolas,
     escolaSelecionada,
     abrirModalNovaTurma,
+    carregarDadosEscola,
   } = useApp();
 
   return (
@@ -27,6 +28,7 @@ export default function TurmasPage() {
         onMatricularNaTurma={(turmaId) => {
           router.push(`/inscricao?turma=${turmaId}`);
         }}
+        onTurmasAtualizadas={carregarDadosEscola}
       />
     </AppLayout>
   );

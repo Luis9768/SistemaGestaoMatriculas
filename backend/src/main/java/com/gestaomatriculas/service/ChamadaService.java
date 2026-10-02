@@ -6,6 +6,7 @@ import com.gestaomatriculas.dto.ChamadaResumoDTO;
 import com.gestaomatriculas.dto.SalvarChamadaDTO;
 import com.gestaomatriculas.exception.BusinessException;
 import com.gestaomatriculas.exception.ResourceNotFoundException;
+import com.gestaomatriculas.model.Aluno;
 import com.gestaomatriculas.model.Matricula;
 import com.gestaomatriculas.model.RegistroPresenca;
 import com.gestaomatriculas.model.Turma;
@@ -89,12 +90,7 @@ public class ChamadaService {
         for (Map.Entry<LocalDate, List<RegistroPresenca>> entry : agrupado.entrySet()) {
             LocalDate data = entry.getKey();
             List<RegistroPresenca> lista = entry.getValue();
-
-            int total = lista.size();
-            int presentes = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.PRESENTE).count();
-            int faltas = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.FALTA).count();
-            int justificadas = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.JUSTIFICADA).count();
-            double pct = total > 0 ? ((double) presentes / total) * 100.0 : 0.0;
+            EstatisticasPresenca stats = calcularEstatisticas(lista);
 
             String responsavel = lista.stream()
                     .map(RegistroPresenca::getResponsavelRegistro)
@@ -116,11 +112,11 @@ public class ChamadaService {
                     .dataAula(data)
                     .responsavelRegistro(responsavel)
                     .conteudoMinistrado(conteudo)
-                    .totalAlunos(total)
-                    .totalPresentes(presentes)
-                    .totalFaltas(faltas)
-                    .totalJustificadas(justificadas)
-                    .percentualPresenca(Math.round(pct * 10.0) / 10.0)
+                    .totalAlunos(stats.total())
+                    .totalPresentes(stats.presentes())
+                    .totalFaltas(stats.faltas())
+                    .totalJustificadas(stats.justificadas())
+                    .percentualPresenca(stats.percentual())
                     .build());
         }
 
@@ -137,13 +133,10 @@ public class ChamadaService {
             throw new ResourceNotFoundException("Nenhuma chamada encontrada para a data: " + dataAula);
         }
 
-        registros.sort(Comparator.comparing(r -> r.getMatricula().getAluno().getNome(), String.CASE_INSENSITIVE_ORDER));
+        registros.sort(Comparator.comparing(r -> r.getMatricula() != null && r.getMatricula().getAluno() != null
+                ? r.getMatricula().getAluno().getNome() : "", String.CASE_INSENSITIVE_ORDER));
 
-        int total = registros.size();
-        int presentes = (int) registros.stream().filter(r -> r.getStatus() == StatusPresenca.PRESENTE).count();
-        int faltas = (int) registros.stream().filter(r -> r.getStatus() == StatusPresenca.FALTA).count();
-        int justificadas = (int) registros.stream().filter(r -> r.getStatus() == StatusPresenca.JUSTIFICADA).count();
-        double pct = total > 0 ? ((double) presentes / total) * 100.0 : 0.0;
+        EstatisticasPresenca stats = calcularEstatisticas(registros);
 
         String responsavel = registros.stream()
                 .map(RegistroPresenca::getResponsavelRegistro)
@@ -157,14 +150,9 @@ public class ChamadaService {
                 .findFirst()
                 .orElse(null);
 
-        List<ChamadaItemDTO> itens = registros.stream().map(r -> ChamadaItemDTO.builder()
-                .alunoId(r.getMatricula().getAluno().getId())
-                .alunoNome(r.getMatricula().getAluno().getNome())
-                .alunoCpf(r.getMatricula().getAluno().getCpf())
-                .matriculaId(r.getMatricula().getId())
-                .status(r.getStatus())
-                .justificativa(r.getJustificativa())
-                .build()).collect(Collectors.toList());
+        List<ChamadaItemDTO> itens = registros.stream()
+                .map(this::toChamadaItemDTO)
+                .collect(Collectors.toList());
 
         return ChamadaDetalheDTO.builder()
                 .turmaId(materia.getTurma().getId())
@@ -175,12 +163,36 @@ public class ChamadaService {
                 .dataAula(dataAula)
                 .responsavelRegistro(responsavel)
                 .conteudoMinistrado(conteudo)
-                .totalAlunos(total)
-                .totalPresentes(presentes)
-                .totalFaltas(faltas)
-                .totalJustificadas(justificadas)
-                .percentualPresenca(Math.round(pct * 10.0) / 10.0)
+                .totalAlunos(stats.total())
+                .totalPresentes(stats.presentes())
+                .totalFaltas(stats.faltas())
+                .totalJustificadas(stats.justificadas())
+                .percentualPresenca(stats.percentual())
                 .itens(itens)
+                .build();
+    }
+
+    private record EstatisticasPresenca(int total, int presentes, int faltas, int justificadas, double percentual) {}
+
+    private EstatisticasPresenca calcularEstatisticas(List<RegistroPresenca> lista) {
+        int total = lista.size();
+        int presentes = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.PRESENTE).count();
+        int faltas = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.FALTA).count();
+        int justificadas = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.JUSTIFICADA).count();
+        double pct = total > 0 ? ((double) presentes / total) * 100.0 : 0.0;
+        return new EstatisticasPresenca(total, presentes, faltas, justificadas, Math.round(pct * 10.0) / 10.0);
+    }
+
+    private ChamadaItemDTO toChamadaItemDTO(RegistroPresenca r) {
+        Matricula m = r.getMatricula();
+        Aluno a = m != null ? m.getAluno() : null;
+        return ChamadaItemDTO.builder()
+                .alunoId(a != null ? a.getId() : null)
+                .alunoNome(a != null ? a.getNome() : "")
+                .alunoCpf(a != null ? a.getCpf() : "")
+                .matriculaId(m != null ? m.getId() : null)
+                .status(r.getStatus())
+                .justificativa(r.getJustificativa())
                 .build();
     }
 

@@ -62,4 +62,19 @@ public class MatriculaController {
     public ResponseEntity<MatriculaDTO> promoverSuplente(@PathVariable Long id) {
         return ResponseEntity.ok(matriculaService.promoverSuplente(id));
     }
+
+    @PatchMapping("/{id}/concluir")
+    public ResponseEntity<MatriculaDTO> concluir(@PathVariable Long id) {
+        return ResponseEntity.ok(matriculaService.concluirMatricula(id));
+    }
+
+    @GetMapping("/{id}/certificado")
+    public ResponseEntity<com.gestaomatriculas.dto.CertificadoDTO> obterCertificado(@PathVariable Long id) {
+        return ResponseEntity.ok(matriculaService.gerarCertificado(id));
+    }
+
+    @GetMapping("/{id}/declaracao-transporte")
+    public ResponseEntity<com.gestaomatriculas.dto.DeclaracaoTransporteDTO> obterDeclaracaoTransporte(@PathVariable Long id) {
+        return ResponseEntity.ok(matriculaService.gerarDeclaracaoTransporte(id));
+    }
 }

@@ -9,6 +9,7 @@ import com.gestaomatriculas.model.Turma;
 import com.gestaomatriculas.model.TurmaMateria;
 import com.gestaomatriculas.model.enums.StatusTurma;
 import com.gestaomatriculas.repository.CursoRepository;
+import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.TurmaMateriaRepository;
 import com.gestaomatriculas.repository.TurmaRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class TurmaService {
     private final TurmaRepository turmaRepository;
     private final CursoRepository cursoRepository;
     private final TurmaMateriaRepository turmaMateriaRepository;
+    private final RegistroPresencaRepository registroPresencaRepository;
 
     @Transactional(readOnly = true)
     public List<TurmaDTO> listarTodas(Long cursoId, Long escolaId, Boolean apenasAbertas) {
@@ -78,7 +80,9 @@ public class TurmaService {
                 .vagasOcupadas(0)
                 .idadeMinima(dto.getIdadeMinima())
                 .idadeMaxima(dto.getIdadeMaxima())
-                .diasToleranciaSuplencia(dto.getDiasToleranciaSuplencia() != null ? dto.getDiasToleranciaSuplencia() : 15)
+                .educadorResponsavel(dto.getEducadorResponsavel())
+                .diasHorariosLocal(dto.getDiasHorariosLocal())
+                .diasToleranciaSuplencia(dto.getDiasToleranciaSuplencia() != null ? dto.getDiasToleranciaSuplencia() : 60)
                 .status(dto.getStatus() == null ? StatusTurma.ABERTA : dto.getStatus())
                 .build();
 
@@ -112,6 +116,8 @@ public class TurmaService {
         turma.setVagasTotais(dto.getVagasTotais());
         turma.setIdadeMinima(dto.getIdadeMinima());
         turma.setIdadeMaxima(dto.getIdadeMaxima());
+        turma.setEducadorResponsavel(dto.getEducadorResponsavel());
+        turma.setDiasHorariosLocal(dto.getDiasHorariosLocal());
         if (dto.getDiasToleranciaSuplencia() != null) {
             turma.setDiasToleranciaSuplencia(dto.getDiasToleranciaSuplencia());
         }
@@ -119,9 +125,22 @@ public class TurmaService {
             turma.setStatus(dto.getStatus());
         }
 
-        if (dto.getMaterias() != null || dto.getMateriasNomes() != null) {
-            turmaMateriaRepository.deleteAll(turma.getMaterias());
-            turma.getMaterias().clear();
+        // Não substitui matérias caso não tenham sido enviadas no DTO
+        boolean temMateriasNoDto = (dto.getMaterias() != null && !dto.getMaterias().isEmpty())
+                || (dto.getMateriasNomes() != null && !dto.getMateriasNomes().isEmpty());
+
+        if (temMateriasNoDto) {
+            // Garante que matérias com chamadas registradas não sejam apagadas acidentalmente
+            if (turma.getMaterias() != null && !turma.getMaterias().isEmpty()) {
+                for (TurmaMateria m : turma.getMaterias()) {
+                    long totalPresencas = registroPresencaRepository.countByMateriaId(m.getId());
+                    if (totalPresencas > 0) {
+                        throw new BusinessException("A matéria '" + m.getNome() + "' possui registros de presença e não pode ser reescrita em lote. Gerencie as matérias individualmente.");
+                    }
+                }
+                turmaMateriaRepository.deleteAll(turma.getMaterias());
+                turma.getMaterias().clear();
+            }
             processarMaterias(turma, dto);
         }
 
@@ -182,6 +201,96 @@ public class TurmaService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public List<TurmaMateriaDTO> listarMaterias(Long turmaId) {
+        if (!turmaRepository.existsById(turmaId)) {
+            throw new ResourceNotFoundException("Turma não encontrada com id: " + turmaId);
+        }
+        return turmaMateriaRepository.findByTurmaIdOrderByOrdemAscIdAsc(turmaId).stream()
+                .map(m -> TurmaMateriaDTO.builder()
+                        .id(m.getId())
+                        .turmaId(turmaId)
+                        .nome(m.getNome())
+                        .duracaoEstimada(m.getDuracaoEstimada())
+                        .ordem(m.getOrdem())
+                        .build())
+                .toList();
+    }
+
+    @Transactional
+    public TurmaMateriaDTO adicionarMateria(Long turmaId, TurmaMateriaDTO dto) {
+        Turma turma = turmaRepository.findById(turmaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + turmaId));
+
+        if (dto.getNome() == null || dto.getNome().trim().isEmpty()) {
+            throw new BusinessException("O nome da matéria é obrigatório.");
+        }
+
+        int proximaOrdem = (turma.getMaterias() != null ? turma.getMaterias().size() : 0) + 1;
+        TurmaMateria nova = TurmaMateria.builder()
+                .turma(turma)
+                .nome(dto.getNome().trim())
+                .duracaoEstimada(dto.getDuracaoEstimada() != null && !dto.getDuracaoEstimada().isBlank() ? dto.getDuracaoEstimada().trim() : null)
+                .ordem(dto.getOrdem() != null ? dto.getOrdem() : proximaOrdem)
+                .build();
+
+        TurmaMateria salva = turmaMateriaRepository.save(nova);
+        if (turma.getMaterias() == null) {
+            turma.setMaterias(new ArrayList<>());
+        }
+        turma.getMaterias().add(salva);
+
+        return TurmaMateriaDTO.builder()
+                .id(salva.getId())
+                .turmaId(turmaId)
+                .nome(salva.getNome())
+                .duracaoEstimada(salva.getDuracaoEstimada())
+                .ordem(salva.getOrdem())
+                .build();
+    }
+
+    @Transactional
+    public TurmaMateriaDTO atualizarMateria(Long turmaId, Long materiaId, TurmaMateriaDTO dto) {
+        TurmaMateria materia = turmaMateriaRepository.findByIdAndTurmaId(materiaId, turmaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Matéria não encontrada nesta turma."));
+
+        if (dto.getNome() != null && !dto.getNome().trim().isEmpty()) {
+            materia.setNome(dto.getNome().trim());
+        }
+        if (dto.getDuracaoEstimada() != null) {
+            materia.setDuracaoEstimada(dto.getDuracaoEstimada().trim());
+        }
+        if (dto.getOrdem() != null) {
+            materia.setOrdem(dto.getOrdem());
+        }
+
+        TurmaMateria atualizada = turmaMateriaRepository.save(materia);
+        return TurmaMateriaDTO.builder()
+                .id(atualizada.getId())
+                .turmaId(turmaId)
+                .nome(atualizada.getNome())
+                .duracaoEstimada(atualizada.getDuracaoEstimada())
+                .ordem(atualizada.getOrdem())
+                .build();
+    }
+
+    @Transactional
+    public void removerMateria(Long turmaId, Long materiaId) {
+        TurmaMateria materia = turmaMateriaRepository.findByIdAndTurmaId(materiaId, turmaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Matéria não encontrada nesta turma."));
+
+        long totalPresencas = registroPresencaRepository.countByMateriaId(materiaId);
+        if (totalPresencas > 0) {
+            throw new BusinessException("Esta matéria já possui " + totalPresencas + " registro(s) de chamada realizada no Diário de Classe e não pode ser excluída para preservar o histórico pedagógico dos alunos.");
+        }
+
+        Turma turma = materia.getTurma();
+        if (turma != null && turma.getMaterias() != null) {
+            turma.getMaterias().remove(materia);
+        }
+        turmaMateriaRepository.delete(materia);
+    }
+
     public TurmaDTO toDTO(Turma turma) {
         Long escolaId = null;
         String escolaNome = null;
@@ -228,6 +337,8 @@ public class TurmaService {
                 .suplenciaAberta(turma.isChamadaSuplenciaPermitida(LocalDate.now()))
                 .status(turma.getStatus())
                 .matriculaAberta(turma.isPeriodoMatriculaAberto())
+                .educadorResponsavel(turma.getEducadorResponsavel())
+                .diasHorariosLocal(turma.getDiasHorariosLocal())
                 .materias(materiasDTO)
                 .materiasNomes(materiasNomes)
                 .build();
