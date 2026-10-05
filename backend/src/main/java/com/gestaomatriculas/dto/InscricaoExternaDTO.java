@@ -39,6 +39,7 @@ public class InscricaoExternaDTO {
     private String endereco;
     private String bairro;
     private String cidade;
+    private String cep;
     private String genero;
     private Boolean neurodiverso;
     private String neurodiversoDetalhe;

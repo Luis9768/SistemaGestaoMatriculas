@@ -22,8 +22,8 @@ public class CursoDTO {
     @NotNull(message = "O tipo do curso é obrigatório (OFICINA ou REGULAR)")
     private TipoCurso tipo;
 
-    @Min(value = 1, message = "A duração deve ser de pelo menos 1 mês")
     private Integer duracaoMeses;
+    private String duracaoEstimada;
 
     @Min(value = 1, message = "A carga horária deve ser maior que zero")
     private Integer cargaHoraria;

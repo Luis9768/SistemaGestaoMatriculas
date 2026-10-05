@@ -159,6 +159,8 @@ public class TurmaService {
                             .turma(turma)
                             .nome(mDto.getNome().trim())
                             .duracaoEstimada(mDto.getDuracaoEstimada() != null ? mDto.getDuracaoEstimada().trim() : null)
+                            .professorResponsavel(mDto.getProfessorResponsavel() != null && !mDto.getProfessorResponsavel().isBlank() ? mDto.getProfessorResponsavel().trim() : null)
+                            .cargaHoraria(mDto.getCargaHoraria())
                             .ordem(mDto.getOrdem() != null ? mDto.getOrdem() : ordem++)
                             .build());
                 }
@@ -212,6 +214,8 @@ public class TurmaService {
                         .turmaId(turmaId)
                         .nome(m.getNome())
                         .duracaoEstimada(m.getDuracaoEstimada())
+                        .professorResponsavel(m.getProfessorResponsavel())
+                        .cargaHoraria(m.getCargaHoraria())
                         .ordem(m.getOrdem())
                         .build())
                 .toList();
@@ -231,6 +235,8 @@ public class TurmaService {
                 .turma(turma)
                 .nome(dto.getNome().trim())
                 .duracaoEstimada(dto.getDuracaoEstimada() != null && !dto.getDuracaoEstimada().isBlank() ? dto.getDuracaoEstimada().trim() : null)
+                .professorResponsavel(dto.getProfessorResponsavel() != null && !dto.getProfessorResponsavel().isBlank() ? dto.getProfessorResponsavel().trim() : null)
+                .cargaHoraria(dto.getCargaHoraria())
                 .ordem(dto.getOrdem() != null ? dto.getOrdem() : proximaOrdem)
                 .build();
 
@@ -245,6 +251,8 @@ public class TurmaService {
                 .turmaId(turmaId)
                 .nome(salva.getNome())
                 .duracaoEstimada(salva.getDuracaoEstimada())
+                .professorResponsavel(salva.getProfessorResponsavel())
+                .cargaHoraria(salva.getCargaHoraria())
                 .ordem(salva.getOrdem())
                 .build();
     }
@@ -260,6 +268,12 @@ public class TurmaService {
         if (dto.getDuracaoEstimada() != null) {
             materia.setDuracaoEstimada(dto.getDuracaoEstimada().trim());
         }
+        if (dto.getProfessorResponsavel() != null) {
+            materia.setProfessorResponsavel(dto.getProfessorResponsavel().trim().isEmpty() ? null : dto.getProfessorResponsavel().trim());
+        }
+        if (dto.getCargaHoraria() != null) {
+            materia.setCargaHoraria(dto.getCargaHoraria());
+        }
         if (dto.getOrdem() != null) {
             materia.setOrdem(dto.getOrdem());
         }
@@ -270,6 +284,8 @@ public class TurmaService {
                 .turmaId(turmaId)
                 .nome(atualizada.getNome())
                 .duracaoEstimada(atualizada.getDuracaoEstimada())
+                .professorResponsavel(atualizada.getProfessorResponsavel())
+                .cargaHoraria(atualizada.getCargaHoraria())
                 .ordem(atualizada.getOrdem())
                 .build();
     }
@@ -311,6 +327,8 @@ public class TurmaService {
                         .turmaId(turma.getId())
                         .nome(m.getNome())
                         .duracaoEstimada(m.getDuracaoEstimada())
+                        .professorResponsavel(m.getProfessorResponsavel())
+                        .cargaHoraria(m.getCargaHoraria())
                         .ordem(m.getOrdem())
                         .build());
                 materiasNomes.add(m.getNome());

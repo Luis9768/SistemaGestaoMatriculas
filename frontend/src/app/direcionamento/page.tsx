@@ -47,7 +47,7 @@ export default function DirecionamentoPage() {
 
   const handleSelecionarEscola = (escolaId: number) => {
     setEscolaSelecionada(escolaId);
-    router.push('/turmas');
+    router.push('/panorama');
   };
 
   return (

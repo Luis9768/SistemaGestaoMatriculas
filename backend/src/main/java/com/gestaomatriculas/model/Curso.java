@@ -43,9 +43,11 @@ public class Curso {
     @Column(length = 50)
     private com.gestaomatriculas.model.enums.ModalidadeCurso modalidade;
 
-    @NotNull
-    @Column(name = "duracao_meses", nullable = false)
+    @Column(name = "duracao_meses")
     private Integer duracaoMeses;
+
+    @Column(name = "duracao_estimada", length = 100)
+    private String duracaoEstimada;
 
     @NotNull
     @Column(name = "carga_horaria", nullable = false)

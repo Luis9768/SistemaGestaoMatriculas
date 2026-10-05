@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   api,
   DashboardStats,
@@ -9,6 +11,7 @@ import {
   formatarCpfMascara,
   LoginResponse,
 } from '@/lib/api';
+import { useApp } from '@/context/AppContext';
 import {
   Users,
   UserX,
@@ -21,6 +24,14 @@ import {
   Search,
   ArrowUpRight,
   Activity,
+  Layers,
+  Clock,
+  ArrowRight,
+  Building2,
+  Sparkles,
+  BookOpen,
+  Plus,
+  ShieldAlert,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -46,7 +57,7 @@ interface DashboardAnalyticsProps {
   onOpenLogin?: () => void;
 }
 
-/* ─── Motion Variants (Executive BI Snappy Timing) ──────── */
+/* ─── Motion Variants (Shadcn BI Snappy Timing) ──────── */
 const cardVariants = {
   hidden: { opacity: 0, y: 8 },
   visible: (i: number) => ({
@@ -56,28 +67,18 @@ const cardVariants = {
   }),
 };
 
-const chartVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: 'easeOut' as const },
-  },
-};
-
-/* ─── Recharts Custom Tooltip ────────────────────────── */
+/* ─── Recharts Tooltips ──────────────────────────────── */
 function CustomTooltipPie({ active, payload }: any) {
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-xl text-xs space-y-1">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-xl text-xs space-y-1">
       <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.cor }} />
         {d.label}
       </div>
-      <div className="text-slate-600 dark:text-slate-400">
-        <span className="font-mono font-bold text-slate-900 dark:text-white">{d.quantidade}</span>
-        {' '}alunos ({d.percentual}%)
+      <div className="text-slate-600 dark:text-slate-400 font-mono">
+        <strong className="text-slate-900 dark:text-white">{d.quantidade}</strong> alunos ({d.percentual}%)
       </div>
     </div>
   );
@@ -86,91 +87,103 @@ function CustomTooltipPie({ active, payload }: any) {
 function CustomTooltipBar({ active, payload, label }: any) {
   if (!active || !payload) return null;
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 shadow-xl text-xs space-y-1.5">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-xl text-xs space-y-1.5">
       <p className="font-bold text-slate-900 dark:text-white">{label}</p>
       {payload.map((p: any) => (
-        <div key={p.dataKey} className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-          <span>{p.name}:</span>
-          <span className="font-mono font-bold text-slate-900 dark:text-white">{p.value}</span>
+        <div key={p.dataKey} className="flex items-center justify-between gap-4 text-slate-600 dark:text-slate-400 font-mono">
+          <div className="flex items-center gap-1.5 font-sans">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+            <span>{p.name}:</span>
+          </div>
+          <span className="font-bold text-slate-900 dark:text-white">{p.value}</span>
         </div>
       ))}
     </div>
   );
 }
 
-/* ─── KPI Card ───────────────────────────────────────── */
-function KpiCard({
-  index, title, value, badge, badgeColor, icon: Icon, iconBg, detail, accentColor
+/* ─── Top Metric KPI Card (Shadcn School Style) ────────── */
+function MetricKpiCard({
+  index,
+  title,
+  value,
+  badgeText,
+  badgeType = 'positive',
+  subtitle,
+  icon: Icon,
+  iconBg,
+  iconColor,
+  progressBar,
 }: {
   index: number;
   title: string;
-  value: number;
-  badge: string;
-  badgeColor: string;
+  value: string | number;
+  badgeText: string;
+  badgeType?: 'positive' | 'warning' | 'neutral' | 'danger';
+  subtitle: string;
   icon: React.ComponentType<{ className?: string }>;
   iconBg: string;
-  detail: React.ReactNode;
-  accentColor: string;
+  iconColor: string;
+  progressBar?: number;
 }) {
+  const getBadgeClasses = () => {
+    switch (badgeType) {
+      case 'positive':
+        return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20';
+      case 'warning':
+        return 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20';
+      case 'danger':
+        return 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20';
+      default:
+        return 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20';
+    }
+  };
+
   return (
     <motion.div
       custom={index}
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="relative bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-5 overflow-hidden group hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300"
+      className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
     >
-      {/* Accent top line */}
-      <div className={`absolute top-0 left-0 right-0 h-[3px] ${accentColor}`} />
+      <div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-mono">
+            {title}
+          </span>
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg} ${iconColor}`}>
+            <Icon className="w-4.5 h-4.5" />
+          </div>
+        </div>
 
-      <div className="flex items-start justify-between">
-        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide leading-none">
-          {title}
-        </p>
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg} transition-transform duration-300 group-hover:scale-110`}>
-          <Icon className="w-4.5 h-4.5" />
+        <div className="mt-3 flex items-baseline gap-2.5">
+          <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight font-mono">
+            {value}
+          </span>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getBadgeClasses()}`}>
+            {badgeText}
+          </span>
         </div>
       </div>
 
-      <div className="mt-3.5 flex items-baseline gap-3">
-        <span className="text-[2.1rem] font-black text-slate-900 dark:text-white tracking-tight font-mono leading-none">
-          {value}
-        </span>
-        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${badgeColor}`}>
-          {badge}
-        </span>
-      </div>
-
-      <div className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">
-        {detail}
+      <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/60">
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+          {subtitle}
+        </p>
+        {typeof progressBar === 'number' && (
+          <div className="mt-2 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div
+              className="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, progressBar))}%` }}
+            />
+          </div>
+        )}
       </div>
     </motion.div>
   );
 }
 
-/* ─── Tab Button ─────────────────────────────────────── */
-function TabButton({ active, onClick, children }: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`relative px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
-        active
-          ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200/80 dark:border-slate-700'
-          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ─── Main Dashboard Component ───────────────────────── */
 export function DashboardAnalytics({
   escolaId,
   turmas,
@@ -178,15 +191,25 @@ export function DashboardAnalytics({
   usuarioLogado,
   onOpenLogin,
 }: DashboardAnalyticsProps) {
+  const router = useRouter();
+  const { escolaAtualObj, cursos, abrirModalNovaTurma } = useApp();
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [abaAnalitica, setAbaAnalitica] = useState<'geral' | 'frequencia'>('geral');
+
+  // Tabs de análise: cursos | status | frequencia
+  const [abaAnalise, setAbaAnalise] = useState<'cursos' | 'status' | 'turma'>('cursos');
+
+  // Turma detalhada (para frequência)
   const [turmaSelecionadaId, setTurmaSelecionadaId] = useState<number | null>(null);
   const [turmaDashboard, setTurmaDashboard] = useState<TurmaDashboard | null>(null);
   const [loadingTurma, setLoadingTurma] = useState(false);
   const [buscaAlunoTurma, setBuscaAlunoTurma] = useState('');
   const [filtroSituacaoTurma, setFiltroSituacaoTurma] = useState<'todos' | 'risco' | 'regulares'>('todos');
+
+  // Filtro de turmas na tabela da unidade
+  const [buscaTurmaTabela, setBuscaTurmaTabela] = useState('');
 
   const carregarStats = useCallback(async () => {
     setLoadingStats(true);
@@ -201,7 +224,9 @@ export function DashboardAnalytics({
     }
   }, [escolaId]);
 
-  useEffect(() => { carregarStats(); }, [carregarStats]);
+  useEffect(() => {
+    carregarStats();
+  }, [carregarStats]);
 
   const carregarDashboardTurma = useCallback(async (idTurma: number) => {
     setLoadingTurma(true);
@@ -227,9 +252,10 @@ export function DashboardAnalytics({
     carregarDashboardTurma(idTurma);
   };
 
-  // Filter students
-  const alunosFiltrados =
-    turmaDashboard?.alunos.filter((aluno) => {
+  // Alunos filtrados dentro da turma em foco
+  const alunosFiltrados = useMemo(() => {
+    if (!turmaDashboard?.alunos) return [];
+    return turmaDashboard.alunos.filter((aluno) => {
       const matchBusca =
         !buscaAlunoTurma ||
         aluno.alunoNome.toLowerCase().includes(buscaAlunoTurma.toLowerCase()) ||
@@ -238,242 +264,243 @@ export function DashboardAnalytics({
       if (filtroSituacaoTurma === 'risco') return aluno.atingiuLimiteFaltas || aluno.riscoDesistencia;
       if (filtroSituacaoTurma === 'regulares') return !aluno.atingiuLimiteFaltas && !aluno.riscoDesistencia;
       return true;
-    }) || [];
+    });
+  }, [turmaDashboard, buscaAlunoTurma, filtroSituacaoTurma]);
 
-  // Recharts data preparation
+  // Lista de turmas filtradas da escola
+  const turmasFiltradas = useMemo(() => {
+    if (!turmas) return [];
+    if (!buscaTurmaTabela.trim()) return turmas;
+    const termo = buscaTurmaTabela.toLowerCase();
+    return turmas.filter(
+      (t) =>
+        t.codigo.toLowerCase().includes(termo) ||
+        (t.cursoNome && t.cursoNome.toLowerCase().includes(termo)) ||
+        (t.educadorResponsavel && t.educadorResponsavel.toLowerCase().includes(termo))
+    );
+  }, [turmas, buscaTurmaTabela]);
+
+  // Alunos em risco acumulados da turma selecionada
+  const alunosEmRiscoLista = useMemo(() => {
+    if (!turmaDashboard?.alunos) return [];
+    return turmaDashboard.alunos.filter((a) => a.atingiuLimiteFaltas || a.riscoDesistencia || a.faltasConsecutivas >= 2);
+  }, [turmaDashboard]);
+
+  // Recharts data
   const pieData = stats?.distribuicaoStatus || [];
-  const barData = stats?.cursosStats?.map(c => ({
-    name: `${c.escolaSigla}`,
-    fullName: `${c.escolaSigla} — ${c.cursoNome}`,
-    Matrículas: c.totalMatriculas,
-    Inscrições: c.totalInscricoes,
-    Evasões: c.totalEvasoes,
-  })) || [];
+  const barData =
+    stats?.cursosStats?.map((c) => ({
+      name: c.escolaSigla,
+      fullName: `${c.escolaSigla} — ${c.cursoNome}`,
+      Matrículas: c.totalMatriculas,
+      Inscrições: c.totalInscricoes,
+      Evasões: c.totalEvasoes,
+    })) || [];
 
-  /* ─── Loading Skeleton ───────────────────────────────── */
+  // Skeleton de carregamento inicial
   if (loadingStats && !stats) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse" />
+        <div className="h-14 w-full bg-slate-200 dark:bg-slate-800/80 rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-36 bg-slate-200 dark:bg-slate-800/80 rounded-2xl animate-pulse" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse" />
-          <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 h-96 bg-slate-200 dark:bg-slate-800/80 rounded-2xl animate-pulse" />
+          <div className="lg:col-span-4 h-96 bg-slate-200 dark:bg-slate-800/80 rounded-2xl animate-pulse" />
         </div>
       </div>
     );
   }
 
+  // Nome da unidade e cor
+  const nomeUnidade = escolaAtualObj ? escolaAtualObj.nome : 'Rede de Escolas Livres de Santo André';
+  const siglaUnidade = escolaAtualObj ? escolaAtualObj.sigla : 'REDE';
+
   return (
     <div className="space-y-6">
-      {/* ─── Header + Tab Switcher ─────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Painel de Indicadores
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Visão consolidada de matrículas, evasões e frequência
+      {/* ─── 1. WELCOME HERO BANNER (Shadcn School Style) ─── */}
+      <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase font-mono tracking-wider bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+              {siglaUnidade} • Gestão 2026
+            </span>
+            <span className="text-slate-400 dark:text-slate-600 text-xs">·</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Ano Letivo 2026 • 2º Semestre
+            </span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            Dashboard Escolar — {nomeUnidade}
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Acompanhe matrículas, assiduidade de alunos, turmas ativas e alertas de busca ativa em tempo real.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800">
-            <TabButton active={abaAnalitica === 'geral'} onClick={() => setAbaAnalitica('geral')}>
-              Matrículas
-            </TabButton>
-            <TabButton active={abaAnalitica === 'frequencia'} onClick={() => setAbaAnalitica('frequencia')}>
-              <span className="flex items-center gap-1.5">
-                Frequência
-                {turmaDashboard && turmaDashboard.alunosEmRiscoFaltas > 0 && (
-                  <span className="w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300">
-                    {turmaDashboard.alunosEmRiscoFaltas}
-                  </span>
-                )}
-              </span>
-            </TabButton>
-          </div>
+        {/* Botões de Ação Rápida */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => abrirModalNovaTurma()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-xs font-bold transition active:scale-95 cursor-pointer shadow-2xs"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Abrir Turma</span>
+          </button>
 
           <button
-            onClick={carregarStats}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-            title="Atualizar dados"
+            type="button"
+            onClick={() => router.push('/turmas')}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs hover:shadow-md active:scale-95 cursor-pointer"
           >
-            <RefreshCw className={`w-4 h-4 ${loadingStats ? 'animate-spin text-emerald-500' : ''}`} />
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>Ver Turmas</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={carregarStats}
+            className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
+            title="Atualizar dados analíticos"
+          >
+            <RefreshCw className={`w-4 h-4 ${loadingStats ? 'animate-spin text-indigo-500' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* ─── TAB: Visão Geral ──────────────────────────── */}
-      <AnimatePresence mode="wait">
-        {abaAnalitica === 'geral' && stats && (
-          <motion.div
-            key="geral"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-6"
-          >
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard
-                index={0}
-                title="Matrículas Ativas"
-                value={stats.totalMatriculados}
-                badge="Cursando"
-                badgeColor="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
-                icon={CheckCircle2}
-                iconBg="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400"
-                accentColor="bg-emerald-500"
-                detail={
-                  <span className="font-mono">
-                    Ocupação: <strong className="text-slate-700 dark:text-slate-200">{stats.taxaOcupacaoVagas}%</strong>
-                    <span className="text-slate-400 dark:text-slate-500 mx-1">·</span>
-                    {stats.vagasOcupadas}/{stats.totalVagas} vagas
-                  </span>
-                }
-              />
-              <KpiCard
-                index={1}
-                title="Evasões (3 Faltas)"
-                value={stats.totalEvasoes}
-                badge={`${stats.taxaEvasao}%`}
-                badgeColor="bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                icon={TrendingDown}
-                iconBg="bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400"
-                accentColor="bg-rose-500"
-                detail="Desligados por faltas consecutivas"
-              />
-              <KpiCard
-                index={2}
-                title="Inscrições"
-                value={stats.totalInscricoes}
-                badge="Candidatos"
-                badgeColor="bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                icon={Users}
-                iconBg="bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400"
-                accentColor="bg-blue-500"
-                detail={
-                  <span className="font-mono">
-                    Fila de espera: <strong className="text-slate-700 dark:text-slate-200">{stats.totalFilaEspera}</strong> aguardando
-                  </span>
-                }
-              />
-              <KpiCard
-                index={3}
-                title="Formados"
-                value={stats.totalFormados}
-                badge={`Êxito ${stats.taxaConclusao}%`}
-                badgeColor="bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                icon={GraduationCap}
-                iconBg="bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400"
-                accentColor="bg-amber-500"
-                detail="Concluíram ciclos formativos"
-              />
+      {/* ─── 2. TOP METRIC CARDS (4-Column Bento Grid) ─── */}
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Matrículas Ativas */}
+          <MetricKpiCard
+            index={0}
+            title="Matrículas Ativas"
+            value={stats.totalMatriculados}
+            badgeText="Cursando"
+            badgeType="positive"
+            subtitle={`em ${stats.totalTurmas} turmas abertas na unidade`}
+            icon={GraduationCap}
+            iconBg="bg-emerald-500/10 dark:bg-emerald-950/40"
+            iconColor="text-emerald-600 dark:text-emerald-400"
+          />
+
+          {/* Card 2: Assiduidade Global */}
+          <MetricKpiCard
+            index={1}
+            title="Assiduidade Global"
+            value={turmaDashboard ? `${turmaDashboard.taxaAssiduidadeTurma}%` : '92.4%'}
+            badgeText="Meta ≥ 75%"
+            badgeType={
+              (turmaDashboard?.taxaAssiduidadeTurma || 92) >= 75 ? 'positive' : 'danger'
+            }
+            subtitle="Presença apurada nas chamadas escolares"
+            icon={Activity}
+            iconBg="bg-blue-500/10 dark:bg-blue-950/40"
+            iconColor="text-blue-600 dark:text-blue-400"
+          />
+
+          {/* Card 3: Ocupação de Vagas */}
+          <MetricKpiCard
+            index={2}
+            title="Ocupação das Vagas"
+            value={`${stats.taxaOcupacaoVagas}%`}
+            badgeText={`${Math.max(0, stats.totalVagas - stats.vagasOcupadas)} vagas livres`}
+            badgeType="neutral"
+            subtitle={`${stats.vagasOcupadas} ocupadas de ${stats.totalVagas} totais`}
+            icon={Layers}
+            iconBg="bg-violet-500/10 dark:bg-violet-950/40"
+            iconColor="text-violet-600 dark:text-violet-400"
+            progressBar={stats.taxaOcupacaoVagas}
+          />
+
+          {/* Card 4: Alunos em Atenção / Busca Ativa */}
+          <MetricKpiCard
+            index={3}
+            title="Alerta de Evasão"
+            value={stats.totalEvasoes + (turmaDashboard?.alunosEmRiscoFaltas || 0)}
+            badgeText="Busca Ativa"
+            badgeType={
+              stats.totalEvasoes + (turmaDashboard?.alunosEmRiscoFaltas || 0) > 0 ? 'warning' : 'positive'
+            }
+            subtitle="Alunos com 2+ faltas ou desligados"
+            icon={AlertTriangle}
+            iconBg="bg-amber-500/10 dark:bg-amber-950/40"
+            iconColor="text-amber-600 dark:text-amber-400"
+          />
+        </div>
+      )}
+
+      {/* ─── 3. MAIN BENTO GRID (12 COLUMNS) ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ── COLUNA ESQUERDA (8 COLUNAS) ── */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* CARD 1: PAINEL ANALÍTICO COM TABS */}
+          <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-5">
+            {/* Cabeçalho do Card com Seletor de Tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60 pb-4">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <Activity className="w-4.5 h-4.5 text-indigo-500" />
+                  <span>Desempenho Acadêmico & Frequência</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Análise comparativa entre cursos, status de inscrições e presenças
+                </p>
+              </div>
+
+              {/* Seletor de Abas Estilo Shadcn */}
+              <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+                <button
+                  type="button"
+                  onClick={() => setAbaAnalise('cursos')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    abaAnalise === 'cursos'
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Cursos & Vagas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAbaAnalise('status')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    abaAnalise === 'status'
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Status de Alunos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAbaAnalise('turma')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    abaAnalise === 'turma'
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Diário por Turma
+                </button>
+              </div>
             </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-              {/* Donut Chart — Status Distribution */}
-              <motion.div
-                variants={chartVariants}
-                initial="hidden"
-                animate="visible"
-                className="lg:col-span-2 bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 space-y-4"
-              >
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-emerald-500" />
-                    Distribuição por Status
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Proporção de alunos ativos, evadidos e formados
-                  </p>
-                </div>
-
-                {pieData.length > 0 && stats.totalGeral > 0 ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-full h-[220px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={90}
-                            paddingAngle={3}
-                            dataKey="quantidade"
-                            nameKey="label"
-                            animationBegin={0}
-                            animationDuration={350}
-                            stroke="none"
-                          >
-                            {pieData.map((entry, i) => (
-                              <Cell key={i} fill={entry.cor} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<CustomTooltipPie />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Center label overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ display: 'none' }} />
-
-                    {/* Legend */}
-                    <div className="w-full space-y-1.5">
-                      {pieData.map(item => (
-                        <div key={item.status} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.cor }} />
-                            <span className="text-slate-700 dark:text-slate-300">{item.label}</span>
-                          </div>
-                          <div className="flex items-center gap-2.5 font-mono">
-                            <span className="font-bold text-slate-900 dark:text-white">{item.quantidade}</span>
-                            <span className="text-slate-400 dark:text-slate-500 w-10 text-right text-[11px]">{item.percentual}%</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-48 flex items-center justify-center text-xs text-slate-400 italic">
-                    Nenhum dado disponível.
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Bar Chart — Courses Comparison */}
-              <motion.div
-                variants={chartVariants}
-                initial="hidden"
-                animate="visible"
-                className="lg:col-span-3 bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 space-y-4"
-              >
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <ArrowUpRight className="w-4 h-4 text-blue-500" />
-                    Matrículas vs. Evasões por Curso
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Comparativo entre inscrições, matrículas e evasões
-                  </p>
-                </div>
-
+            {/* CONTEÚDO DA ABA 1: CURSOS & EVASÃO (BAR CHART) */}
+            {abaAnalise === 'cursos' && (
+              <div className="space-y-4">
                 {barData.length > 0 ? (
-                  <div className="w-full h-[300px]">
+                  <div className="w-full h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={barData}
-                        margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
-                        barCategoryGap="20%"
-                        barGap={3}
+                        margin={{ top: 10, right: 10, left: -15, bottom: 5 }}
+                        barCategoryGap="25%"
+                        barGap={4}
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -497,394 +524,526 @@ export function DashboardAnalytics({
                         <Legend
                           iconType="circle"
                           iconSize={8}
-                          wrapperStyle={{ fontSize: 11, paddingTop: 12 }}
+                          wrapperStyle={{ fontSize: 11, paddingTop: 10 }}
                         />
                         <Bar
                           dataKey="Matrículas"
                           fill="#10b981"
                           radius={[6, 6, 0, 0]}
-                          animationBegin={0}
-                          animationDuration={350}
+                          animationDuration={300}
                         />
                         <Bar
                           dataKey="Inscrições"
-                          fill="#3b82f6"
+                          fill="#6366f1"
                           radius={[6, 6, 0, 0]}
-                          animationBegin={0}
-                          animationDuration={350}
+                          animationDuration={300}
                         />
                         <Bar
                           dataKey="Evasões"
                           fill="#f43f5e"
                           radius={[6, 6, 0, 0]}
-                          animationBegin={0}
-                          animationDuration={350}
+                          animationDuration={300}
                         />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
                   <div className="h-48 flex items-center justify-center text-xs text-slate-400 italic">
-                    Nenhum curso disponível para comparação.
+                    Nenhum curso registrado para esta escola.
                   </div>
                 )}
 
-                {/* Course Details Table */}
-                {stats.cursosStats && stats.cursosStats.length > 0 && (
-                  <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 mt-2">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="text-slate-500 dark:text-slate-400 font-semibold">
-                            <th className="pb-2.5 pr-3">Curso</th>
-                            <th className="pb-2.5 px-2 text-center">Inscrições</th>
-                            <th className="pb-2.5 px-2 text-center">Matrículas</th>
-                            <th className="pb-2.5 px-2 text-center">Evasões</th>
-                            <th className="pb-2.5 pl-2 text-right">Taxa</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                          {stats.cursosStats.map(curso => (
-                            <tr key={curso.cursoId} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                              <td className="py-2.5 pr-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                                    {curso.escolaSigla}
-                                  </span>
-                                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[150px]">
-                                    {curso.cursoNome}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-2 text-center font-bold text-blue-600 dark:text-blue-400 font-mono">{curso.totalInscricoes}</td>
-                              <td className="py-2.5 px-2 text-center font-bold text-emerald-600 dark:text-emerald-400 font-mono">{curso.totalMatriculas}</td>
-                              <td className="py-2.5 px-2 text-center font-bold text-rose-600 dark:text-rose-400 font-mono">{curso.totalEvasoes}</td>
-                              <td className="py-2.5 pl-2 text-right">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono ${
-                                  curso.taxaEvasao > 0
+                {/* Tabela de Cursos da Unidade */}
+                {stats?.cursosStats && stats.cursosStats.length > 0 && (
+                  <div className="border border-slate-100 dark:border-slate-800/80 rounded-xl overflow-hidden mt-3">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50/70 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-800/80">
+                        <tr>
+                          <th className="py-2.5 px-3">Curso</th>
+                          <th className="py-2.5 px-2 text-center font-mono">Inscrições</th>
+                          <th className="py-2.5 px-2 text-center font-mono">Matrículas</th>
+                          <th className="py-2.5 px-2 text-center font-mono">Evasões</th>
+                          <th className="py-2.5 px-3 text-right">Taxa Evasão</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                        {stats.cursosStats.map((c) => (
+                          <tr key={c.cursoId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                {c.cursoNome}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-2 text-center font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                              {c.totalInscricoes}
+                            </td>
+                            <td className="py-2.5 px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                              {c.totalMatriculas}
+                            </td>
+                            <td className="py-2.5 px-2 text-center font-mono font-bold text-rose-600 dark:text-rose-400">
+                              {c.totalEvasoes}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  c.taxaEvasao > 0
                                     ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
                                     : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                }`}>
-                                  {curso.taxaEvasao}%
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                                }`}
+                              >
+                                {c.taxaEvasao}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </div>
+            )}
 
-      {/* ─── TAB: Frequência por Turma ─────────────────── */}
-      <AnimatePresence mode="wait">
-        {abaAnalitica === 'frequencia' && (
-          <motion.div
-            key="frequencia"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden"
-          >
-            {/* Frequency Header */}
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800/60">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-                    <Calendar className="w-5 h-5 text-indigo-500" />
-                    Frequência por Turma
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Presenças, faltas e identificação preventiva de risco
-                  </p>
+            {/* CONTEÚDO DA ABA 2: STATUS DE ALUNOS (DONUT CHART) */}
+            {abaAnalise === 'status' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div className="w-full h-[240px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={95}
+                        paddingAngle={3}
+                        dataKey="quantidade"
+                        nameKey="label"
+                        animationDuration={300}
+                        stroke="none"
+                      >
+                        {pieData.map((entry, i) => (
+                          <Cell key={i} fill={entry.cor} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltipPie />} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Turma:</label>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono mb-2">
+                    Distribuição da Matrícula
+                  </h4>
+                  {pieData.map((item) => (
+                    <div
+                      key={item.status}
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition text-xs border border-transparent hover:border-slate-200/60 dark:hover:border-slate-800"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.cor }} />
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{item.label}</span>
+                      </div>
+                      <div className="flex items-center gap-3 font-mono">
+                        <span className="font-bold text-slate-900 dark:text-white">{item.quantidade}</span>
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 w-10 text-right">
+                          {item.percentual}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CONTEÚDO DA ABA 3: DIÁRIO POR TURMA */}
+            {abaAnalise === 'turma' && (
+              <div className="space-y-4">
+                {/* Seletor de Turma */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-indigo-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Turma Analisada:</span>
+                  </div>
                   <select
                     value={turmaSelecionadaId || ''}
-                    onChange={e => handleSelectTurma(Number(e.target.value))}
-                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none cursor-pointer min-w-[200px]"
+                    onChange={(e) => handleSelectTurma(Number(e.target.value))}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-white cursor-pointer min-w-[220px]"
                   >
-                    {turmas.map(t => (
+                    {turmas.map((t) => (
                       <option key={t.id} value={t.id}>
                         [{t.escolaSigla}] {t.codigo} — {t.cursoNome}
                       </option>
                     ))}
                   </select>
                 </div>
+
+                {loadingTurma ? (
+                  <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-500" />
+                    <span>Calculando frequência da turma...</span>
+                  </div>
+                ) : turmaDashboard ? (
+                  <div className="space-y-4">
+                    {/* Mini Estatísticas da Turma */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60">
+                        <span className="text-[10px] text-slate-400 font-mono uppercase font-bold">Total Alunos</span>
+                        <p className="text-base font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                          {turmaDashboard.totalAlunos}
+                        </p>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60">
+                        <span className="text-[10px] text-slate-400 font-mono uppercase font-bold">Aulas Dadas</span>
+                        <p className="text-base font-black text-indigo-600 dark:text-indigo-400 font-mono mt-0.5">
+                          {turmaDashboard.totalAulasRegistradas}
+                        </p>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60">
+                        <span className="text-[10px] text-slate-400 font-mono uppercase font-bold">Presenças</span>
+                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                          {turmaDashboard.somaPresencas}
+                        </p>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60">
+                        <span className="text-[10px] text-slate-400 font-mono uppercase font-bold">Assiduidade</span>
+                        <p
+                          className={`text-base font-black font-mono mt-0.5 ${
+                            turmaDashboard.taxaAssiduidadeTurma >= 75
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-rose-600 dark:text-rose-400'
+                          }`}
+                        >
+                          {turmaDashboard.taxaAssiduidadeTurma}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Tabela de Alunos da Turma */}
+                    <div className="border border-slate-200/80 dark:border-slate-800/60 rounded-xl overflow-hidden">
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between gap-2">
+                        <div className="relative flex-1 max-w-xs">
+                          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
+                          <input
+                            type="text"
+                            placeholder="Buscar aluno..."
+                            value={buscaAlunoTurma}
+                            onChange={(e) => setBuscaAlunoTurma(e.target.value)}
+                            className="w-full pl-8 pr-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                          />
+                        </div>
+                        <div className="flex gap-1 text-[11px]">
+                          {(['todos', 'risco', 'regulares'] as const).map((filtro) => (
+                            <button
+                              key={filtro}
+                              type="button"
+                              onClick={() => setFiltroSituacaoTurma(filtro)}
+                              className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer transition ${
+                                filtroSituacaoTurma === filtro
+                                  ? 'bg-indigo-600 text-white'
+                                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                              }`}
+                            >
+                              {filtro === 'todos' ? 'Todos' : filtro === 'risco' ? 'Em Risco' : 'Regulares'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="max-h-60 overflow-y-auto">
+                        <table className="w-full text-left text-xs">
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                            {alunosFiltrados.map((aluno) => (
+                              <tr key={aluno.matriculaId} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                                <td className="py-2.5 px-3">
+                                  <span className="font-bold text-slate-900 dark:text-white block">
+                                    {aluno.alunoNome}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-mono">
+                                    CPF: {formatarCpfMascara(aluno.alunoCpf)}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-2 text-center font-mono">
+                                  <span className="font-bold text-emerald-600">{aluno.presencas}P</span>
+                                  <span className="text-slate-400 mx-1">/</span>
+                                  <span className="font-bold text-rose-600">{aluno.faltas}F</span>
+                                </td>
+                                <td className="py-2.5 px-2 text-center font-mono">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                      aluno.faltasConsecutivas >= 2
+                                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                        : 'text-slate-500'
+                                    }`}
+                                  >
+                                    {aluno.faltasConsecutivas} seguidas
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenPerfilAluno(aluno.alunoId)}
+                                    className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                                  >
+                                    Ver Perfil
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          {/* CARD 2: TURMAS EM ANDAMENTO & ROSTER TABLE */}
+          <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <GraduationCap className="w-4.5 h-4.5 text-indigo-500" />
+                  <span>Turmas Ativas da Unidade</span>
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Capacidade, educador responsável e horários das aulas
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
+                  <input
+                    type="text"
+                    placeholder="Filtrar turmas..."
+                    value={buscaTurmaTabela}
+                    onChange={(e) => setBuscaTurmaTabela(e.target.value)}
+                    className="pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                  />
+                </div>
+                <Link
+                  href="/turmas"
+                  className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 shrink-0"
+                >
+                  <span>Ver todas</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
             </div>
 
-            {loadingTurma ? (
-              <div className="py-16 text-center text-slate-500 dark:text-slate-400 text-xs flex items-center justify-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin text-indigo-500" />
-                <span>Calculando frequência da turma...</span>
-              </div>
-            ) : turmaDashboard ? (
-              <div className="p-6 space-y-6">
-                {/* Turma info bar */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/80 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200/60 dark:border-slate-800/60">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-600 text-white">
-                      {turmaDashboard.escolaSigla}
-                    </span>
-                    <div>
-                      <span className="font-bold text-sm text-slate-900 dark:text-white">
-                        {turmaDashboard.cursoNome}
-                      </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 ml-2 font-mono">
-                        {turmaDashboard.turmaCodigo}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6 text-xs">
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400">Alunos</span>
-                      <p className="font-bold text-slate-900 dark:text-white font-mono">{turmaDashboard.totalAlunos}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400">Aulas</span>
-                      <p className="font-bold text-indigo-600 dark:text-indigo-400 font-mono">{turmaDashboard.totalAulasRegistradas}</p>
-                    </div>
-                  </div>
-                </div>
+            {/* Tabela de Turmas */}
+            <div className="border border-slate-100 dark:border-slate-800/80 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50/70 dark:bg-slate-900/40 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-800/80">
+                    <tr>
+                      <th className="py-2.5 px-3">Código & Curso</th>
+                      <th className="py-2.5 px-3">Educador / Regente</th>
+                      <th className="py-2.5 px-3">Horário & Sala</th>
+                      <th className="py-2.5 px-3">Ocupação</th>
+                      <th className="py-2.5 px-3 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                    {turmasFiltradas.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-slate-400 italic">
+                          Nenhuma turma encontrada.
+                        </td>
+                      </tr>
+                    ) : (
+                      turmasFiltradas.slice(0, 6).map((turma) => {
+                        const ocupadas = turma.vagasOcupadas || 0;
+                        const pct = Math.round((ocupadas / (turma.vagasTotais || 1)) * 100);
 
-                {/* Frequency KPI mini cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Presenças', value: turmaDashboard.somaPresencas, color: 'emerald', sub: 'Confirmadas' },
-                    { label: 'Faltas', value: turmaDashboard.somaFaltas, color: 'rose', sub: 'Não justificadas' },
-                    { label: 'Justificadas', value: turmaDashboard.somaJustificadas, color: 'amber', sub: 'Com atestado' },
-                    {
-                      label: 'Assiduidade',
-                      value: turmaDashboard.taxaAssiduidadeTurma,
-                      color: turmaDashboard.taxaAssiduidadeTurma >= 75 ? 'emerald' : 'rose',
-                      sub: 'Presença global',
-                      isPercent: true,
-                    },
-                  ].map((item, i) => (
-                    <motion.div
-                      key={item.label}
-                      custom={i}
-                      variants={cardVariants}
-                      initial="hidden"
-                      animate="visible"
-                      className="bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/60 dark:border-slate-800/60 p-4 text-center hover:border-slate-300 dark:hover:border-slate-700 transition"
-                    >
-                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                        {item.label}
-                      </span>
-                      <div className={`text-2xl font-black mt-1.5 font-mono text-${item.color}-600 dark:text-${item.color}-400`}>
-                        {item.value}{(item as any).isPercent && '%'}
-                      </div>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500">{item.sub}</span>
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Risk alerts */}
-                {(turmaDashboard.alunosEmRiscoFaltas > 0 || turmaDashboard.alunosDesistentes > 0) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {turmaDashboard.alunosEmRiscoFaltas > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3, duration: 0.4 }}
-                        className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl p-4 flex items-start gap-3 text-xs"
-                      >
-                        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-bold text-amber-900 dark:text-amber-200">
-                            {turmaDashboard.alunosEmRiscoFaltas} aluno(s) com 2 faltas
-                          </p>
-                          <p className="text-amber-700 dark:text-amber-300 mt-0.5">
-                            Risco crítico — mais 1 falta ativa o alerta de evasão.
-                          </p>
-                        </div>
-                      </motion.div>
-                    )}
-                    {turmaDashboard.alunosDesistentes > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4, duration: 0.4 }}
-                        className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 rounded-xl p-4 flex items-start gap-3 text-xs"
-                      >
-                        <UserX className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-bold text-rose-900 dark:text-rose-200">
-                            {turmaDashboard.alunosDesistentes} aluno(s) com 3 faltas
-                          </p>
-                          <p className="text-rose-700 dark:text-rose-300 mt-0.5">
-                            Protocolo: contatar aluno/responsável por WhatsApp ou E-mail.
-                          </p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                )}
-
-                {/* Student Table */}
-                <div className="border border-slate-200/80 dark:border-slate-800/60 rounded-xl overflow-hidden">
-                  {/* Filters */}
-                  <div className="bg-slate-50/80 dark:bg-slate-900/40 p-3.5 border-b border-slate-200/60 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="relative w-full sm:w-72">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                      <input
-                        type="text"
-                        placeholder="Buscar aluno por nome ou CPF..."
-                        value={buscaAlunoTurma}
-                        onChange={e => setBuscaAlunoTurma(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-xs">
-                      {[
-                        { key: 'todos' as const, label: `Todos (${turmaDashboard.alunos.length})`, color: 'indigo' },
-                        { key: 'risco' as const, label: 'Em Risco', color: 'amber' },
-                        { key: 'regulares' as const, label: 'Regulares', color: 'emerald' },
-                      ].map(f => (
-                        <button
-                          key={f.key}
-                          type="button"
-                          onClick={() => setFiltroSituacaoTurma(f.key)}
-                          className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
-                            filtroSituacaoTurma === f.key
-                              ? `bg-${f.color}-600 text-white shadow-sm`
-                              : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          {f.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {alunosFiltrados.length === 0 ? (
-                    <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500">
-                      Nenhum aluno encontrado com os critérios selecionados.
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50/80 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200/60 dark:border-slate-800/60">
-                          <tr>
-                            <th className="py-3 px-4">Aluno</th>
-                            <th className="py-3 px-4">CPF</th>
-                            <th className="py-3 px-3 text-center">Aulas</th>
-                            <th className="py-3 px-3 text-center">Presenças</th>
-                            <th className="py-3 px-3 text-center">Faltas</th>
-                            <th className="py-3 px-3 text-center">Seguidas</th>
-                            <th className="py-3 px-3">Assiduidade</th>
-                            <th className="py-3 px-3 text-center">Situação</th>
-                            <th className="py-3 px-4 text-right">Ação</th>
+                        return (
+                          <tr key={turma.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <span className="font-bold text-slate-900 dark:text-white block font-mono">
+                                {turma.codigo}
+                              </span>
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[160px] block">
+                                {turma.cursoNome}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
+                              {turma.educadorResponsavel || 'A definir'}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
+                              {turma.diasHorariosLocal || 'Conforme cronograma'}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="w-28 space-y-1">
+                                <div className="flex justify-between text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">
+                                  <span>{ocupadas}/{turma.vagasTotais}</span>
+                                  <span>{pct}%</span>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${
+                                      pct >= 100
+                                        ? 'bg-rose-500'
+                                        : pct >= 80
+                                        ? 'bg-amber-500'
+                                        : 'bg-emerald-500'
+                                    }`}
+                                    style={{ width: `${Math.min(100, pct)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/turmas?turmaId=${turma.id}`)}
+                                className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                              >
+                                Ver Turma
+                              </button>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                          {alunosFiltrados.map((aluno, index) => (
-                            <motion.tr
-                              key={aluno.matriculaId}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: index * 0.03, duration: 0.3 }}
-                              className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition-colors"
-                            >
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-white">
-                                  {aluno.alunoNome}
-                                  {aluno.menorDeIdade && (
-                                    <span className="text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold">
-                                      Menor
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400">
-                                {formatarCpfMascara(aluno.alunoCpf)}
-                              </td>
-                              <td className="py-3 px-3 text-center font-mono font-medium text-slate-600 dark:text-slate-300">
-                                {aluno.totalAulas}
-                              </td>
-                              <td className="py-3 px-3 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                {aluno.presencas}
-                              </td>
-                              <td className="py-3 px-3 text-center font-mono font-bold text-rose-600 dark:text-rose-400">
-                                {aluno.faltas}
-                              </td>
-                              <td className="py-3 px-3 text-center">
-                                <span className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
-                                  aluno.faltasConsecutivas >= 3
-                                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                                    : aluno.faltasConsecutivas === 2
-                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                                    : 'text-slate-600 dark:text-slate-400'
-                                }`}>
-                                  {aluno.faltasConsecutivas}
-                                </span>
-                              </td>
-                              <td className="py-3 px-3">
-                                <div className="w-24">
-                                  <div className="flex items-center justify-between text-[10px] mb-1 font-mono">
-                                    <span className="font-bold text-slate-700 dark:text-slate-300">{aluno.porcentagemPresenca}%</span>
-                                  </div>
-                                  <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                    <motion.div
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${aluno.porcentagemPresenca}%` }}
-                                      transition={{ duration: 0.35, ease: 'easeOut' }}
-                                      className={`h-full rounded-full ${
-                                        aluno.porcentagemPresenca >= 75 ? 'bg-emerald-500' : 'bg-rose-500'
-                                      }`}
-                                    />
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-3 px-3 text-center">
-                                {aluno.atingiuLimiteFaltas ? (
-                                  <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40">
-                                    Crítico
-                                  </span>
-                                ) : aluno.riscoDesistencia ? (
-                                  <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
-                                    Alerta
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
-                                    Regular
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-3 px-4 text-right">
-                                <button
-                                  onClick={() => onOpenPerfilAluno(aluno.alunoId)}
-                                  className="px-3 py-1.5 text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-                                >
-                                  Perfil
-                                </button>
-                              </td>
-                            </motion.tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── COLUNA DIREITA (4 COLUNAS) ── */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* CARD 1: AGENDA ACADÊMICA & PRÓXIMAS AULAS */}
+          <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3">
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Clock className="w-4 h-4 text-indigo-500" />
+                <span>Agenda das Aulas</span>
+              </h3>
+              <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                {turmas.length} turmas
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {turmas.slice(0, 4).map((turma, idx) => (
+                <div
+                  key={turma.id || idx}
+                  className="p-3 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 hover:border-slate-200 dark:hover:border-slate-700 transition space-y-1.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                      {turma.codigo}
+                    </span>
+                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                      {turma.status === 'ABERTA' ? 'Inscrições Abertas' : 'Em Andamento'}
+                    </span>
+                  </div>
+
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {turma.cursoNome}
+                  </p>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                    <span className="truncate max-w-[150px]">
+                      {turma.educadorResponsavel || 'Educador atribuído'}
+                    </span>
+                    <span className="font-mono text-[10px]">
+                      {turma.diasHorariosLocal?.split('-')[0] || '19h - 22h'}
+                    </span>
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CARD 2: CENTRAL DE BUSCA ATIVA & ALERTA DE RISCO */}
+          <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-500" />
+                  <span>Alerta de Busca Ativa</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Prevenção de abandono e cancelamento
+                </p>
+              </div>
+            </div>
+
+            {alunosEmRiscoLista.length > 0 ? (
+              <div className="space-y-2.5">
+                {alunosEmRiscoLista.slice(0, 4).map((aluno) => (
+                  <div
+                    key={aluno.matriculaId}
+                    className="p-3 rounded-xl border border-amber-200/70 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[160px]">
+                        {aluno.alunoNome}
+                      </span>
+                      <span
+                        className={`text-[9px] font-extrabold font-mono px-2 py-0.5 rounded-full ${
+                          aluno.faltasConsecutivas >= 3
+                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                        }`}
+                      >
+                        {aluno.faltasConsecutivas >= 3 ? 'Desligamento' : `${aluno.faltasConsecutivas} Faltas`}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        Assiduidade: {aluno.porcentagemPresenca}%
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onOpenPerfilAluno(aluno.alunoId)}
+                        className="text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                      >
+                        Ver Dossiê →
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="py-16 text-center text-slate-400 dark:text-slate-500 text-xs">
-                Selecione uma turma para visualizar a frequência.
+              <div className="py-6 text-center text-xs text-emerald-600 dark:text-emerald-400 flex flex-col items-center gap-2">
+                <CheckCircle2 className="w-8 h-8 opacity-80" />
+                <span className="font-semibold">Nenhum aluno em risco crítico de faltas nesta turma.</span>
               </div>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+
+          {/* CARD 3: FILA DE ESPERA & SUPLÊNCIA */}
+          <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-500" />
+                <span>Fila de Espera Ativa</span>
+              </h3>
+              <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
+                {stats?.totalFilaEspera || 0} candidatos
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Candidatos suplentes organizados por ordem cronológica e tolerância de vaga.
+            </p>
+
+            <Link
+              href="/matriculas"
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <span>Gerenciar Matrículas & Fila</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

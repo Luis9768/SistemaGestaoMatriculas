@@ -105,6 +105,7 @@ public class MatriculaService {
                 dto.getEndereco(),
                 dto.getBairro(),
                 dto.getCidade(),
+                dto.getCep(),
                 dto.getGenero(),
                 dto.getNeurodiverso(),
                 dto.getNeurodiversoDetalhe(),

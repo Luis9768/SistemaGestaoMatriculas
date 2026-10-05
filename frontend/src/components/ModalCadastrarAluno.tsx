@@ -24,6 +24,7 @@ import {
   calcularIdade,
   aplicarMascaraCpf,
   aplicarMascaraTelefone,
+  aplicarMascaraCep,
 } from '@/lib/api';
 
 interface ModalCadastrarAlunoProps {
@@ -44,6 +45,7 @@ export function ModalCadastrarAluno({
   const [dataNascimento, setDataNascimento] = useState('');
 
   // Endereço Residencial
+  const [cep, setCep] = useState('');
   const [endereco, setEndereco] = useState('');
   const [bairro, setBairro] = useState('');
   const [cidade, setCidade] = useState('Santo André');
@@ -84,6 +86,7 @@ export function ModalCadastrarAluno({
     setEmail('');
     setTelefone('');
     setDataNascimento('');
+    setCep('');
     setEndereco('');
     setBairro('');
     setCidade('Santo André');
@@ -140,6 +143,7 @@ export function ModalCadastrarAluno({
         endereco: endereco.trim() || undefined,
         bairro: bairro.trim() || undefined,
         cidade: cidade.trim() || undefined,
+        cep: cep.trim() || undefined,
         genero: genero.trim() || undefined,
         neurodiverso,
         neurodiversoDetalhe: neurodiverso ? neurodiversoDetalhe.trim() || undefined : undefined,
@@ -268,7 +272,7 @@ export function ModalCadastrarAluno({
                       max={new Date().toISOString().split('T')[0]}
                       value={dataNascimento}
                       onChange={(e) => setDataNascimento(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 dark:text-white"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
                     />
                   </div>
 
@@ -327,11 +331,25 @@ export function ModalCadastrarAluno({
               <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
                 <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm">
                   <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Endereço Residencial (Santo André / Região)</span>
+                  <span>Endereço Residencial</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="sm:col-span-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      CEP
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="09000-000"
+                      maxLength={9}
+                      value={cep}
+                      onChange={(e) => setCep(aplicarMascaraCep(e.target.value))}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Logradouro e Número
                     </label>

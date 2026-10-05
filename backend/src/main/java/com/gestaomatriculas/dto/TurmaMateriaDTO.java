@@ -12,5 +12,7 @@ public class TurmaMateriaDTO {
     private Long turmaId;
     private String nome;
     private String duracaoEstimada;
+    private String professorResponsavel;
+    private Integer cargaHoraria;
     private Integer ordem;
 }

@@ -55,6 +55,9 @@ public class Aluno {
     @Column(name = "cidade")
     private String cidade;
 
+    @Column(name = "cep", length = 10)
+    private String cep;
+
     @Column(name = "genero", length = 50)
     private String genero;
 

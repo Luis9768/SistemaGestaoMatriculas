@@ -34,6 +34,12 @@ public class TurmaMateria {
     @Column(name = "duracao_estimada", length = 100)
     private String duracaoEstimada;
 
+    @Column(name = "professor_responsavel", length = 150)
+    private String professorResponsavel;
+
+    @Column(name = "carga_horaria")
+    private Integer cargaHoraria;
+
     @Column(name = "ordem")
     private Integer ordem;
 

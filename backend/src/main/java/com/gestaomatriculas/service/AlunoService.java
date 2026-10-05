@@ -286,6 +286,7 @@ public class AlunoService {
                 .endereco(dto.getEndereco())
                 .bairro(dto.getBairro())
                 .cidade(dto.getCidade())
+                .cep(dto.getCep())
                 .genero(dto.getGenero())
                 .neurodiverso(dto.getNeurodiverso() != null ? dto.getNeurodiverso() : false)
                 .neurodiversoDetalhe(dto.getNeurodiversoDetalhe())
@@ -322,6 +323,7 @@ public class AlunoService {
         if (dto.getEndereco() != null) aluno.setEndereco(dto.getEndereco().trim());
         if (dto.getBairro() != null) aluno.setBairro(dto.getBairro().trim());
         if (dto.getCidade() != null) aluno.setCidade(dto.getCidade().trim());
+        if (dto.getCep() != null) aluno.setCep(dto.getCep().trim());
         if (dto.getGenero() != null) aluno.setGenero(dto.getGenero().trim());
         if (dto.getNeurodiverso() != null) aluno.setNeurodiverso(dto.getNeurodiverso());
         if (dto.getNeurodiversoDetalhe() != null) aluno.setNeurodiversoDetalhe(dto.getNeurodiversoDetalhe().trim());
@@ -386,6 +388,7 @@ public class AlunoService {
             if (dto.getEndereco() != null && !dto.getEndereco().isBlank()) existente.setEndereco(dto.getEndereco());
             if (dto.getBairro() != null && !dto.getBairro().isBlank()) existente.setBairro(dto.getBairro());
             if (dto.getCidade() != null && !dto.getCidade().isBlank()) existente.setCidade(dto.getCidade());
+            if (dto.getCep() != null && !dto.getCep().isBlank()) existente.setCep(dto.getCep());
             if (dto.getGenero() != null && !dto.getGenero().isBlank()) existente.setGenero(dto.getGenero());
             if (dto.getNeurodiverso() != null) existente.setNeurodiverso(dto.getNeurodiverso());
             if (dto.getNeurodiversoDetalhe() != null) existente.setNeurodiversoDetalhe(dto.getNeurodiversoDetalhe());
@@ -417,6 +420,7 @@ public class AlunoService {
                     .endereco(dto.getEndereco())
                     .bairro(dto.getBairro())
                     .cidade(dto.getCidade())
+                    .cep(dto.getCep())
                     .genero(dto.getGenero())
                     .neurodiverso(dto.getNeurodiverso() != null ? dto.getNeurodiverso() : false)
                     .neurodiversoDetalhe(dto.getNeurodiversoDetalhe())
@@ -437,13 +441,25 @@ public class AlunoService {
     public Aluno obterOuCriar(String nome, String cpf, String email, String telefone, LocalDate dataNascimento,
                               String respNome, String respCpf, String respTelefone, String respEmail, String respParentesco) {
         return obterOuCriar(nome, cpf, email, telefone, dataNascimento, respNome, respCpf, respTelefone, respEmail, respParentesco,
-                null, null, null, null, false, null, false, null, null, true, false, true);
+                null, null, null, null, null, false, null, false, null, null, true, false, true);
     }
 
     @Transactional
     public Aluno obterOuCriar(String nome, String cpf, String email, String telefone, LocalDate dataNascimento,
                               String respNome, String respCpf, String respTelefone, String respEmail, String respParentesco,
                               String endereco, String bairro, String cidade, String genero,
+                              Boolean neurodiverso, String neurodiversoDetalhe,
+                              Boolean pcd, String pcdDetalhe, String contatoEmergencia,
+                              Boolean consentimentoLgpdDadosSensiveis, Boolean consentimentoUsoImagem, Boolean termoPapelEntregue) {
+        return obterOuCriar(nome, cpf, email, telefone, dataNascimento, respNome, respCpf, respTelefone, respEmail, respParentesco,
+                endereco, bairro, cidade, null, genero, neurodiverso, neurodiversoDetalhe, pcd, pcdDetalhe, contatoEmergencia,
+                consentimentoLgpdDadosSensiveis, consentimentoUsoImagem, termoPapelEntregue);
+    }
+
+    @Transactional
+    public Aluno obterOuCriar(String nome, String cpf, String email, String telefone, LocalDate dataNascimento,
+                              String respNome, String respCpf, String respTelefone, String respEmail, String respParentesco,
+                              String endereco, String bairro, String cidade, String cep, String genero,
                               Boolean neurodiverso, String neurodiversoDetalhe,
                               Boolean pcd, String pcdDetalhe, String contatoEmergencia,
                               Boolean consentimentoLgpdDadosSensiveis, Boolean consentimentoUsoImagem, Boolean termoPapelEntregue) {
@@ -467,6 +483,7 @@ public class AlunoService {
                 .endereco(endereco)
                 .bairro(bairro)
                 .cidade(cidade)
+                .cep(cep)
                 .genero(genero)
                 .neurodiverso(neurodiverso)
                 .neurodiversoDetalhe(neurodiversoDetalhe)
@@ -540,6 +557,7 @@ public class AlunoService {
                 .endereco(aluno.getEndereco())
                 .bairro(aluno.getBairro())
                 .cidade(aluno.getCidade())
+                .cep(aluno.getCep())
                 .genero(aluno.getGenero())
                 .neurodiverso(aluno.getNeurodiverso())
                 .neurodiversoDetalhe(aluno.getNeurodiversoDetalhe())

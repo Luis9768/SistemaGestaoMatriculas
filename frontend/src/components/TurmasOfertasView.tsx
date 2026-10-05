@@ -428,8 +428,17 @@ export function TurmasOfertasView({
                             <span
                               key={m.id || idx}
                               className="px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-800/50 text-[10px] font-semibold"
+                              title={
+                                m.professorResponsavel
+                                  ? `Docente atual: ${m.professorResponsavel}${m.cargaHoraria ? ` • ${m.cargaHoraria}h` : ''}`
+                                  : m.cargaHoraria
+                                  ? `Carga: ${m.cargaHoraria}h`
+                                  : undefined
+                              }
                             >
                               {m.nome}
+                              {m.cargaHoraria ? ` (${m.cargaHoraria}h)` : ''}
+                              {m.professorResponsavel ? ` • Prof. ${m.professorResponsavel.split(' ')[0]}` : ''}
                             </span>
                           ))}
                         </div>

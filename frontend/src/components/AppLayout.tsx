@@ -1,41 +1,119 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Calendar,
+  LayoutDashboard,
+  GraduationCap,
   Users,
-  Layers,
+  ClipboardCheck,
   BookOpen,
   Search,
   FileSpreadsheet,
-  Activity,
+  ShieldCheck,
   ArrowLeft,
   LogOut,
   CheckCircle2,
   AlertCircle,
   Menu,
   X,
-  Users2,
   Plus,
+  ChevronDown,
+  Building2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 import { NotificacoesPopover } from '@/components/NotificacoesPopover';
 
-const NAV_TABS: Array<{ href: string; label: string; icon: any; adminOnly?: boolean; allowedRoles?: string[] }> = [
-  { href: '/turmas', label: 'Turmas & Ofertas', icon: Calendar },
-  { href: '/matriculas', label: 'Matrículas & Fila', icon: Users },
-  { href: '/frequencia', label: 'Diário de Chamadas', icon: Layers, allowedRoles: ['ROLE_ADMIN', 'ROLE_ENCARREGADA'] },
-  { href: '/cursos', label: 'Matriz Curricular & Cursos', icon: BookOpen },
-  { href: '/alunos', label: 'Cadastro de Alunos', icon: Search },
-  { href: '/usuarios', label: 'Equipe da Secretaria', icon: Users2, adminOnly: true },
-  { href: '/importacao', label: 'Importação em Lote', icon: FileSpreadsheet },
-  { href: '/panorama', label: 'Panorama & Métricas', icon: Activity },
+/* ─── Navigation Categorized in Shadcn School Style ─── */
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
+  allowedRoles?: string[];
+  badge?: string;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'Visão Geral',
+    items: [
+      { href: '/panorama', label: 'Dashboard Escolar', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: 'Gestão Acadêmica',
+    items: [
+      { href: '/turmas', label: 'Turmas & Vagas', icon: GraduationCap },
+      { href: '/matriculas', label: 'Matrículas & Fila', icon: Users },
+      { href: '/frequencia', label: 'Diário de Chamadas', icon: ClipboardCheck, allowedRoles: ['ROLE_ADMIN', 'ROLE_ENCARREGADA'] },
+      { href: '/cursos', label: 'Matriz & Cursos', icon: BookOpen },
+      { href: '/alunos', label: 'Dossiê de Alunos', icon: Search },
+    ],
+  },
+  {
+    title: 'Administração',
+    items: [
+      { href: '/usuarios', label: 'Equipe da Secretaria', icon: ShieldCheck, adminOnly: true },
+      { href: '/importacao', label: 'Importação em Lote', icon: FileSpreadsheet },
+    ],
+  },
 ];
+
+/* ─── School Badge Styles Helper ─── */
+function getSchoolColorClasses(sigla?: string) {
+  switch (sigla) {
+    case 'ELT':
+      return {
+        bg: 'bg-violet-500/10 dark:bg-violet-950/40',
+        text: 'text-violet-700 dark:text-violet-300',
+        border: 'border-violet-300 dark:border-violet-700/60',
+        dot: 'bg-violet-600',
+      };
+    case 'ELD':
+      return {
+        bg: 'bg-rose-500/10 dark:bg-rose-950/40',
+        text: 'text-rose-700 dark:text-rose-300',
+        border: 'border-rose-300 dark:border-rose-700/60',
+        dot: 'bg-rose-600',
+      };
+    case 'ELCV':
+      return {
+        bg: 'bg-sky-500/10 dark:bg-sky-950/40',
+        text: 'text-sky-700 dark:text-sky-300',
+        border: 'border-sky-300 dark:border-sky-700/60',
+        dot: 'bg-sky-600',
+      };
+    case 'EMIA':
+    case 'ELIA':
+      return {
+        bg: 'bg-amber-500/10 dark:bg-amber-950/40',
+        text: 'text-amber-700 dark:text-amber-300',
+        border: 'border-amber-300 dark:border-amber-700/60',
+        dot: 'bg-amber-600',
+      };
+    default:
+      return {
+        bg: 'bg-slate-500/10 dark:bg-slate-800/40',
+        text: 'text-slate-700 dark:text-slate-300',
+        border: 'border-slate-300 dark:border-slate-700',
+        dot: 'bg-slate-600',
+      };
+  }
+}
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -64,8 +142,118 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     carregarMatriculas,
   } = useApp();
 
-  const [menuAberto, setMenuAberto] = useState(false);
+  // Sidebar collapse & mobile drawer state
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [escolaDropdownOpen, setEscolaDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const [inputMateriaTexto, setInputMateriaTexto] = useState('');
+
+  // Carregar preferência salva de sidebar
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebar_collapsed');
+      if (saved !== null) {
+        setIsCollapsed(saved === 'true');
+      }
+    }
+  }, []);
+
+  const toggleSidebarCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sidebar_collapsed', String(next));
+      }
+      return next;
+    });
+  };
+
+  // Fechar dropdowns ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setEscolaDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fechar menu mobile ao navegar
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setEscolaDropdownOpen(false);
+  }, [pathname]);
+
+  // Tecla ESC fecha modais/menus
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+        setEscolaDropdownOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && !usuarioLogado) {
+      router.replace('/login');
+    }
+  }, [loading, usuarioLogado, router]);
+
+  // Se não houver escola selecionada, direciona para o Hub
+  useEffect(() => {
+    if (!loading && usuarioLogado && escolaSelecionada === null) {
+      if (usuarioLogado.role === 'ROLE_ENCARREGADA' && usuarioLogado.escolaId) {
+        setEscolaSelecionada(usuarioLogado.escolaId);
+      } else {
+        router.replace('/direcionamento');
+      }
+    }
+  }, [loading, usuarioLogado, escolaSelecionada, router]);
+
+  if (loading || !usuarioLogado) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin text-indigo-600" />
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            Carregando ambiente escolar...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const schoolColor = getSchoolColorClasses(escolaAtualObj?.sigla);
+
+  // Mapeamento de Breadcrumb
+  const getPageTitle = () => {
+    switch (pathname) {
+      case '/panorama':
+        return 'Dashboard Escolar';
+      case '/turmas':
+        return 'Turmas & Vagas';
+      case '/matriculas':
+        return 'Matrículas & Fila';
+      case '/frequencia':
+        return 'Diário de Chamadas';
+      case '/cursos':
+        return 'Matriz & Cursos';
+      case '/alunos':
+        return 'Dossiê de Alunos';
+      case '/usuarios':
+        return 'Equipe da Secretaria';
+      case '/importacao':
+        return 'Importação em Lote';
+      default:
+        return 'Visão Geral';
+    }
+  };
 
   const handleAdicionarMateria = (e?: React.MouseEvent | React.KeyboardEvent) => {
     if (e) e.preventDefault();
@@ -94,242 +282,368 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Fechar menu ao navegar ou teclar ESC
-  useEffect(() => {
-    setMenuAberto(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setMenuAberto(false);
-      }
-    };
-    if (menuAberto) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
-  }, [menuAberto]);
-
-  useEffect(() => {
-    if (!loading && !usuarioLogado) {
-      router.replace('/login');
-    }
-  }, [loading, usuarioLogado, router]);
-
-  // Se não houver escola selecionada, direciona para o Hub
-  useEffect(() => {
-    if (!loading && usuarioLogado && escolaSelecionada === null) {
-      if (usuarioLogado.role === 'ROLE_ENCARREGADA' && usuarioLogado.escolaId) {
-        setEscolaSelecionada(usuarioLogado.escolaId);
-      } else {
-        router.replace('/direcionamento');
-      }
-    }
-  }, [loading, usuarioLogado, escolaSelecionada, router]);
-
-  if (loading || !usuarioLogado) {
-    return (
-      <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            Carregando ambiente escolar...
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  const handleVoltar = () => {
-    if (pathname === '/turmas') {
-      router.push('/direcionamento');
-    } else {
-      router.push('/turmas');
-    }
+  // Troca rápida de escola no seletor
+  const handleTrocarEscola = (id: number | null) => {
+    setEscolaSelecionada(id);
+    setEscolaDropdownOpen(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Topbar Superior Integrada — Linha única, limpa e espaçosa */}
-      <header className="bg-white/95 dark:bg-[#0D1322]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-3">
-          {/* Lado Esquerdo: Setinha Voltar + Botão 3 Barrinhas */}
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            {/* Setinha para Escolha de Turmas / Voltar (à esquerda das 3 barrinhas) */}
-            <button
-              onClick={handleVoltar}
-              type="button"
-              aria-label={pathname === '/turmas' ? 'Voltar para escolha de escolas' : 'Ir para escolha de turmas'}
-              title={pathname === '/turmas' ? 'Voltar para escolha de escolas (Hub)' : 'Ir para escolha de turmas (/turmas)'}
-              className="p-2 sm:p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer active:scale-95 shadow-xs flex items-center justify-center shrink-0"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+      {/* ─── DESKTOP & MOBILE SIDEBAR ─── */}
+      {/* Backdrop Mobile */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden"
+          aria-hidden="true"
+        />
+      )}
 
-            {/* Botão de 3 Barrinhas (Menu Lateral) */}
-            <button
-              onClick={() => setMenuAberto((prev) => !prev)}
-              type="button"
-              aria-label={menuAberto ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
-              aria-expanded={menuAberto}
-              className="p-2 sm:p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 transition cursor-pointer active:scale-95 shadow-xs flex items-center justify-center shrink-0"
-              title="Menu de Módulos (3 barrinhas)"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Ações da Direita */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Central de Notificações do Sistema */}
-            <NotificacoesPopover escolaId={escolaSelecionada} />
-
-            {/* Botão de Modo Claro e Escuro */}
-            <ThemeToggle showLabel={false} />
-
-            {/* Botão Sair */}
-            <button
-              onClick={handleLogout}
-              type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:border-rose-300 dark:hover:border-rose-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
-              title="Encerrar sessão"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sair</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* DRAWER / MENU LATERAL COM AS 3 BARRINHAS */}
-      {/* 1. Backdrop com blur e animação de fade */}
-      <div
-        onClick={() => setMenuAberto(false)}
-        className={`fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 transition-opacity duration-300 ${
-          menuAberto ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        aria-hidden="true"
-      />
-
-      {/* 2. Painel Lateral Deslizante à Esquerda */}
+      {/* Sidebar Principal (Estilo Shadcn Dashboard) */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white dark:bg-[#0B101D] border-r border-slate-200 dark:border-slate-800/90 z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
-          menuAberto ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 bottom-0 left-0 z-40 bg-white dark:bg-[#0D1322] border-r border-slate-200/90 dark:border-slate-800/90 flex flex-col transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'lg:w-[72px]' : 'lg:w-64'
+        } ${
+          mobileMenuOpen ? 'w-72 translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
-        aria-label="Menu de Navegação Principal"
+        aria-label="Navegação da Escola"
       >
-        {/* Topo do Drawer: Brasão de Santo André + Nome da Escola Ativa + Botão de Fechar */}
-        <div className="h-16 px-4 sm:px-5 border-b border-slate-200/90 dark:border-slate-800/90 flex items-center justify-between bg-slate-50/70 dark:bg-[#0E1424]/70">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2">
+        {/* Topo da Sidebar: Identidade Institucional Santo André */}
+        <div className="h-16 px-4 border-b border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
             <Image
               src="/logo_santo_andre.png"
-              alt="Brasão Oficial de Santo André"
+              alt="Brasão Santo André"
               width={28}
-              height={40}
-              className="h-8 w-auto object-contain drop-shadow-xs dark:brightness-110 shrink-0"
+              height={36}
+              className="h-8 w-auto object-contain shrink-0 drop-shadow-xs dark:brightness-110"
               priority
             />
-            <div className="flex flex-col text-left min-w-0">
-              <span className="text-xs sm:text-sm font-extrabold tracking-tight text-slate-900 dark:text-white truncate leading-snug">
-                {escolaAtualObj ? escolaAtualObj.nome : 'Escolas Livres'}
-              </span>
-              {escolaAtualObj && (
-                <div className="mt-0.5">
-                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono tracking-wider leading-none">
-                    {escolaAtualObj.sigla} • Santo André
-                  </span>
-                </div>
-              )}
-            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-black tracking-tight text-slate-900 dark:text-white uppercase truncate">
+                  Santo André
+                </span>
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 font-mono tracking-wider truncate">
+                  Escolas Livres
+                </span>
+              </div>
+            )}
           </div>
 
-          <button
-            onClick={() => setMenuAberto(false)}
-            type="button"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer shrink-0"
-            title="Fechar menu"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Botão recolher no desktop ou fechar no mobile */}
+          <div className="flex items-center">
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition lg:hidden"
+              title="Fechar menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <button
+              onClick={toggleSidebarCollapse}
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              title={isCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
+            >
+              {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
-        {/* Lista Vertical dos 8 Módulos */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
-          <span className="block px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold">
-            Módulos de Gestão
-          </span>
-          {NAV_TABS.filter((tab) => {
-            if (tab.adminOnly && usuarioLogado?.role !== 'ROLE_ADMIN') return false;
-            if (tab.allowedRoles && !tab.allowedRoles.includes(usuarioLogado?.role || '')) return false;
-            return true;
-          }).map((tab) => {
-            const TabIcon = tab.icon;
-            const active = pathname === tab.href;
+        {/* Card Seletor da Escola Ativa (Dropdown Integrado) */}
+        <div className="p-3 border-b border-slate-100 dark:border-slate-800/60">
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setEscolaDropdownOpen((prev) => !prev)}
+              disabled={usuarioLogado?.role === 'ROLE_ENCARREGADA'}
+              className={`w-full flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all ${
+                schoolColor.bg
+              } ${schoolColor.border} hover:opacity-90 ${
+                isCollapsed ? 'justify-center p-2' : 'justify-between'
+              } ${usuarioLogado?.role === 'ROLE_ENCARREGADA' ? 'cursor-default' : 'cursor-pointer'}`}
+              title={escolaAtualObj ? escolaAtualObj.nome : 'Rede Municipal'}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${schoolColor.dot}`} />
+                {!isCollapsed && (
+                  <div className="min-w-0">
+                    <p className={`text-xs font-extrabold truncate ${schoolColor.text}`}>
+                      {escolaAtualObj ? escolaAtualObj.sigla : 'REDE'}
+                    </p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                      {escolaAtualObj ? escolaAtualObj.nome : 'Todas as Escolas'}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {!isCollapsed && usuarioLogado?.role !== 'ROLE_ENCARREGADA' && (
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              )}
+            </button>
+
+            {/* Menu Popover para alternar entre as 4 Escolas */}
+            {escolaDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-60 bg-white dark:bg-[#0F1629] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 p-1 text-xs">
+                <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
+                  Alternar Unidade
+                </div>
+                {escolas.map((esc) => {
+                  const itemColor = getSchoolColorClasses(esc.sigla);
+                  const isCurrent = escolaSelecionada === esc.id;
+                  return (
+                    <button
+                      key={esc.id}
+                      type="button"
+                      onClick={() => handleTrocarEscola(esc.id)}
+                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
+                        isCurrent
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${itemColor.dot}`} />
+                        <span className="truncate">{esc.nome}</span>
+                      </div>
+                      <span className="text-[10px] font-mono uppercase font-bold text-slate-400">
+                        {esc.sigla}
+                      </span>
+                    </button>
+                  );
+                })}
+                <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                <button
+                  type="button"
+                  onClick={() => handleTrocarEscola(null)}
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
+                    escolaSelecionada === null
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-slate-400" />
+                    <span>Todas as Escolas (Rede)</span>
+                  </div>
+                </button>
+                <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                <Link
+                  href="/direcionamento"
+                  onClick={() => setEscolaDropdownOpen(false)}
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Voltar ao Hub de Escolas</span>
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Navegação Hierárquica da Sidebar */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+          {NAV_SECTIONS.map((section) => {
+            const filteredItems = section.items.filter((item) => {
+              if (item.adminOnly && usuarioLogado?.role !== 'ROLE_ADMIN') return false;
+              if (item.allowedRoles && !item.allowedRoles.includes(usuarioLogado?.role || '')) return false;
+              return true;
+            });
+
+            if (filteredItems.length === 0) return null;
 
             return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                onClick={() => setMenuAberto(false)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
-                  active
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs'
-                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
-                }`}
-              >
-                <TabIcon className={`w-4 h-4 shrink-0 ${active ? 'text-amber-500 dark:text-amber-600' : 'text-slate-400'}`} />
-                <span className="truncate">{tab.label}</span>
-              </Link>
+              <div key={section.title} className="space-y-1">
+                {!isCollapsed && (
+                  <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-mono">
+                    {section.title}
+                  </p>
+                )}
+                {filteredItems.map((item) => {
+                  const ItemIcon = item.icon;
+                  const isActive = pathname === item.href;
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      title={isCollapsed ? item.label : undefined}
+                      className={`flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                        isCollapsed ? 'justify-center px-0' : ''
+                      } ${
+                        isActive
+                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <ItemIcon
+                        className={`w-4 h-4 shrink-0 ${
+                          isActive
+                            ? 'text-indigo-400 dark:text-indigo-600'
+                            : 'text-slate-400 dark:text-slate-500'
+                        }`}
+                      />
+                      {!isCollapsed && <span className="truncate">{item.label}</span>}
+                      {!isCollapsed && item.badge && (
+                        <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-mono bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
 
-        {/* Rodapé do Menu com Informações do Usuário */}
-        <div className="p-4 border-t border-slate-200/90 dark:border-slate-800/90 bg-slate-50/50 dark:bg-[#0E1424]/50">
-          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
-            <span className="truncate max-w-[170px]">{usuarioLogado?.email}</span>
-            <span className="font-mono text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">
-              {usuarioLogado?.role === 'ROLE_ADMIN' ? 'Admin' : 'Encarregada'}
-            </span>
+        {/* Rodapé da Sidebar: Perfil do Usuário */}
+        <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0B101D]/50">
+          <div
+            className={`flex items-center gap-2.5 ${
+              isCollapsed ? 'justify-center' : 'justify-between'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                {usuarioLogado?.email?.slice(0, 2).toUpperCase() || 'US'}
+              </div>
+              {!isCollapsed && (
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                    {usuarioLogado?.email?.split('@')[0]}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono truncate">
+                    {usuarioLogado?.role === 'ROLE_ADMIN' ? 'Administrador' : 'Encarregada'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {!isCollapsed && (
+              <button
+                onClick={handleLogout}
+                type="button"
+                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition cursor-pointer"
+                title="Encerrar sessão"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </aside>
 
-      {/* Notificações do Sistema */}
-      {feedbackMsg && (
-        <div className="max-w-7xl mx-auto w-full px-4 sm:px-8 mt-4">
-          <div
-            className={`p-4 rounded-2xl flex items-center justify-between shadow-xs border ${
-              feedbackMsg.tipo === 'sucesso'
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
-                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800'
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              {feedbackMsg.tipo === 'sucesso' ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
-              )}
-              <span className="text-xs font-semibold">{feedbackMsg.texto}</span>
+      {/* ─── MAIN CONTENT WRAPPER ─── */}
+      <div
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          isCollapsed ? 'lg:pl-[72px]' : 'lg:pl-64'
+        }`}
+      >
+        {/* Topbar Superior Integrada (Shadcn School Style) */}
+        <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between px-4 sm:px-6">
+          {/* Lado Esquerdo: Toggle Mobile + Breadcrumbs */}
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Botão Hamburger (Mobile) */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              type="button"
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 lg:hidden cursor-pointer"
+              aria-label="Abrir menu lateral"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+
+            {/* Breadcrumb Elegante */}
+            <nav className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+              <Link
+                href="/direcionamento"
+                className="hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1"
+                title="Voltar ao Hub de Escolas"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Escolas Livres</span>
+              </Link>
+              <ChevronRight className="w-3 h-3 text-slate-400" />
+              <Link
+                href="/panorama"
+                className="font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition truncate max-w-[140px] sm:max-w-[200px]"
+              >
+                {escolaAtualObj ? escolaAtualObj.nome : 'Rede Municipal'}
+              </Link>
+              <ChevronRight className="w-3 h-3 text-slate-400" />
+              <span className="font-bold text-slate-900 dark:text-white truncate">
+                {getPageTitle()}
+              </span>
+            </nav>
+          </div>
+
+          {/* Lado Direito: Ações Globais */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Badge de Escola Ativa com Acesso Rápido ao Hub */}
+            {escolaAtualObj && (
+              <Link
+                href="/direcionamento"
+                className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition ${
+                  schoolColor.bg
+                } ${schoolColor.border} ${schoolColor.text} hover:opacity-80`}
+                title="Trocar de Escola no Hub"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${schoolColor.dot}`} />
+                <span>{escolaAtualObj.sigla}</span>
+                <span className="text-[10px] opacity-75 font-normal">· Trocar</span>
+              </Link>
+            )}
+
+            {/* Central de Notificações */}
+            <NotificacoesPopover escolaId={escolaSelecionada} />
+
+            {/* Alternador Modo Claro / Escuro */}
+            <ThemeToggle showLabel={false} />
+
+            {/* Botão Sair Rápido */}
+            <button
+              onClick={handleLogout}
+              type="button"
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 transition cursor-pointer shadow-2xs"
+              title="Encerrar sessão"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </header>
+
+        {/* Feedback Alert Toast do Sistema */}
+        {feedbackMsg && (
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 mt-4">
+            <div
+              className={`p-3.5 rounded-2xl flex items-center justify-between shadow-xs border ${
+                feedbackMsg.tipo === 'sucesso'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                {feedbackMsg.tipo === 'sucesso' ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+                )}
+                <span className="text-xs font-semibold">{feedbackMsg.texto}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Conteúdo da Rota Ativa */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8">
-        {children}
-      </main>
+        {/* Área Principal de Conteúdo */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+          {children}
+        </main>
+      </div>
 
-      {/* MODAL NOVA TURMA */}
+      {/* ─── MODAIS GLOBAIS ─── */}
+      {/* Modal Nova Turma */}
       {showModalTurma && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-[#0F1629] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
@@ -426,7 +740,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Digite as matérias individualmente ou separe por vírgula (ex: <i>Audiovisual, Artes Cênicas, Design de Cinema, Máquinas Cinematográficas</i>).
+                  Digite as matérias individualmente ou separe por vírgula (ex: <i>Audiovisual, Artes Cênicas, Design de Cinema</i>).
                 </p>
 
                 {/* Chips / Tags das Matérias Cadastradas */}
@@ -554,7 +868,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm cursor-pointer"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
                 >
                   Salvar Turma
                 </button>
@@ -564,7 +878,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* MODAL PERFIL DO ESTUDANTE */}
+      {/* Modal Perfil do Estudante */}
       {showModalPerfil && perfilAlunoId && (
         <PerfilAlunoModal
           alunoId={perfilAlunoId}

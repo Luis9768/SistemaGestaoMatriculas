@@ -88,7 +88,8 @@ export interface Curso {
   descricao?: string;
   tipo: 'OFICINA' | 'REGULAR';
   modalidade?: 'FORMACAO' | 'NUCLEO' | 'OFICINA';
-  duracaoMeses: number;
+  duracaoMeses?: number;
+  duracaoEstimada?: string;
   cargaHoraria: number;
   ativo?: boolean;
   disciplinas?: Disciplina[];
@@ -99,6 +100,8 @@ export interface TurmaMateria {
   turmaId?: number;
   nome: string;
   duracaoEstimada?: string;
+  cargaHoraria?: number;
+  professorResponsavel?: string;
   ordem?: number;
 }
 
@@ -140,6 +143,7 @@ export interface Aluno {
   endereco?: string;
   bairro?: string;
   cidade?: string;
+  cep?: string;
   genero?: string;
   neurodiverso?: boolean;
   neurodiversoDetalhe?: string;
@@ -495,6 +499,7 @@ export interface InscricaoExternaPayload {
   endereco?: string;
   bairro?: string;
   cidade?: string;
+  cep?: string;
   genero?: string;
   neurodiverso?: boolean;
   neurodiversoDetalhe?: string;
@@ -586,6 +591,21 @@ export const formatarTelefone = (valor?: string): string => {
   }
   if (digits.length > 2 && digits.length < 10) {
     return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+  }
+  return valor;
+};
+
+export const aplicarMascaraCep = (valor: string): string => {
+  const digits = valor.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
+
+export const formatarCep = (valor?: string): string => {
+  if (!valor) return 'Não informado';
+  const digits = valor.replace(/\D/g, '');
+  if (digits.length === 8) {
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
   }
   return valor;
 };
@@ -831,7 +851,16 @@ export const api = {
     return res.json();
   },
 
-  async adicionarMateriaTurma(turmaId: number, data: { nome: string; duracaoEstimada?: string; ordem?: number }): Promise<TurmaMateria> {
+  async adicionarMateriaTurma(
+    turmaId: number,
+    data: {
+      nome: string;
+      duracaoEstimada?: string;
+      cargaHoraria?: number;
+      professorResponsavel?: string;
+      ordem?: number;
+    }
+  ): Promise<TurmaMateria> {
     const res = await fetch(`${API_BASE}/turmas/${turmaId}/materias`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -847,7 +876,13 @@ export const api = {
   async atualizarMateriaTurma(
     turmaId: number,
     materiaId: number,
-    data: { nome: string; duracaoEstimada?: string; ordem?: number }
+    data: {
+      nome?: string;
+      duracaoEstimada?: string;
+      cargaHoraria?: number;
+      professorResponsavel?: string;
+      ordem?: number;
+    }
   ): Promise<TurmaMateria> {
     const res = await fetch(`${API_BASE}/turmas/${turmaId}/materias/${materiaId}`, {
       method: 'PUT',

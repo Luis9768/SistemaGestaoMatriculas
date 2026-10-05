@@ -71,7 +71,7 @@ public class CursoService {
                     .mapToInt(d -> d.getCargaHoraria() != null ? d.getCargaHoraria() : 0)
                     .sum();
             if (somaDisciplinas > 0) {
-                cargaCalculada = somaDisciplinas;
+                cargaCalculada = Math.max(cargaCalculada, somaDisciplinas);
             }
         }
         if (cargaCalculada == 0) {
@@ -85,6 +85,7 @@ public class CursoService {
                 .tipo(dto.getTipo() != null ? dto.getTipo() : TipoCurso.OFICINA)
                 .modalidade(modalidade)
                 .duracaoMeses(dto.getDuracaoMeses() != null ? dto.getDuracaoMeses() : 2)
+                .duracaoEstimada(dto.getDuracaoEstimada() != null && !dto.getDuracaoEstimada().isBlank() ? dto.getDuracaoEstimada().trim() : null)
                 .cargaHoraria(cargaCalculada)
                 .ativo(dto.getAtivo() == null ? true : dto.getAtivo())
                 .disciplinas(new ArrayList<>())
@@ -237,6 +238,7 @@ public class CursoService {
                 .tipo(curso.getTipo())
                 .modalidade(curso.getModalidade())
                 .duracaoMeses(curso.getDuracaoMeses())
+                .duracaoEstimada(curso.getDuracaoEstimada())
                 .cargaHoraria(curso.getCargaHoraria())
                 .ativo(curso.getAtivo())
                 .disciplinas(discDtos)

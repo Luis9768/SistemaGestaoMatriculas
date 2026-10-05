@@ -10,6 +10,8 @@ import {
   DeclaracaoMatriculaData,
   aplicarMascaraTelefone,
   formatarTelefone,
+  aplicarMascaraCep,
+  formatarCep,
 } from '@/lib/api';
 import { getCorTemaEscola } from '@/lib/escolaUtils';
 import { ModalCertificado } from './ModalCertificado';
@@ -17,7 +19,6 @@ import { ModalDeclaracaoTransporte } from './ModalDeclaracaoTransporte';
 import { ModalDeclaracaoMatricula } from './ModalDeclaracaoMatricula';
 import {
   X,
-  Plus,
   Mail,
   Phone,
   Edit3,
@@ -42,8 +43,9 @@ import {
   Sparkles,
   Building2,
   Users2,
-  AlertCircle,
-  User,
+  Clock,
+  ArrowRight,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface PerfilAlunoModalProps {
@@ -85,84 +87,21 @@ const calcularIdade = (dataNasc?: string) => {
   return isNaN(idade) ? null : idade;
 };
 
-interface DossierFieldProps {
-  icon: React.ElementType;
-  label: string;
-  value?: string | null;
-  fallback?: string;
-  isMono?: boolean;
-  highlight?: boolean;
-}
-
-function DossierField({
-  icon: Icon,
-  label,
-  value,
-  fallback = 'Não informado',
-  isMono,
-  highlight,
-}: DossierFieldProps) {
-  const hasValue = Boolean(value && value.trim() && value.trim() !== 'Não informado');
-  return (
-    <div className="flex items-start gap-2.5 text-xs">
-      <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5">
-        <Icon className="w-3.5 h-3.5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-mono leading-none mb-1">
-          {label}
-        </span>
-        {hasValue ? (
-          <span
-            className={`block truncate text-xs ${
-              isMono ? 'font-mono' : ''
-            } ${
-              highlight
-                ? 'text-amber-600 dark:text-amber-400 font-bold'
-                : 'text-slate-800 dark:text-slate-200 font-semibold'
-            }`}
-          >
-            {value}
-          </span>
-        ) : (
-          <span className="block italic text-slate-400 dark:text-slate-500 text-[11px]">
-            {fallback}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DossierCard({
-  title,
-  icon: Icon,
-  badge,
-  children,
-}: {
-  title: string;
-  icon: React.ElementType;
-  badge?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-slate-50/70 dark:bg-[#070A12]/70 rounded-xl p-3.5 border border-slate-200/70 dark:border-slate-800/70 flex flex-col justify-between space-y-3">
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800/60 pb-2">
-        <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-          <Icon className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-          <span>{title}</span>
-        </span>
-        {badge && (
-          <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-            {badge}
-          </span>
-        )}
-      </div>
-      <div className="space-y-2.5">
-        {children}
-      </div>
-    </div>
-  );
+/* ─── Helper de Cor das Escolas ─── */
+function getEscolaPillStyle(sigla?: string) {
+  switch (sigla) {
+    case 'ELT':
+      return 'bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/20';
+    case 'ELD':
+      return 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20';
+    case 'ELCV':
+      return 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20';
+    case 'EMIA':
+    case 'ELIA':
+      return 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20';
+    default:
+      return 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20';
+  }
 }
 
 export function PerfilAlunoModal({
@@ -178,11 +117,12 @@ export function PerfilAlunoModal({
   const [abaAtiva, setAbaAtiva] = useState<'atuais' | 'frequencia' | 'historico' | 'cadastro'>('atuais');
   const [matriculaSelecionadaId, setMatriculaSelecionadaId] = useState<number | null>(null);
 
-  // Modo de edição de dados cadastrais, endereço e inclusão
+  // Modo de edição de dados cadastrais
   const [modoEdicao, setModoEdicao] = useState(false);
   const [editEmail, setEditEmail] = useState('');
   const [editTelefone, setEditTelefone] = useState('');
   const [editEndereco, setEditEndereco] = useState('');
+  const [editCep, setEditCep] = useState('');
   const [editBairro, setEditBairro] = useState('');
   const [editCidade, setEditCidade] = useState('');
   const [editGenero, setEditGenero] = useState('');
@@ -198,7 +138,7 @@ export function PerfilAlunoModal({
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const [feedbackSalvo, setFeedbackSalvo] = useState<string | null>(null);
 
-  // Estados para emissão de Certificado, Declaração CPTM / SPTrans e Declaração de Matrícula
+  // Sub-modais de Documentos
   const [modalCertificadoAberto, setModalCertificadoAberto] = useState(false);
   const [modalDeclaracaoAberto, setModalDeclaracaoAberto] = useState(false);
   const [modalDeclaracaoMatriculaAberto, setModalDeclaracaoMatriculaAberto] = useState(false);
@@ -243,6 +183,7 @@ export function PerfilAlunoModal({
       setEditEmail(perfil.aluno.email || '');
       setEditTelefone(aplicarMascaraTelefone(perfil.aluno.telefone || ''));
       setEditEndereco(perfil.aluno.endereco || '');
+      setEditCep(aplicarMascaraCep(perfil.aluno.cep || ''));
       setEditBairro(perfil.aluno.bairro || '');
       setEditCidade(perfil.aluno.cidade || '');
       setEditGenero(perfil.aluno.genero || '');
@@ -273,6 +214,7 @@ export function PerfilAlunoModal({
         endereco: editEndereco.trim() || undefined,
         bairro: editBairro.trim() || undefined,
         cidade: editCidade.trim() || undefined,
+        cep: editCep.trim() || undefined,
         genero: editGenero || undefined,
         neurodiverso: editNeurodiverso,
         neurodiversoDetalhe: editNeurodiverso ? editNeurodiversoDetalhe.trim() || undefined : undefined,
@@ -289,7 +231,7 @@ export function PerfilAlunoModal({
             }
           : undefined,
       });
-      setFeedbackSalvo('Ficha cadastral e conformidade LGPD atualizadas com sucesso.');
+      setFeedbackSalvo('Ficha cadastral atualizada com sucesso.');
       setModoEdicao(false);
       await carregarPerfil();
       if (onUpdate) onUpdate();
@@ -336,7 +278,6 @@ export function PerfilAlunoModal({
             <h1>Prefeitura Municipal de Santo André • Secretaria de Cultura</h1>
             <h2>Rede de Escolas Livres (ELT • ELD • ELCV • EMIA)</h2>
             <div class="doc-tag">FICHA CADASTRAL INTERNA DO ESTUDANTE — REGISTRO #${aluno.id}</div>
-            <p style="margin-top: 4px; font-size: 10px;">Para fins estritamente arquivísticos e de prontuário interno da Secretaria de Cultura</p>
           </div>
           <div class="section">
             <div class="section-title">1. Identificação e Contato</div>
@@ -348,36 +289,9 @@ export function PerfilAlunoModal({
               <div class="field"><span class="field-label">E-mail:</span> ${aluno.email}</div>
               <div class="field"><span class="field-label">Telefone:</span> ${formatarTelefone(aluno.telefone) || 'Não informado'}</div>
               <div class="field"><span class="field-label">Endereço:</span> ${aluno.endereco || 'Não informado'}</div>
+              <div class="field"><span class="field-label">CEP:</span> ${aluno.cep || 'Não informado'}</div>
               <div class="field"><span class="field-label">Bairro / Cidade:</span> ${(aluno.bairro || '') + ' - ' + (aluno.cidade || 'Santo André')}/SP</div>
-              <div class="field"><span class="field-label">Contato Emergência:</span> ${aluno.contatoEmergencia || 'Não informado'}</div>
             </div>
-          </div>
-          ${aluno.responsavel ? `
-          <div class="section">
-            <div class="section-title">2. Responsável Legal (Art. 14 LGPD)</div>
-            <div class="grid">
-              <div class="field"><span class="field-label">Nome:</span> <strong>${aluno.responsavel.nome}</strong></div>
-              <div class="field"><span class="field-label">Parentesco:</span> ${aluno.responsavel.grauParentesco || 'Responsável Legal'}</div>
-              <div class="field"><span class="field-label">CPF:</span> ${formatarCpf(aluno.responsavel.cpf)}</div>
-              <div class="field"><span class="field-label">Telefone:</span> ${formatarTelefone(aluno.responsavel.telefone) || 'Não informado'}</div>
-              <div class="field"><span class="field-label">E-mail:</span> ${aluno.responsavel.email || 'Não informado'}</div>
-            </div>
-          </div>` : ''}
-          <div class="section">
-            <div class="section-title">3. Inclusão, Acessibilidade e LGPD</div>
-            <div class="grid">
-              <div class="field"><span class="field-label">PCD:</span> ${aluno.pcd ? `Sim (${aluno.pcdDetalhe || 'Não especificado'})` : 'Não'}</div>
-              <div class="field"><span class="field-label">Neurodivergência:</span> ${aluno.neurodiverso ? `Sim (${aluno.neurodiversoDetalhe || 'Não especificado'})` : 'Não'}</div>
-              <div class="field"><span class="field-label">Uso Institucional de Imagem:</span> ${aluno.consentimentoUsoImagem ? 'Autorizado' : 'Não Autorizado'}</div>
-            </div>
-          </div>
-          <div class="termo-box">
-            <strong>TERMO DE RESPONSABILIDADE E CONSENTIMENTO LGPD:</strong><br/>
-            Declaro verídicas as informações cadastrais prestadas. Autorizo o tratamento e custódia dos dados pessoais e sensíveis para finalidades estritamente pedagógicas e administrativas da Secretaria de Cultura de Santo André (Art. 7º, 11 e 14 da Lei 13.709/2018).
-          </div>
-          <div class="signatures">
-            <div class="sig-line">Assinatura do(a) Aluno(a) ou Responsável Legal</div>
-            <div class="sig-line">Secretaria Escolar • Santo André<br/>Data: ____/____/2026</div>
           </div>
         </body>
       </html>
@@ -389,7 +303,6 @@ export function PerfilAlunoModal({
       printWindow.print();
     }, 250);
   };
-
 
   const handleDesligarPorFaltas = async (matriculaId: number) => {
     if (
@@ -460,10 +373,11 @@ export function PerfilAlunoModal({
         setModalDeclaracaoMatriculaAberto(true);
       }
     } catch (e: any) {
-      // Fallback robusto usando os dados completos já carregados do aluno
-      const curso = perfil?.cursosAtuais.find((c) => c.matriculaId === matId) ||
-                    perfil?.historicoCursos.find((c) => c.matriculaId === matId) ||
-                    (perfil?.cursosAtuais && perfil.cursosAtuais[0]);
+      const curso =
+        perfil?.cursosAtuais.find((c) => c.matriculaId === matId) ||
+        perfil?.historicoCursos.find((c) => c.matriculaId === matId) ||
+        (perfil?.cursosAtuais && perfil.cursosAtuais[0]);
+
       if (curso && aluno) {
         const hoje = new Date();
         const meses = [
@@ -471,10 +385,12 @@ export function PerfilAlunoModal({
           'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
         ];
         const dataEmissaoFormatada = `${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}`;
-        const mesAnoInicio = curso.dataInicio ? (() => {
-          const d = new Date(curso.dataInicio);
-          return `${meses[d.getMonth()]} de ${d.getFullYear()}`;
-        })() : 'fevereiro de 2026';
+        const mesAnoInicio = curso.dataInicio
+          ? (() => {
+              const d = new Date(curso.dataInicio);
+              return `${meses[d.getMonth()]} de ${d.getFullYear()}`;
+            })()
+          : 'fevereiro de 2026';
 
         const decFallback: DeclaracaoMatriculaData = {
           matriculaId: curso.matriculaId,
@@ -489,7 +405,9 @@ export function PerfilAlunoModal({
           alunoCpf: aluno.cpf,
           alunoDataNascimento: aluno.dataNascimento,
           alunoIdade: calcularIdade(aluno.dataNascimento) || undefined,
-          alunoEnderecoCompleto: aluno.endereco ? `${aluno.endereco}, ${aluno.bairro || ''} - ${aluno.cidade || 'Santo André'}/SP` : 'Santo André - SP',
+          alunoEnderecoCompleto: aluno.endereco
+            ? `${aluno.endereco}, ${aluno.bairro || ''} - ${aluno.cidade || 'Santo André'}/SP`
+            : 'Santo André - SP',
           alunoNomeResponsavel: aluno.responsavel?.nome,
           alunoCpfResponsavel: aluno.responsavel?.cpf,
           cursoNome: curso.cursoNome,
@@ -554,116 +472,127 @@ export function PerfilAlunoModal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-white dark:bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800/80 max-w-5xl xl:max-w-6xl w-full h-[90vh] max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in duration-150">
+      {/* ─── MODAL CONTAINER (SHADCN CLEAN CARD STYLE) ─── */}
+      <div className="bg-white dark:bg-[#0E1424] text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800/90 max-w-5xl xl:max-w-6xl w-full h-[90vh] max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
         
-        {/* Cabeçalho do Prontuário - Linha Executiva e Compacta */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1220] shrink-0">
+        {/* ─── 1. TOP HEADER (STUDENT DOSSIER CARD) ─── */}
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0E1424] shrink-0">
           {loading ? (
-            <div className="flex items-center gap-2.5 py-2">
-              <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs text-slate-500 dark:text-slate-400">Carregando prontuário do estudante...</span>
+            <div className="flex items-center gap-3 py-3">
+              <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Carregando prontuário do estudante...
+              </span>
             </div>
           ) : erro ? (
-            <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 p-3 rounded-xl text-xs flex items-center justify-between">
+            <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 p-3.5 rounded-xl text-xs flex items-center justify-between">
               <span>{erro}</span>
-              <button onClick={carregarPerfil} className="underline text-xs font-semibold cursor-pointer">Tentar novamente</button>
+              <button onClick={carregarPerfil} className="underline text-xs font-semibold cursor-pointer">
+                Tentar novamente
+              </button>
             </div>
           ) : aluno ? (
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               
-              {/* Identificação Principal do Estudante */}
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-11 h-11 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-base flex items-center justify-center shrink-0 select-none shadow-xs">
+              {/* Avatar + Nome + Metadados com Ícones */}
+              <div className="flex items-start sm:items-center gap-4 min-w-0">
+                <div className="w-13 h-13 rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 font-black text-xl flex items-center justify-center shrink-0 shadow-2xs">
                   {aluno.nome.charAt(0).toUpperCase()}
                 </div>
-                <div className="min-w-0">
+
+                <div className="min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white truncate">
+                    <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white truncate">
                       {aluno.nome}
                     </h2>
                     {aluno.menorDeIdade ? (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200/60 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/40">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                         Menor de Idade
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200/60 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                         Regular
                       </span>
                     )}
-                    <span className="font-mono text-xs text-slate-400 dark:text-slate-500">
+                    <span className="font-mono text-xs text-slate-400 dark:text-slate-500 font-bold bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md">
                       Matrícula #{aluno.id}
                     </span>
                   </div>
 
-                  {/* Faixa Compacta de Metadados / Contato Imediato */}
-                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex-wrap">
-                    <span className="font-mono text-slate-600 dark:text-slate-300 font-medium">CPF {formatarCpf(aluno.cpf)}</span>
+                  {/* Grid de Metadados Limpa e Organizada */}
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                    <div className="flex items-center gap-1.5 font-mono text-slate-700 dark:text-slate-300 font-semibold">
+                      <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                      <span>CPF {formatarCpf(aluno.cpf)}</span>
+                    </div>
+
                     {aluno.dataNascimento && (
-                      <>
-                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         <span>{formatarData(aluno.dataNascimento)}{idade !== null ? ` (${idade} anos)` : ''}</span>
-                      </>
+                      </div>
                     )}
+
                     {aluno.telefone && (
-                      <>
-                        <span className="text-slate-300 dark:text-slate-700">•</span>
-                        <span className="font-mono">{formatarTelefone(aluno.telefone)}</span>
-                      </>
+                      <div className="flex items-center gap-1.5 font-mono">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{formatarTelefone(aluno.telefone)}</span>
+                      </div>
                     )}
+
                     {aluno.email && (
-                      <>
-                        <span className="text-slate-300 dark:text-slate-700">•</span>
-                        <span className="truncate max-w-[220px]" title={aluno.email}>{aluno.email}</span>
-                      </>
+                      <div className="flex items-center gap-1.5 truncate max-w-[200px]" title={aluno.email}>
+                        <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{aluno.email}</span>
+                      </div>
                     )}
+
                     {(aluno.bairro || aluno.cidade) && (
-                      <>
-                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>{[aluno.bairro, aluno.cidade || 'Santo André'].filter(Boolean).join(', ')}</span>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Ações do Cabeçalho */}
-              <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-                {/* Botão Principal: Declaração Oficial de Matrícula Escolar */}
+              {/* Botões de Ação do Cabeçalho (Padrão Shadcn) */}
+              <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
                 <button
                   type="button"
                   onClick={() => handleAbrirDeclaracaoMatricula()}
                   disabled={carregandoDocumento}
-                  title="Emitir Declaração Oficial de Matrícula e Frequência Escolar (PDF)"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition active:scale-95 cursor-pointer"
+                  title="Emitir Declaração Oficial de Matrícula (PDF)"
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Declaração de Matrícula (PDF)</span>
-                  <span className="sm:hidden">Declaração</span>
+                  <span>Declaração de Matrícula</span>
                 </button>
 
-                {/* Ficha Cadastral Interna */}
                 <button
                   type="button"
                   onClick={handleImprimirFichaTermo}
-                  title="Imprimir Ficha Cadastral Interna do Estudante"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-medium transition cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition cursor-pointer shadow-2xs"
+                  title="Imprimir Ficha Cadastral"
                 >
-                  <Printer className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                  <span className="hidden lg:inline">Ficha Cadastral</span>
+                  <Printer className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="hidden sm:inline">Ficha Cadastral</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={iniciarEdicao}
-                  title="Editar dados da ficha cadastral"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-medium transition cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition cursor-pointer shadow-2xs"
+                  title="Editar Ficha"
                 >
-                  <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                  <span className="hidden sm:inline">Editar Ficha</span>
+                  <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="hidden sm:inline">Editar</span>
                 </button>
 
                 <button
                   onClick={onClose}
-                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer ml-1"
+                  className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer ml-1"
                   aria-label="Fechar prontuário"
                 >
                   <X className="w-5 h-5" />
@@ -673,172 +602,245 @@ export function PerfilAlunoModal({
           ) : null}
         </div>
 
-        {/* Barra de Segmento de Abas */}
-        <div className="bg-slate-50/70 dark:bg-[#070A11] px-6 py-2 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-4 shrink-0">
+        {/* ─── 2. TABS BAR (ESTILO SHADCN SEGMENTED LIST) ─── */}
+        <div className="bg-slate-50/80 dark:bg-[#0B101D] px-6 py-2.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-1 bg-slate-200/60 dark:bg-slate-900/80 p-1 rounded-xl text-xs overflow-x-auto">
             <button
               onClick={() => setAbaAtiva('atuais')}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-lg font-bold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 abaAtiva === 'atuais'
-                  ? 'bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white shadow-2xs font-semibold'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
+              <BookOpen className="w-3.5 h-3.5 text-slate-400" />
               <span>Cursos Atuais</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                 {perfil?.cursosAtuais.length || 0}
               </span>
             </button>
 
             <button
               onClick={() => setAbaAtiva('frequencia')}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-lg font-bold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 abaAtiva === 'frequencia'
-                  ? 'bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white shadow-2xs font-semibold'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
               <span>Frequência & Presenças</span>
               {cursoSelecionado?.frequencia?.atingiuLimiteFaltas && (
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
               )}
             </button>
 
             <button
               onClick={() => setAbaAtiva('historico')}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-lg font-bold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 abaAtiva === 'historico'
-                  ? 'bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white shadow-2xs font-semibold'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
+              <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
               <span>Histórico Escolar</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                 {perfil?.historicoCursos.length || 0}
               </span>
             </button>
 
             <button
               onClick={() => setAbaAtiva('cadastro')}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-lg font-bold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 abaAtiva === 'cadastro'
-                  ? 'bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white shadow-2xs font-semibold'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               <UserCheck className="w-3.5 h-3.5 text-slate-400" />
               <span>Ficha & Dados Cadastrais</span>
               {modoEdicao && (
-                <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold uppercase tracking-wider">
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold uppercase">
                   Editando
                 </span>
               )}
             </button>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 font-mono">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 font-mono font-medium">
             <span>{perfil?.totalCursosAtivos || 0} ativo(s)</span>
-            <span>•</span>
+            <span>·</span>
             <span>{perfil?.totalCursosConcluidos || 0} concluído(s)</span>
           </div>
         </div>
 
-        {/* Conteúdo com macro-espaçamento limpo */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-5 bg-white dark:bg-[#0B0F19]">
+        {/* ─── 3. TAB CONTENT (RESPONSIVE SCROLLABLE BODY) ─── */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-[#F8FAFC]/50 dark:bg-[#0B101D]">
           
-          {/* ABA 1: CURSOS ATUAIS */}
+          {/* ════ ABA 1: CURSOS ATUAIS ════ */}
           {abaAtiva === 'atuais' && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {perfil?.cursosAtuais.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-[#0E1322] rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs">
-                  O estudante não possui matrículas ativas no momento.
+                <div className="text-center py-16 text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0E1424] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs flex flex-col items-center gap-2">
+                  <BookOpen className="w-8 h-8 opacity-40" />
+                  <span>O estudante não possui matrículas ativas no momento.</span>
                 </div>
               ) : (
                 perfil?.cursosAtuais.map((curso) => {
                   const freq = curso.frequencia?.porcentagemFrequencia ?? 100;
                   const faltasConsecutivas = curso.frequencia?.faltasConsecutivas || 0;
                   const emAlerta = curso.frequencia?.atingiuLimiteFaltas || faltasConsecutivas >= 3;
+                  const escolaPill = getEscolaPillStyle(curso.escolaSigla);
 
                   return (
                     <div
                       key={curso.matriculaId}
-                      className="border border-slate-200/80 dark:border-slate-800/80 rounded-xl p-5 bg-white dark:bg-[#0D1220] hover:border-slate-300 dark:hover:border-slate-700 transition space-y-4"
+                      className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-5"
                     >
-                      {/* Topo do Card de Curso */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      {/* Topo do Card de Matrícula */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60 pb-4">
+                        <div className="flex items-center gap-2.5 flex-wrap">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border uppercase tracking-wider ${getCorTemaEscola(
-                              curso.escolaSigla || curso.escolaCorTema
-                            )}`}
+                            className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-extrabold border uppercase tracking-wider ${escolaPill}`}
                           >
                             {curso.escolaSigla || 'GERAL'}
                           </span>
-                          <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                          <h3 className="font-extrabold text-slate-900 dark:text-white text-base tracking-tight">
                             {curso.cursoNome}
                           </h3>
-                          <span className="text-xs font-mono text-slate-400 dark:text-slate-500">
-                            ({curso.turmaCodigo})
+                          <span className="text-xs font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                            {curso.turmaCodigo}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/70 dark:border-slate-700">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
                             {curso.modalidade || 'FORMAÇÃO'}
                           </span>
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40">
+                          <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                             {curso.status}
                           </span>
                         </div>
                       </div>
 
-                      {/* Informações de Período e Horário */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400 pt-1">
-                        <div>
-                          <strong className="text-slate-600 dark:text-slate-300 font-medium">Período Letivo:</strong>{' '}
-                          {formatarData(curso.dataInicio)} até {formatarData(curso.dataTermino)}
+                      {/* Grade de Informações Acadêmicas (4 Tiles) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60 space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Período Letivo</span>
+                          </span>
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            {formatarData(curso.dataInicio)} a {formatarData(curso.dataTermino)}
+                          </p>
                         </div>
-                        <div>
-                          <strong className="text-slate-600 dark:text-slate-300 font-medium">Escola Oficial:</strong>{' '}
-                          {curso.escolaNome}
+
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60 space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5" />
+                            <span>Escola Oficial</span>
+                          </span>
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            {curso.escolaNome || 'Escolas Livres Santo André'}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60 space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>Horário & Dias</span>
+                          </span>
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            {curso.horario || 'Conforme cronograma da turma'}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60 space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>Modalidade</span>
+                          </span>
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            {curso.modalidade || 'Regular'}
+                          </p>
                         </div>
                       </div>
 
-                      {/* Barra de Progresso de Frequência */}
-                      <div className="bg-slate-50/70 dark:bg-[#070A11] p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-800/70 space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                            Assiduidade do Estudante
-                          </span>
-                          <span className={`font-mono font-bold ${freq >= 75 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                      {/* Bloco Elegante de Assiduidade & Presenças (Shadcn Bento Style) */}
+                      <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/70 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                              Assiduidade do Estudante
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">
+                              (Meta mínima exigida: 75%)
+                            </span>
+                          </div>
+                          <span
+                            className={`text-base font-black font-mono ${
+                              freq >= 75
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                            }`}
+                          >
                             {freq}%
                           </span>
                         </div>
 
-                        <div className="w-full bg-slate-200/70 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        {/* Barra de Progresso Suave */}
+                        <div className="w-full bg-slate-200/80 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-300 ${
-                              freq >= 75 ? 'bg-emerald-500' : 'bg-rose-500'
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              freq >= 75
+                                ? 'bg-emerald-500 dark:bg-emerald-400'
+                                : 'bg-rose-500 dark:bg-rose-400'
                             }`}
                             style={{ width: `${Math.min(freq, 100)}%` }}
                           />
                         </div>
 
-                        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono pt-0.5">
-                          <span>{curso.frequencia?.totalPresencas || 0} presenças de {curso.frequencia?.totalAulas || 0} aulas</span>
-                          <span>{curso.frequencia?.totalFaltas || 0} faltas ({faltasConsecutivas} consecutivas)</span>
+                        {/* Mini Chips de Presenças / Faltas */}
+                        <div className="flex items-center justify-between text-xs font-mono pt-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                              {curso.frequencia?.totalPresencas || 0} presenças
+                            </span>
+                            <span className="text-slate-400">de</span>
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              {curso.frequencia?.totalAulas || 0} aulas ministradas
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-rose-600 dark:text-rose-400">
+                              {curso.frequencia?.totalFaltas || 0} faltas
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                faltasConsecutivas >= 2
+                                  ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20'
+                                  : 'text-slate-400'
+                              }`}
+                            >
+                              ({faltasConsecutivas} consecutivas)
+                            </span>
+                          </div>
                         </div>
                       </div>
 
                       {/* Alerta de Risco de Evasão (se houver) */}
                       {emAlerta && (
-                        <div className="bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 p-4 rounded-xl space-y-3 text-xs">
-                          <div className="flex items-start gap-2 text-amber-900 dark:text-amber-300">
-                            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700 dark:text-amber-400" />
+                        <div className="bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/20 rounded-xl p-4 space-y-3 text-xs">
+                          <div className="flex items-start gap-2.5 text-amber-900 dark:text-amber-300">
+                            <AlertTriangle className="w-4.5 h-4.5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
                             <div>
-                              <strong className="block">Alerta de Faltas Consecutivas (3 ou mais)</strong>
+                              <strong className="block text-sm font-bold">
+                                Alerta de Busca Ativa (3 ou mais ausências consecutivas)
+                              </strong>
                               <span className="text-[11px] text-amber-800 dark:text-amber-400">
-                                Recomenda-se tentativa de contato antes do cancelamento definitivo da matrícula.
+                                Estudante em risco crítico de desligamento. Contate o estudante ou responsável para justificar faltas antes do cancelamento definitivo da vaga.
                               </span>
                             </div>
                           </div>
@@ -851,22 +853,22 @@ export function PerfilAlunoModal({
                                 )}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer"
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" />
-                                <span>WhatsApp</span>
+                                <span>Contatar por WhatsApp</span>
                               </a>
                             )}
 
                             {(aluno?.email || aluno?.responsavel?.email) && (
                               <a
                                 href={`mailto:${aluno?.email || aluno?.responsavel?.email}?subject=${encodeURIComponent(
-                                  `Frequência: ${curso.cursoNome}`
+                                  `Frequência Escolar: ${curso.cursoNome}`
                                 )}`}
-                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer"
+                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
                               >
                                 <Mail className="w-3.5 h-3.5" />
-                                <span>E-mail</span>
+                                <span>Enviar E-mail</span>
                               </a>
                             )}
 
@@ -874,50 +876,48 @@ export function PerfilAlunoModal({
                               <button
                                 type="button"
                                 onClick={() => handleDesligarPorFaltas(curso.matriculaId)}
-                                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-medium transition cursor-pointer sm:ml-auto"
+                                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition cursor-pointer sm:ml-auto"
                               >
-                                Desligar por Faltas
+                                Confirmar Desligamento por Faltas
                               </button>
                             )}
                           </div>
                         </div>
                       )}
 
-                      {/* Ações de Documentos Oficiais e Frequência */}
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap items-center justify-between gap-2.5">
+                      {/* Barra de Ações & Emissão de Documentos */}
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          {/* Declaração Oficial de Matrícula Escolar */}
                           <button
                             type="button"
                             onClick={() => handleAbrirDeclaracaoMatricula(curso.matriculaId)}
                             disabled={carregandoDocumento}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-semibold transition cursor-pointer"
-                            title="Emitir Declaração Oficial de Matrícula e Frequência Escolar"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition cursor-pointer shadow-2xs"
+                            title="Emitir Declaração Oficial de Matrícula"
                           >
-                            <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <FileText className="w-3.5 h-3.5 text-indigo-500" />
                             <span>Declaração de Matrícula</span>
                           </button>
 
-                          {/* Declaração de Transporte CPTM / SPTrans */}
                           {curso.aptoDeclaracaoTransporte ? (
                             <button
                               type="button"
                               onClick={() => handleAbrirDeclaracao(curso.matriculaId)}
                               disabled={carregandoDocumento}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 text-xs font-semibold transition cursor-pointer"
-                              title="Emitir Declaração de Estudante para passe escolar CPTM / SPTrans"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition cursor-pointer shadow-2xs"
+                              title="Emitir Declaração de Transporte CPTM / SPTrans"
                             >
-                              <Bus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                              <span>Declaração CPTM / SPTrans</span>
+                              <Bus className="w-3.5 h-3.5 text-sky-500" />
+                              <span>Passe CPTM / SPTrans</span>
                             </button>
                           ) : (
-                            <div
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-800 text-xs cursor-not-allowed"
-                              title={curso.motivoInaptidaoDeclaracaoTransporte || 'Necessário 2 meses de curso'}
+                            <span
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs font-semibold cursor-not-allowed"
+                              title={curso.motivoInaptidaoDeclaracaoTransporte || 'Requer 60 dias de curso'}
                             >
                               <Bus className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Declaração CPTM/SPTrans ({curso.diasRestantesDeclaracaoTransporte ?? 60}d restantes)</span>
-                            </div>
+                              <span>Passe Transporte ({curso.diasRestantesDeclaracaoTransporte ?? 60}d restantes)</span>
+                            </span>
                           )}
 
                           {/* Homologar Formatura se Ativo */}
@@ -927,44 +927,42 @@ export function PerfilAlunoModal({
                                 type="button"
                                 onClick={() => handleConcluirMatricula(curso.matriculaId)}
                                 disabled={concluindoMatriculaId === curso.matriculaId}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-2xs transition cursor-pointer"
-                                title="Homologar conclusão com aproveitamento (>=75% de presença)"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-xs"
                               >
                                 <GraduationCap className="w-3.5 h-3.5" />
                                 <span>{concluindoMatriculaId === curso.matriculaId ? 'Homologando...' : 'Homologar Formatura (≥75%)'}</span>
                               </button>
                             ) : (
-                              <div
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-800 text-xs cursor-not-allowed"
-                                title={`Frequência de ${freq}% é insuficiente para formatura (mínimo exigido: 75%)`}
+                              <span
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs font-semibold cursor-not-allowed"
+                                title={`Frequência de ${freq}% é insuficiente para formatura (mínimo: 75%)`}
                               >
                                 <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
                                 <span>Formatura Bloqueada ({freq}% &lt; 75%)</span>
-                              </div>
+                              </span>
                             )
                           )}
 
-                          {/* Certificado caso já homologado */}
                           {curso.aptoCertificado && (
                             <button
                               type="button"
                               onClick={() => handleAbrirCertificado(curso.matriculaId)}
                               disabled={carregandoDocumento}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-semibold transition cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-xs font-bold transition cursor-pointer shadow-2xs"
                             >
-                              <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                              <Award className="w-3.5 h-3.5 text-amber-500" />
                               <span>Certificado MEC/LDB</span>
                             </button>
                           )}
                         </div>
 
-                        {/* Link direto para a aba de frequência */}
                         <button
+                          type="button"
                           onClick={() => {
                             setMatriculaSelecionadaId(curso.matriculaId);
                             setAbaAtiva('frequencia');
                           }}
-                          className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition sm:ml-auto"
+                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer transition sm:ml-auto"
                         >
                           <span>Ver diário completo</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -977,19 +975,20 @@ export function PerfilAlunoModal({
             </div>
           )}
 
-          {/* ABA 2: FREQUÊNCIA & PRESENÇAS FILTRADAS POR CURSO */}
+          {/* ════ ABA 2: FREQUÊNCIA & DIÁRIO DE CHAMADAS ════ */}
           {abaAtiva === 'frequencia' && (
             <div className="space-y-5">
-              {/* Barra de Filtro de Curso e Ações */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/70 dark:bg-[#070A11] p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-800/70">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                    Curso:
+              {/* Seletor de Curso */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-[#0E1424] p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-xs">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                  <Calendar className="w-4 h-4 text-indigo-500" />
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    Turma Vinculada:
                   </label>
                   <select
                     value={matriculaSelecionadaId || ''}
                     onChange={(e) => setMatriculaSelecionadaId(Number(e.target.value))}
-                    className="w-full sm:w-80 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                    className="w-full sm:w-80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 cursor-pointer"
                   >
                     <optgroup label="Cursos Atuais">
                       {perfil?.cursosAtuais.map((c) => (
@@ -1011,16 +1010,16 @@ export function PerfilAlunoModal({
                 </div>
               </div>
 
-              {/* Bento Cards Minimalistas */}
               {cursoSelecionado ? (
                 <>
+                  {/* 4 Cards de Métricas da Frequência */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-[#0D1220] border border-slate-200/80 dark:border-slate-800/80">
-                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
                         Assiduidade
                       </span>
                       <div
-                        className={`text-xl font-bold font-mono mt-1 ${
+                        className={`text-2xl font-black font-mono mt-1 ${
                           (cursoSelecionado.frequencia?.porcentagemFrequencia ?? 100) >= 75
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-rose-600 dark:text-rose-400'
@@ -1028,89 +1027,89 @@ export function PerfilAlunoModal({
                       >
                         {cursoSelecionado.frequencia?.porcentagemFrequencia ?? 100}%
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5">Meta: 75%</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Meta: ≥ 75%</span>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-[#0D1220] border border-slate-200/80 dark:border-slate-800/80">
-                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                        Aulas Totais
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
+                        Aulas Registradas
                       </span>
-                      <div className="text-xl font-bold font-mono text-slate-800 dark:text-slate-200 mt-1">
+                      <div className="text-2xl font-black font-mono text-slate-800 dark:text-slate-200 mt-1">
                         {cursoSelecionado.frequencia?.totalAulas || 0}
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5">Registradas no diário</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Aulas no diário</span>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-[#0D1220] border border-slate-200/80 dark:border-slate-800/80">
-                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
                         Presenças
                       </span>
-                      <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                      <div className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">
                         {cursoSelecionado.frequencia?.totalPresencas || 0}
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-400 block mt-0.5">
                         +{cursoSelecionado.frequencia?.totalJustificadas || 0} justificada(s)
                       </span>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-[#0D1220] border border-slate-200/80 dark:border-slate-800/80">
-                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
                         Faltas
                       </span>
-                      <div className="text-xl font-bold font-mono text-rose-600 dark:text-rose-400 mt-1">
+                      <div className="text-2xl font-black font-mono text-rose-600 dark:text-rose-400 mt-1">
                         {cursoSelecionado.frequencia?.totalFaltas || 0}
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-400 block mt-0.5">
                         {cursoSelecionado.frequencia?.faltasConsecutivas || 0} consecutiva(s)
                       </span>
                     </div>
                   </div>
 
-                  {/* Tabela do Diário de Presenças */}
-                  <div className="border border-slate-200/80 dark:border-slate-800/80 rounded-xl overflow-hidden bg-white dark:bg-[#0D1220]">
-                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800/70 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        Diário de Chamadas ({cursoSelecionado.presencas?.length || 0} registros)
+                  {/* Tabela do Diário de Chamadas */}
+                  <div className="border border-slate-200/90 dark:border-slate-800/90 rounded-2xl overflow-hidden bg-white dark:bg-[#0E1424] shadow-xs">
+                    <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
+                      <span className="font-extrabold text-slate-900 dark:text-white">
+                        Registros de Chamadas ({cursoSelecionado.presencas?.length || 0} aulas lançadas)
                       </span>
-                      <span className="font-mono text-[11px]">
+                      <span className="font-mono text-[11px] font-bold">
                         {cursoSelecionado.cursoNome} • {cursoSelecionado.turmaCodigo}
                       </span>
                     </div>
 
                     {cursoSelecionado.presencas?.length === 0 ? (
-                      <div className="text-center py-10 text-slate-400 dark:text-slate-500 text-xs">
-                        Nenhum registro de chamada lançado até o momento.
+                      <div className="text-center py-12 text-slate-400 text-xs">
+                        Nenhum registro de chamada lançado até o momento para este curso.
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50/60 dark:bg-[#080B13] text-slate-400 dark:text-slate-500 uppercase tracking-wider text-[10px] font-semibold border-b border-slate-100 dark:border-slate-800/70">
+                          <thead className="bg-slate-50/70 dark:bg-slate-900/40 text-slate-400 uppercase tracking-wider text-[10px] font-bold border-b border-slate-100 dark:border-slate-800/80">
                             <tr>
-                              <th className="py-2.5 px-4">Data</th>
-                              <th className="py-2.5 px-4">Status</th>
-                              <th className="py-2.5 px-4">Conteúdo</th>
-                              <th className="py-2.5 px-4">Justificativa</th>
+                              <th className="py-3 px-4">Data</th>
+                              <th className="py-3 px-4">Status</th>
+                              <th className="py-3 px-4">Conteúdo Ministrado</th>
+                              <th className="py-3 px-4">Observações</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                             {cursoSelecionado.presencas?.map((p, idx) => (
                               <tr key={p.id || idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                                <td className="py-3 px-4 font-mono text-slate-800 dark:text-slate-200 font-medium">
+                                <td className="py-3 px-4 font-mono text-slate-800 dark:text-slate-200 font-bold">
                                   {formatarData(p.dataAula)}
                                 </td>
                                 <td className="py-3 px-4">
                                   {p.status === 'PRESENTE' && (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40">
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                                       Presente
                                     </span>
                                   )}
                                   {p.status === 'FALTA' && (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/40">
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
                                       Falta
                                     </span>
                                   )}
                                   {p.status === 'JUSTIFICADA' && (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/40">
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                                       Justificada
                                     </span>
                                   )}
@@ -1118,7 +1117,7 @@ export function PerfilAlunoModal({
                                 <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
                                   {p.conteudoMinistrado || 'Aula regular'}
                                 </td>
-                                <td className="py-3 px-4 text-slate-400 dark:text-slate-500 italic">
+                                <td className="py-3 px-4 text-slate-400 italic">
                                   {p.justificativa || '—'}
                                 </td>
                               </tr>
@@ -1130,132 +1129,109 @@ export function PerfilAlunoModal({
                   </div>
                 </>
               ) : (
-                <div className="text-center py-10 text-slate-400 dark:text-slate-500 text-xs">
-                  Nenhum curso selecionado.
+                <div className="text-center py-12 text-slate-400 text-xs">
+                  Selecione um curso para visualizar a frequência.
                 </div>
               )}
             </div>
           )}
 
-          {/* ABA 3: HISTÓRICO ESCOLAR */}
+          {/* ════ ABA 3: HISTÓRICO ESCOLAR ════ */}
           {abaAtiva === 'historico' && (
             <div className="space-y-4">
               {perfil?.historicoCursos.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-[#0E1322] rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs">
-                  Nenhum curso finalizado ou anterior no histórico deste estudante.
+                <div className="text-center py-16 text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0E1424] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs flex flex-col items-center gap-2">
+                  <GraduationCap className="w-8 h-8 opacity-40" />
+                  <span>Nenhum curso anterior no histórico deste estudante.</span>
                 </div>
               ) : (
                 perfil?.historicoCursos.map((curso) => (
                   <div
                     key={curso.matriculaId}
-                    className="border border-slate-200/80 dark:border-slate-800/80 rounded-xl p-5 bg-white dark:bg-[#0D1220] hover:border-slate-300 dark:hover:border-slate-700 transition space-y-3"
+                    className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-4"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 flex-wrap">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border uppercase tracking-wider ${getCorTemaEscola(
-                            curso.escolaSigla || curso.escolaCorTema
+                          className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-extrabold border uppercase tracking-wider ${getEscolaPillStyle(
+                            curso.escolaSigla
                           )}`}
                         >
                           {curso.escolaSigla || 'GERAL'}
                         </span>
-                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{curso.cursoNome}</h4>
-                        <span className="text-xs font-mono text-slate-400 dark:text-slate-500">
+                        <h4 className="font-extrabold text-slate-900 dark:text-white text-base tracking-tight">
+                          {curso.cursoNome}
+                        </h4>
+                        <span className="text-xs font-mono font-bold text-slate-400">
                           ({curso.turmaCodigo})
                         </span>
                       </div>
 
                       <div>
                         {curso.formado ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40">
-                            <GraduationCap className="w-3.5 h-3.5" />
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                            <GraduationCap className="w-4 h-4" />
                             <span>Formado</span>
                           </span>
                         ) : curso.desistenteFaltas ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/40">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
                             <span>Desistente por Faltas</span>
                           </span>
                         ) : (
-                          <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200/60 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                             {curso.status}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-4 gap-y-1">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap gap-x-5 gap-y-1">
                       <span><strong>Escola:</strong> {curso.escolaNome}</span>
-                      <span><strong>Modalidade:</strong> {curso.modalidade || 'Livre'}</span>
                       <span><strong>Período:</strong> {formatarData(curso.dataInicio)} a {formatarData(curso.dataTermino)}</span>
+                      {curso.frequencia && (
+                        <span><strong>Frequência Final:</strong> {curso.frequencia.porcentagemFrequencia}%</span>
+                      )}
                     </div>
 
-                    <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap items-center justify-between gap-2.5">
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        {/* Certificado Oficial (LDB 9.394/96) */}
                         {curso.aptoCertificado || curso.formado ? (
                           <button
                             type="button"
                             onClick={() => handleAbrirCertificado(curso.matriculaId)}
                             disabled={carregandoDocumento}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-semibold transition cursor-pointer shadow-2xs"
-                            title="Emitir Certificado Oficial de Conclusão com Grade Curricular e Livro de Registro"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-xs font-bold transition cursor-pointer shadow-2xs"
                           >
-                            <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                            <span>📜 Emitir Certificado de Conclusão</span>
+                            <Award className="w-4 h-4 text-amber-500" />
+                            <span>Emitir Certificado de Conclusão</span>
                           </button>
                         ) : (
-                          <span
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700"
-                            title={curso.motivoInaptidaoCertificado || 'Não apto ao certificado por frequência insuficiente'}
-                          >
-                            <span>Sem certificado ({curso.motivoInaptidaoCertificado || 'frequência < 75%'})</span>
+                          <span className="text-xs text-slate-400 font-medium">
+                            Sem certificado (frequência &lt; 75%)
                           </span>
                         )}
 
-                        {/* Declaração Oficial de Matrícula Escolar */}
                         <button
                           type="button"
                           onClick={() => handleAbrirDeclaracaoMatricula(curso.matriculaId)}
                           disabled={carregandoDocumento}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-semibold transition cursor-pointer"
-                          title="Emitir Declaração Oficial de Matrícula e Frequência Escolar"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition cursor-pointer shadow-2xs"
                         >
-                          <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <FileText className="w-4 h-4 text-indigo-500" />
                           <span>Declaração de Matrícula</span>
                         </button>
-
-                        {/* Declaração de Transporte CPTM / SPTrans */}
-                        {curso.aptoDeclaracaoTransporte && (
-                          <button
-                            type="button"
-                            onClick={() => handleAbrirDeclaracao(curso.matriculaId)}
-                            disabled={carregandoDocumento}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 text-xs font-semibold transition cursor-pointer"
-                            title="Emitir Declaração Estudantil para passe escolar CPTM / SPTrans"
-                          >
-                            <Bus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                            <span>Declaração CPTM / SPTrans</span>
-                          </button>
-                        )}
                       </div>
 
-                      <div className="flex items-center gap-3 sm:ml-auto text-xs text-slate-500 dark:text-slate-400">
-                        {curso.frequencia && (
-                          <span>
-                            Frequência: <strong className="text-slate-700 dark:text-slate-300">{curso.frequencia.porcentagemFrequencia}%</strong>
-                          </span>
-                        )}
-                        <button
-                          onClick={() => {
-                            setMatriculaSelecionadaId(curso.matriculaId);
-                            setAbaAtiva('frequencia');
-                          }}
-                          className="font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer flex items-center gap-1"
-                        >
-                          <span>Ver diário</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setMatriculaSelecionadaId(curso.matriculaId);
+                          setAbaAtiva('frequencia');
+                        }}
+                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Ver diário do curso</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))
@@ -1263,41 +1239,39 @@ export function PerfilAlunoModal({
             </div>
           )}
 
-          {/* ABA 4: FICHA & DADOS CADASTRAIS (DOSSIÊ COMPLETO) */}
+          {/* ════ ABA 4: FICHA & DADOS CADASTRAIS (LGPD) ════ */}
           {abaAtiva === 'cadastro' && aluno && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              {/* Mensagem de Feedback de Edição */}
+            <div className="space-y-5 animate-in fade-in duration-150">
               {feedbackSalvo && (
-                <div className="px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2 shadow-xs">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="font-medium">{feedbackSalvo}</span>
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-xs flex items-center gap-2 shadow-xs">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span className="font-bold">{feedbackSalvo}</span>
                 </div>
               )}
 
               {modoEdicao ? (
                 <form
                   onSubmit={handleSalvarEdicao}
-                  className="bg-slate-50/80 dark:bg-[#070A11] border border-slate-200/90 dark:border-slate-800 p-5 rounded-2xl space-y-4 shadow-xs"
+                  className="bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 p-6 rounded-2xl space-y-5 shadow-xs"
                 >
-                  <div className="flex items-center justify-between text-xs border-b border-slate-200/70 dark:border-slate-800/70 pb-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3">
                     <div>
-                      <span className="font-bold text-sm text-slate-900 dark:text-white block">
+                      <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
                         Editar Ficha Cadastral do Estudante
-                      </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Atualize dados de contato, endereço residencial, gênero e inclusão LGPD
-                      </span>
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Atualize dados de contato, endereço residencial e informações de inclusão
+                      </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                    {/* Bloco 1: Contato & Identificação */}
-                    <div className="space-y-3 p-4 bg-white dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
-                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                        1. Contato & Gênero
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div className="space-y-3 p-4 bg-slate-50/70 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                      <span className="block text-xs font-extrabold uppercase text-slate-700 dark:text-slate-300 border-b border-slate-200/60 pb-1 font-mono">
+                        1. Dados de Contato
                       </span>
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
                           E-mail *
                         </label>
                         <input
@@ -1305,376 +1279,241 @@ export function PerfilAlunoModal({
                           required
                           value={editEmail}
                           onChange={(e) => setEditEmail(e.target.value)}
-                          placeholder="nome@exemplo.com"
-                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
+                          className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
                           Telefone / WhatsApp
                         </label>
                         <input
                           type="text"
                           value={editTelefone}
                           onChange={(e) => setEditTelefone(aplicarMascaraTelefone(e.target.value))}
-                          placeholder="(00) 00000-0000"
                           maxLength={15}
-                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-slate-400"
+                          className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800 font-mono"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
                           Identidade de Gênero
                         </label>
                         <input
                           type="text"
                           value={editGenero}
                           onChange={(e) => setEditGenero(e.target.value)}
-                          placeholder="Ex: Masculino, Feminino, Não-Binário"
-                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
+                          className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800"
                         />
                       </div>
                     </div>
 
-                    {/* Bloco 2: Residência & Território */}
-                    <div className="space-y-3 p-4 bg-white dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
-                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                        2. Residência & Emergência
+                    <div className="space-y-3 p-4 bg-slate-50/70 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                      <span className="block text-xs font-extrabold uppercase text-slate-700 dark:text-slate-300 border-b border-slate-200/60 pb-1 font-mono">
+                        2. Endereço Residencial
                       </span>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                          Logradouro e Número
-                        </label>
-                        <input
-                          type="text"
-                          value={editEndereco}
-                          onChange={(e) => setEditEndereco(e.target.value)}
-                          placeholder="Ex: Rua Gertrudes de Lima, 78"
-                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
-                        />
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                            CEP
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="09000-000"
+                            maxLength={9}
+                            value={editCep}
+                            onChange={(e) => setEditCep(aplicarMascaraCep(e.target.value))}
+                            className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                            Logradouro
+                          </label>
+                          <input
+                            type="text"
+                            value={editEndereco}
+                            onChange={(e) => setEditEndereco(e.target.value)}
+                            className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800"
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
                             Bairro
                           </label>
                           <input
                             type="text"
                             value={editBairro}
                             onChange={(e) => setEditBairro(e.target.value)}
-                            placeholder="Centro"
-                            className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
+                            className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
                             Cidade
                           </label>
                           <input
                             type="text"
                             value={editCidade}
                             onChange={(e) => setEditCidade(e.target.value)}
-                            placeholder="Santo André"
-                            className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
+                            className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
                           Contato de Emergência
                         </label>
                         <input
                           type="text"
                           value={editContatoEmergencia}
                           onChange={(e) => setEditContatoEmergencia(e.target.value)}
-                          placeholder="Nome e telefone de emergência"
-                          className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
+                          className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-800"
                         />
                       </div>
                     </div>
-
-                    {/* Bloco 3: Inclusão, Acessibilidade & LGPD */}
-                    <div className="space-y-3 p-4 bg-white dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
-                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                        3. Inclusão & Termos LGPD
-                      </span>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id="edit-pcd"
-                            checked={editPcd}
-                            onChange={(e) => setEditPcd(e.target.checked)}
-                            className="rounded text-violet-600 cursor-pointer"
-                          />
-                          <label htmlFor="edit-pcd" className="text-xs font-semibold cursor-pointer">
-                            Estudante PCD
-                          </label>
-                        </div>
-                        {editPcd && (
-                          <input
-                            type="text"
-                            value={editPcdDetalhe}
-                            onChange={(e) => setEditPcdDetalhe(e.target.value)}
-                            placeholder="Especifique a deficiência"
-                            className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"
-                          />
-                        )}
-
-                        <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <input
-                            type="checkbox"
-                            id="edit-neuro"
-                            checked={editNeurodiverso}
-                            onChange={(e) => setEditNeurodiverso(e.target.checked)}
-                            className="rounded text-indigo-600 cursor-pointer"
-                          />
-                          <label htmlFor="edit-neuro" className="text-xs font-semibold cursor-pointer">
-                            Estudante Neurodivergente
-                          </label>
-                        </div>
-                        {editNeurodiverso && (
-                          <input
-                            type="text"
-                            value={editNeurodiversoDetalhe}
-                            onChange={(e) => setEditNeurodiversoDetalhe(e.target.value)}
-                            placeholder="Especifique (TEA, TDAH, etc.)"
-                            className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"
-                          />
-                        )}
-
-                        <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                          <label className="flex items-center gap-2 text-xs cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={editConsentimentoUsoImagem}
-                              onChange={(e) => setEditConsentimentoUsoImagem(e.target.checked)}
-                              className="rounded text-sky-600 cursor-pointer"
-                            />
-                            <span>Autorização de Imagem e Voz</span>
-                          </label>
-
-                          <label className="flex items-center gap-2 text-xs cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={editTermoPapelEntregue}
-                              onChange={(e) => setEditTermoPapelEntregue(e.target.checked)}
-                              className="rounded text-emerald-600 cursor-pointer"
-                            />
-                            <span>Termo Físico Arquivado</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {aluno.responsavel && (
-                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase text-slate-400 block">
-                            Contato do Responsável ({aluno.responsavel.grauParentesco || 'Responsável'})
-                          </span>
-                          <input
-                            type="text"
-                            value={editRespTelefone}
-                            onChange={(e) => setEditRespTelefone(aplicarMascaraTelefone(e.target.value))}
-                            placeholder="Tel: (00) 00000-0000"
-                            maxLength={15}
-                            className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-mono"
-                          />
-                          <input
-                            type="email"
-                            value={editRespEmail}
-                            onChange={(e) => setEditRespEmail(e.target.value)}
-                            placeholder="E-mail do responsável"
-                            className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"
-                          />
-                        </div>
-                      )}
-                    </div>
                   </div>
 
-                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                  <div className="pt-2 flex justify-end gap-2.5">
                     <button
                       type="button"
                       onClick={() => setModoEdicao(false)}
-                      className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={salvandoEdicao}
-                      className="px-5 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-xs"
+                      className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
                     >
                       {salvandoEdicao ? 'Salvando...' : 'Salvar Ficha'}
                     </button>
                   </div>
                 </form>
               ) : (
-                /* Visualização Organizada e Alinhada da Ficha do Estudante (Bento Dossier) */
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                        Prontuário & Ficha Cadastral Oficial
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Dados cadastrais, identificação civil, endereço de residência, acessibilidade e termos arquivados
-                      </p>
+                /* Visualização do Dossiê Cadastral em 3 Cards Bento */
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Card 1: Identificação */}
+                  <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
+                    <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
+                      <UserCheck className="w-4 h-4 text-indigo-500" />
+                      <h4 className="font-extrabold text-xs uppercase tracking-wider font-mono text-slate-800 dark:text-slate-200">
+                        1. Identificação & Contato
+                      </h4>
                     </div>
-                    <button
-                      type="button"
-                      onClick={iniciarEdicao}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition cursor-pointer shadow-2xs"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                      <span>Editar Informações</span>
-                    </button>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Nome Completo</span>
+                        <strong className="text-slate-900 dark:text-white">{aluno.nome}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">E-mail</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{aluno.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Telefone</span>
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                          {formatarTelefone(aluno.telefone) || 'Não informado'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Gênero</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.genero || 'Não declarado'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Grid de 3 Cartões Perfeitamente Alinhados */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Bloco 1: Identificação & Contato */}
-                    <DossierCard title="Identificação & Contato" icon={UserCheck} badge="Básico">
-                      <DossierField
-                        icon={CreditCard}
-                        label="CPF do Estudante"
-                        value={formatarCpf(aluno.cpf)}
-                        isMono
-                      />
-                      <DossierField
-                        icon={Mail}
-                        label="E-mail Institucional / Pessoal"
-                        value={aluno.email}
-                      />
-                      <DossierField
-                        icon={Phone}
-                        label="Telefone Celular / WhatsApp"
-                        value={formatarTelefone(aluno.telefone)}
-                        isMono
-                      />
-                      <DossierField
-                        icon={Sparkles}
-                        label="Identidade de Gênero"
-                        value={aluno.genero}
-                        fallback="Não informada"
-                      />
-                    </DossierCard>
+                  {/* Card 2: Endereço & Residência */}
+                  <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
+                    <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
+                      <MapPin className="w-4 h-4 text-indigo-500" />
+                      <h4 className="font-extrabold text-xs uppercase tracking-wider font-mono text-slate-800 dark:text-slate-200">
+                        2. Endereço Residencial
+                      </h4>
+                    </div>
 
-                    {/* Bloco 2: Residência & Nascimento */}
-                    <DossierCard title="Residência & Nascimento" icon={MapPin} badge="Território">
-                      <DossierField
-                        icon={Calendar}
-                        label="Data de Nascimento"
-                        value={
-                          aluno.dataNascimento
-                            ? `${formatarData(aluno.dataNascimento)}${idade !== null ? ` (${idade} anos)` : ''}`
-                            : null
-                        }
-                      />
-                      <DossierField
-                        icon={MapPin}
-                        label="Endereço Residencial"
-                        value={aluno.endereco}
-                        fallback="Endereço não cadastrado"
-                      />
-                      <DossierField
-                        icon={Building2}
-                        label="Bairro & Município"
-                        value={
-                          [aluno.bairro, aluno.cidade ? `${aluno.cidade} - SP` : null]
-                            .filter(Boolean)
-                            .join(' • ') || null
-                        }
-                        fallback="Bairro e cidade não informados"
-                      />
-                      <DossierField
-                        icon={AlertCircle}
-                        label="Contato de Emergência"
-                        value={aluno.contatoEmergencia}
-                        fallback="Sem contato de emergência"
-                        highlight={Boolean(aluno.contatoEmergencia)}
-                      />
-                    </DossierCard>
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Logradouro</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.endereco || 'Não informado'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">CEP</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
+                          {aluno.cep ? formatarCep(aluno.cep) : 'Não informado'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Bairro</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.bairro || 'Não informado'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Cidade / UF</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.cidade || 'Santo André'} / SP
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Emergência</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.contatoEmergencia || 'Não informado'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* Bloco 3: Acessibilidade & Vínculo Familiar */}
-                    <DossierCard title="Acessibilidade & Vínculo" icon={ShieldCheck} badge="Inclusão">
-                      <DossierField
-                        icon={HeartHandshake}
-                        label="Pessoa com Deficiência (PCD)"
-                        value={aluno.pcd ? `Sim (${aluno.pcdDetalhe || 'Registrado'})` : 'Não registrado'}
-                      />
-                      <DossierField
-                        icon={Sparkles}
-                        label="Neurodivergência"
-                        value={aluno.neurodiverso ? `Sim (${aluno.neurodiversoDetalhe || 'Registrado'})` : 'Não registrada'}
-                      />
-                      <DossierField
-                        icon={Users2}
-                        label="Responsável Legal"
-                        value={
-                          aluno.responsavel
-                            ? `${aluno.responsavel.nome} (${aluno.responsavel.grauParentesco || 'Responsável'})${
-                                aluno.responsavel.telefone ? ` • ${formatarTelefone(aluno.responsavel.telefone)}` : ''
-                              }`
+                  {/* Card 3: Inclusão & Responsável */}
+                  <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
+                    <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
+                      <ShieldCheck className="w-4 h-4 text-indigo-500" />
+                      <h4 className="font-extrabold text-xs uppercase tracking-wider font-mono text-slate-800 dark:text-slate-200">
+                        3. Inclusão & Vínculo
+                      </h4>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">PCD</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.pcd ? `Sim (${aluno.pcdDetalhe || 'Registrado'})` : 'Não registrado'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Neurodivergência</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.neurodiverso ? `Sim (${aluno.neurodiversoDetalhe || 'Registrado'})` : 'Não registrada'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Responsável Legal</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.responsavel
+                            ? `${aluno.responsavel.nome} (${aluno.responsavel.grauParentesco || 'Responsável'})`
                             : aluno.menorDeIdade
-                            ? 'Pendente de cadastro'
-                            : 'Maior de 18 anos (Titular único)'
-                        }
-                      />
-                      <DossierField
-                        icon={FileCheck}
-                        label="Registro Institucional"
-                        value={`Santo André • Matrícula #${aluno.id}`}
-                        isMono
-                      />
-                    </DossierCard>
-                  </div>
-
-                  {/* Barra de Conformidade LGPD & Termos Institucionais */}
-                  <div className="flex flex-wrap items-center gap-2 pt-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 text-xs font-semibold">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>LGPD: Consentimento Geral Ativo (Art. 7º)</span>
-                    </span>
-
-                    {(aluno.pcd || aluno.neurodiverso) && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 text-xs font-semibold">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>LGPD Dados Sensíveis (Art. 11): Autorizado</span>
-                      </span>
-                    )}
-
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                        aluno.consentimentoUsoImagem
-                          ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border-sky-200 dark:border-sky-800/50'
-                          : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-800/50'
-                      }`}
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      <span>
-                        Uso de Imagem: {aluno.consentimentoUsoImagem ? 'Autorizado' : 'Não Autorizado'}
-                      </span>
-                    </span>
-
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                        aluno.termoPapelEntregue
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50'
-                          : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800/50'
-                      }`}
-                    >
-                      <FileCheck className="w-3.5 h-3.5" />
-                      <span>
-                        {aluno.termoPapelEntregue
-                          ? 'Termo Físico em Papel (Arquivado)'
-                          : 'Termo Físico: Pendente na Secretaria'}
-                      </span>
-                    </span>
+                            ? 'Pendente'
+                            : 'Maior de idade (Titular)'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono block">Uso de Imagem</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {aluno.consentimentoUsoImagem ? 'Autorizado' : 'Não autorizado'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1683,11 +1522,14 @@ export function PerfilAlunoModal({
 
         </div>
 
-        {/* Rodapé Minimalista */}
-        <div className="bg-slate-50/50 dark:bg-[#070A11] border-t border-slate-100 dark:border-slate-800/80 px-6 py-3.5 flex justify-end items-center">
+        {/* ─── 4. MODAL FOOTER ─── */}
+        <div className="bg-white dark:bg-[#0E1424] border-t border-slate-100 dark:border-slate-800/80 px-6 py-4 flex justify-between items-center shrink-0">
+          <div className="text-xs text-slate-400 font-mono hidden sm:block">
+            Prefeitura de Santo André • Prontuário Escolar #{aluno?.id || ''}
+          </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium text-xs transition cursor-pointer shadow-xs"
+            className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-xl font-bold text-xs transition cursor-pointer shadow-2xs"
           >
             Fechar
           </button>
@@ -1695,7 +1537,7 @@ export function PerfilAlunoModal({
 
       </div>
 
-      {/* Modal de Certificado Oficial de Conclusão */}
+      {/* Sub-modais de Documentos */}
       {modalCertificadoAberto && certificadoSelecionado && (
         <ModalCertificado
           certificado={certificadoSelecionado}
@@ -1704,7 +1546,6 @@ export function PerfilAlunoModal({
         />
       )}
 
-      {/* Modal de Declaração Estudantil CPTM / SPTrans */}
       {modalDeclaracaoAberto && declaracaoSelecionada && (
         <ModalDeclaracaoTransporte
           declaracao={declaracaoSelecionada}
@@ -1713,7 +1554,6 @@ export function PerfilAlunoModal({
         />
       )}
 
-      {/* Modal de Declaração Oficial de Matrícula e Frequência Escolar */}
       {modalDeclaracaoMatriculaAberto && declaracaoMatriculaSelecionada && (
         <ModalDeclaracaoMatricula
           declaracao={declaracaoMatriculaSelecionada}

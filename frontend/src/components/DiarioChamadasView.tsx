@@ -190,6 +190,11 @@ export function DiarioChamadasView({
     const dataAlvo =
       dataPredefinida || new Date().toISOString().split('T')[0];
     setDataAulaForm(dataAlvo);
+    if (materiaAtual?.professorResponsavel) {
+      setResponsavelNome(materiaAtual.professorResponsavel);
+    } else if (usuarioLogado?.nome && (!responsavelNome || responsavelNome === '')) {
+      setResponsavelNome(usuarioLogado.nome);
+    }
     setLoadingItens(true);
     setModo('nova_chamada');
 
@@ -745,12 +750,34 @@ export function DiarioChamadasView({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Caixinha do Nome do Responsável */}
               <div className="md:col-span-2">
-                <label
-                  htmlFor="input-responsavel"
-                  className="block text-xs font-extrabold text-slate-800 dark:text-slate-200 mb-1.5"
-                >
-                  Nome do Responsável pelo Registro da Chamada <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="input-responsavel"
+                    className="block text-xs font-extrabold text-slate-800 dark:text-slate-200"
+                  >
+                    Professor / Responsável pela Chamada Deste Dia <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    {materiaAtual?.professorResponsavel && materiaAtual.professorResponsavel !== responsavelNome && (
+                      <button
+                        type="button"
+                        onClick={() => setResponsavelNome(materiaAtual.professorResponsavel!)}
+                        className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800 hover:bg-amber-100 transition cursor-pointer"
+                      >
+                        Usar Prof. da Matéria: {materiaAtual.professorResponsavel}
+                      </button>
+                    )}
+                    {usuarioLogado?.nome && usuarioLogado.nome !== responsavelNome && (
+                      <button
+                        type="button"
+                        onClick={() => setResponsavelNome(usuarioLogado.nome)}
+                        className="text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                      >
+                        Usar Meu Usuário ({usuarioLogado.nome})
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <div className="relative">
                   <input
                     id="input-responsavel"
@@ -758,7 +785,7 @@ export function DiarioChamadasView({
                     required
                     value={responsavelNome}
                     onChange={(e) => setResponsavelNome(e.target.value)}
-                    placeholder="Ex: André Augusto"
+                    placeholder="Nome do professor ou educador que ministrou a aula..."
                     className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
                   />
                   {responsavelNome.trim() && (
@@ -1070,8 +1097,11 @@ export function DiarioChamadasView({
                 <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
                   {chamadaFocada.responsavelRegistro || 'Não informado'}
                 </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
-                  Autenticado no sistema institucional
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold block mt-1">
+                  ✓ Registro histórico inalterável do dia
+                </span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                  Preserva a autoria de quem realizou a chamada nesta data, imutável mesmo se houver troca de professor na matéria.
                 </span>
               </div>
             </div>
