@@ -2,6 +2,7 @@ package com.gestaomatriculas.service;
 
 import com.gestaomatriculas.dto.CursoDTO;
 import com.gestaomatriculas.dto.DisciplinaDTO;
+import com.gestaomatriculas.exception.BusinessException;
 import com.gestaomatriculas.exception.ResourceNotFoundException;
 import com.gestaomatriculas.model.Curso;
 import com.gestaomatriculas.model.Disciplina;
@@ -60,6 +61,10 @@ public class CursoService {
                     .orElseThrow(() -> new ResourceNotFoundException("Escola não encontrada com id: " + dto.getEscolaId()));
         } else {
             escola = escolaRepository.findAll().stream().findFirst().orElse(null);
+        }
+
+        if (securityService.isEncarregada() && escola != null && !securityService.temAcessoAEscola(escola.getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para cadastrar cursos nesta escola.");
         }
 
         ModalidadeCurso modalidade = dto.getModalidade();
@@ -121,6 +126,13 @@ public class CursoService {
         Curso curso = cursoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + id));
 
+        if (securityService.isEncarregada() && curso.getEscola() != null && !securityService.temAcessoAEscola(curso.getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para alterar cursos desta escola.");
+        }
+        if (dto.getEscolaId() != null && securityService.isEncarregada() && !securityService.temAcessoAEscola(dto.getEscolaId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para transferir este curso para uma escola não autorizada.");
+        }
+
         curso.setNome(dto.getNome());
         curso.setDescricao(dto.getDescricao());
         curso.setTipo(dto.getTipo());
@@ -174,6 +186,10 @@ public class CursoService {
         Curso curso = cursoRepository.findById(cursoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + cursoId));
 
+        if (securityService.isEncarregada() && curso.getEscola() != null && !securityService.temAcessoAEscola(curso.getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para adicionar disciplinas a cursos desta escola.");
+        }
+
         Disciplina d = Disciplina.builder()
                 .nome(discDto.getNome().trim())
                 .cargaHoraria(discDto.getCargaHoraria() != null && discDto.getCargaHoraria() > 0 ? discDto.getCargaHoraria() : 20)
@@ -197,6 +213,11 @@ public class CursoService {
     public void removerDisciplina(Long cursoId, Long disciplinaId) {
         Curso curso = cursoRepository.findById(cursoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + cursoId));
+
+        if (securityService.isEncarregada() && curso.getEscola() != null && !securityService.temAcessoAEscola(curso.getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para remover disciplinas de cursos desta escola.");
+        }
+
         Disciplina disc = disciplinaRepository.findById(disciplinaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Disciplina não encontrada com id: " + disciplinaId));
 
@@ -219,6 +240,11 @@ public class CursoService {
     public void deletar(Long id) {
         Curso curso = cursoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + id));
+
+        if (securityService.isEncarregada() && curso.getEscola() != null && !securityService.temAcessoAEscola(curso.getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para desativar cursos desta escola.");
+        }
+
         curso.setAtivo(false);
         cursoRepository.save(curso);
     }

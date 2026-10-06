@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
   PlusCircle,
@@ -8,12 +8,12 @@ import {
   User,
   Trash2,
   CheckCircle2,
-  Sparkles,
   Calendar,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 import { Curso, Disciplina, Escola } from '@/lib/api';
+import { useApp } from '@/context/AppContext';
 
 interface PortalProfessorasViewProps {
   cursos: Curso[];
@@ -30,15 +30,47 @@ export function PortalProfessorasView({
   onSalvarCurso,
   onAbrirNovaTurma,
 }: PortalProfessorasViewProps) {
+  const { usuarioLogado } = useApp();
   const [modoAba, setModoAba] = useState<'catalogo' | 'novo'>('catalogo');
   const [cursoExpandidoId, setCursoExpandidoId] = useState<number | null>(null);
 
+  const isEncarregada = usuarioLogado?.role === 'ROLE_ENCARREGADA';
+  const permittedSchoolIds: number[] = usuarioLogado?.escolasIds?.length
+    ? usuarioLogado.escolasIds
+    : (usuarioLogado?.escolas?.map((e) => e.id) || (usuarioLogado?.escolaId ? [usuarioLogado.escolaId] : []));
+
+  const escolasPermitidas = isEncarregada && permittedSchoolIds.length > 0
+    ? escolas.filter((esc) => permittedSchoolIds.includes(esc.id))
+    : escolas;
+
+  const resolveInitialEscolaId = (): number => {
+    if (isEncarregada && permittedSchoolIds.length > 0) {
+      if (escolaSelecionada && permittedSchoolIds.includes(escolaSelecionada)) {
+        return escolaSelecionada;
+      }
+      return permittedSchoolIds[0];
+    }
+    return escolaSelecionada || (escolas[0]?.id || 1);
+  };
+
   // Formulário do Novo Curso
   const [nomeCurso, setNomeCurso] = useState('');
-  const [escolaId, setEscolaId] = useState<number>(escolaSelecionada || (escolas[0]?.id || 1));
+  const [escolaId, setEscolaId] = useState<number>(resolveInitialEscolaId);
+
+  useEffect(() => {
+    if (isEncarregada && permittedSchoolIds.length > 0) {
+      if (escolaSelecionada && permittedSchoolIds.includes(escolaSelecionada)) {
+        setEscolaId(escolaSelecionada);
+      } else if (!permittedSchoolIds.includes(escolaId)) {
+        setEscolaId(permittedSchoolIds[0]);
+      }
+    } else if (escolaSelecionada && escolaId !== escolaSelecionada) {
+      setEscolaId(escolaSelecionada);
+    }
+  }, [escolaSelecionada, usuarioLogado, escolas]);
   const [modalidade, setModalidade] = useState<'FORMACAO' | 'NUCLEO' | 'OFICINA'>('FORMACAO');
-  const [cargaHorariaCurso, setCargaHorariaCurso] = useState<number | string>(500);
-  const [duracaoTexto, setDuracaoTexto] = useState('2 semestres');
+  const [cargaHorariaCurso, setCargaHorariaCurso] = useState<number | string>('');
+  const [duracaoTexto, setDuracaoTexto] = useState('');
   const [descricao, setDescricao] = useState('');
 
   // Disciplinas em composição (inicialmente limpo, sem professores fictícios)
@@ -46,7 +78,7 @@ export function PortalProfessorasView({
 
   // Inputs temporários para adicionar nova disciplina
   const [novaDiscNome, setNovaDiscNome] = useState('');
-  const [novaDiscCarga, setNovaDiscCarga] = useState<number>(40);
+  const [novaDiscCarga, setNovaDiscCarga] = useState<number | string>('');
   const [novaDiscProf, setNovaDiscProf] = useState('');
   const [novaDiscEmenta, setNovaDiscEmenta] = useState('');
 
@@ -62,7 +94,8 @@ export function PortalProfessorasView({
       alert('Informe o nome da disciplina');
       return;
     }
-    if (novaDiscCarga <= 0) {
+    const cargaNum = Number(novaDiscCarga) || 0;
+    if (cargaNum <= 0) {
       alert('A carga horária deve ser maior que zero');
       return;
     }
@@ -71,14 +104,14 @@ export function PortalProfessorasView({
       ...disciplinas,
       {
         nome: novaDiscNome.trim(),
-        cargaHoraria: Number(novaDiscCarga),
+        cargaHoraria: cargaNum,
         professorResponsavel: novaDiscProf.trim() || undefined,
         descricao: novaDiscEmenta.trim() || undefined,
       },
     ]);
 
     setNovaDiscNome('');
-    setNovaDiscCarga(40);
+    setNovaDiscCarga('');
     setNovaDiscProf('');
     setNovaDiscEmenta('');
   };
@@ -103,6 +136,11 @@ export function PortalProfessorasView({
       return;
     }
 
+    if (isEncarregada && permittedSchoolIds.length > 0 && !permittedSchoolIds.includes(Number(escolaId))) {
+      setErroMsg('Você não possui autorização para criar ou gerenciar cursos nesta escola.');
+      return;
+    }
+
     try {
       setSalvando(true);
       setErroMsg(null);
@@ -122,9 +160,13 @@ export function PortalProfessorasView({
       setSucessoMsg(`Curso "${nomeCurso}" (${cargaFinal}h de conteúdo) e suas ${disciplinas.length} disciplinas foram salvos com sucesso!`);
       setNomeCurso('');
       setDescricao('');
-      setCargaHorariaCurso(500);
-      setDuracaoTexto('2 semestres');
+      setCargaHorariaCurso('');
+      setDuracaoTexto('');
       setDisciplinas([]);
+      setNovaDiscNome('');
+      setNovaDiscCarga('');
+      setNovaDiscProf('');
+      setNovaDiscEmenta('');
       setModoAba('catalogo');
       setTimeout(() => setSucessoMsg(null), 6000);
     } catch (err: any) {
@@ -134,9 +176,17 @@ export function PortalProfessorasView({
     }
   };
 
-  const cursosFiltrados = escolaSelecionada
-    ? cursos.filter((c) => c.escolaId === escolaSelecionada)
-    : cursos;
+  const cursosFiltrados = cursos.filter((c) => {
+    if (isEncarregada && permittedSchoolIds.length > 0) {
+      if (c.escolaId && !permittedSchoolIds.includes(c.escolaId)) {
+        return false;
+      }
+    }
+    if (escolaSelecionada) {
+      return c.escolaId === escolaSelecionada;
+    }
+    return true;
+  });
 
   const getBadgeEscola = (sigla?: string) => {
     switch (sigla) {
@@ -161,10 +211,6 @@ export function PortalProfessorasView({
         <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Secretaria de Cultura • Matriz Pedagógica</span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
               Catálogo de Cursos & Matriz Curricular
             </h1>
@@ -249,17 +295,28 @@ export function PortalProfessorasView({
 
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Escola de Cultura *</label>
-                <select
-                  value={escolaId}
-                  onChange={(e) => setEscolaId(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-600 transition"
-                >
-                  {escolas.map((esc) => (
-                    <option key={esc.id} value={esc.id}>
-                      [{esc.sigla}] {esc.nome}
-                    </option>
-                  ))}
-                </select>
+                {isEncarregada && escolasPermitidas.length <= 1 ? (
+                  <div className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-900/60 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center justify-between">
+                    <span>
+                      [{escolasPermitidas[0]?.sigla || 'ELT'}] {escolasPermitidas[0]?.nome || 'Escola Livre'}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      Unidade Autorizada
+                    </span>
+                  </div>
+                ) : (
+                  <select
+                    value={escolaId}
+                    onChange={(e) => setEscolaId(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 text-xs font-semibold focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-600 transition"
+                  >
+                    {escolasPermitidas.map((esc) => (
+                      <option key={esc.id} value={esc.id}>
+                        [{esc.sigla}] {esc.nome}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -384,8 +441,9 @@ export function PortalProfessorasView({
                   <input
                     type="number"
                     min={1}
+                    placeholder="Ex: 40"
                     value={novaDiscCarga}
-                    onChange={(e) => setNovaDiscCarga(Number(e.target.value))}
+                    onChange={(e) => setNovaDiscCarga(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
@@ -574,13 +632,15 @@ export function PortalProfessorasView({
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => onAbrirNovaTurma(curso.id!)}
-                          className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer"
-                        >
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>Abrir Turma</span>
-                        </button>
+                        {(!isEncarregada || !curso.escolaId || permittedSchoolIds.includes(curso.escolaId)) && (
+                          <button
+                            onClick={() => onAbrirNovaTurma(curso.id!)}
+                            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer"
+                          >
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Abrir Turma</span>
+                          </button>
+                        )}
 
                         <button
                           onClick={() => setCursoExpandidoId(isExpandido ? null : curso.id!)}

@@ -86,6 +86,11 @@ public class MatriculaService {
         Turma turma = turmaRepository.findById(dto.getTurmaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + dto.getTurmaId()));
 
+        if (securityService.isEncarregada() && turma.getCurso() != null && turma.getCurso().getEscola() != null
+                && !securityService.temAcessoAEscola(turma.getCurso().getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para realizar matrículas para esta escola.");
+        }
+
         return realizarMatricula(aluno, turma, dto.getCanalOrigem(), dto.getObservacoes());
     }
 
@@ -127,6 +132,12 @@ public class MatriculaService {
     public MatriculaDTO cancelarMatricula(Long id) {
         Matricula matricula = matriculaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Matrícula não encontrada com id: " + id));
+
+        if (securityService.isEncarregada() && matricula.getTurma() != null && matricula.getTurma().getCurso() != null
+                && matricula.getTurma().getCurso().getEscola() != null
+                && !securityService.temAcessoAEscola(matricula.getTurma().getCurso().getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para cancelar matrículas desta escola.");
+        }
 
         if (matricula.getStatus() == StatusMatricula.CANCELADA) {
             throw new BusinessException("Esta matrícula já está cancelada.");
@@ -173,6 +184,10 @@ public class MatriculaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Matrícula não encontrada com id: " + id));
 
         Turma turma = matricula.getTurma();
+        if (securityService.isEncarregada() && turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null
+                && !securityService.temAcessoAEscola(turma.getCurso().getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para gerenciar suplentes desta escola.");
+        }
         if (!turma.isChamadaSuplenciaPermitida()) {
             throw new BusinessException("O prazo limite para convocação de suplentes desta turma foi encerrado ("
                     + turma.getDiasToleranciaSuplencia() + " dias após o início das aulas).");

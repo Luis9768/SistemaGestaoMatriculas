@@ -280,9 +280,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setRefreshing(true);
     try {
       const activeUser = usuarioLogado || api.getUsuarioSalvo();
-      const escolaFiltro = (activeUser?.role === 'ROLE_ENCARREGADA' && activeUser.escolaId)
-        ? activeUser.escolaId
-        : (escolaSelecionada || undefined);
+      const permittedIds: number[] = activeUser?.escolasIds?.length
+        ? activeUser.escolasIds
+        : (activeUser?.escolas?.map((e) => e.id) || (activeUser?.escolaId ? [activeUser.escolaId] : []));
+
+      let escolaFiltro = escolaSelecionada || undefined;
+      if (activeUser?.role === 'ROLE_ENCARREGADA') {
+        if (escolaSelecionada && permittedIds.includes(escolaSelecionada)) {
+          escolaFiltro = escolaSelecionada;
+        } else if (permittedIds.length > 0) {
+          escolaFiltro = permittedIds[0];
+        } else if (activeUser.escolaId) {
+          escolaFiltro = activeUser.escolaId;
+        }
+      }
 
       if (activeUser) {
         const [c, t] = await Promise.all([
@@ -390,6 +401,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleSalvarCursoComDisciplinas = async (cursoData: Curso) => {
+    const activeUser = usuarioLogado || api.getUsuarioSalvo();
+    if (activeUser?.role === 'ROLE_ENCARREGADA') {
+      const permittedIds: number[] = activeUser?.escolasIds?.length
+        ? activeUser.escolasIds
+        : (activeUser?.escolas?.map((e) => e.id) || (activeUser?.escolaId ? [activeUser.escolaId] : []));
+      if (cursoData.escolaId && !permittedIds.includes(cursoData.escolaId)) {
+        mostrarFeedback('erro', 'Você não possui permissão para cadastrar cursos nesta escola.');
+        return;
+      }
+    }
     const salvo = await api.createCurso(cursoData);
     mostrarFeedback('sucesso', `Curso "${salvo.nome}" cadastrado com sucesso!`);
     await carregarDadosEscola();
@@ -398,6 +419,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const handleCriarTurma = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const activeUser = usuarioLogado || api.getUsuarioSalvo();
+      if (activeUser?.role === 'ROLE_ENCARREGADA') {
+        const permittedIds: number[] = activeUser?.escolasIds?.length
+          ? activeUser.escolasIds
+          : (activeUser?.escolas?.map((e) => e.id) || (activeUser?.escolaId ? [activeUser.escolaId] : []));
+        const cursoEscolhido = cursos.find((c) => c.id === novaTurma.cursoId);
+        if (cursoEscolhido?.escolaId && !permittedIds.includes(cursoEscolhido.escolaId)) {
+          mostrarFeedback('erro', 'Você não possui permissão para abrir turmas nesta escola.');
+          return;
+        }
+      }
+
       await api.createTurma(novaTurma);
       setShowModalTurma(false);
       setNovaTurma({
@@ -434,9 +467,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const abrirModalNovaTurma = (cursoId?: number) => {
-    if (cursoId) {
-      setTurmaCursoPreSelecionadoId(cursoId);
-      setNovaTurma((prev) => ({ ...prev, cursoId }));
+    const activeUser = usuarioLogado || api.getUsuarioSalvo();
+    const permittedIds: number[] = activeUser?.escolasIds?.length
+      ? activeUser.escolasIds
+      : (activeUser?.escolas?.map((e) => e.id) || (activeUser?.escolaId ? [activeUser.escolaId] : []));
+
+    const isEncarregada = activeUser?.role === 'ROLE_ENCARREGADA';
+    const cursosPermitidos = isEncarregada && permittedIds.length > 0
+      ? cursos.filter((c) => !c.escolaId || permittedIds.includes(c.escolaId))
+      : cursos;
+
+    let targetCursoId = cursoId;
+    if (targetCursoId) {
+      if (isEncarregada && permittedIds.length > 0) {
+        const cursoAlvo = cursos.find((c) => c.id === targetCursoId);
+        if (cursoAlvo?.escolaId && !permittedIds.includes(cursoAlvo.escolaId)) {
+          mostrarFeedback('erro', 'Você não possui permissão para abrir turmas para esta escola.');
+          return;
+        }
+      }
+    } else {
+      targetCursoId = cursosPermitidos[0]?.id || 0;
+    }
+
+    if (targetCursoId) {
+      setTurmaCursoPreSelecionadoId(targetCursoId);
+      setNovaTurma((prev) => ({ ...prev, cursoId: targetCursoId }));
     }
     setShowModalTurma(true);
   };

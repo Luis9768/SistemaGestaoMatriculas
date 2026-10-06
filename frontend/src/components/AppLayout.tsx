@@ -245,9 +245,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const podeTrocarEscola = usuarioLogado?.role === 'ROLE_ADMIN' || permittedSchoolIds.length > 1;
 
+  const isEncarregada = usuarioLogado?.role === 'ROLE_ENCARREGADA';
+
   const escolasDisponiveis = usuarioLogado?.role === 'ROLE_ADMIN'
     ? escolas
     : escolas.filter((esc) => permittedSchoolIds.includes(esc.id));
+
+  const cursosDisponiveisParaTurma = isEncarregada && permittedSchoolIds.length > 0
+    ? cursos.filter((c) => !c.escolaId || permittedSchoolIds.includes(c.escolaId))
+    : cursos;
 
   // Mapeamento de Breadcrumb
   const getPageTitle = () => {
@@ -708,7 +714,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-semibold"
                 >
                   <option value="">Selecione o curso...</option>
-                  {cursos.map((c) => (
+                  {cursosDisponiveisParaTurma.map((c) => (
                     <option key={c.id} value={c.id}>
                       [{c.escolaSigla}] {c.nome} ({c.cargaHoraria}h)
                     </option>

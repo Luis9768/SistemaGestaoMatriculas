@@ -68,6 +68,10 @@ public class TurmaService {
         Curso curso = cursoRepository.findById(dto.getCursoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + dto.getCursoId()));
 
+        if (securityService.isEncarregada() && curso.getEscola() != null && !securityService.temAcessoAEscola(curso.getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para abrir turmas nesta escola.");
+        }
+
         turmaRepository.findByCodigo(dto.getCodigo()).ifPresent(t -> {
             throw new BusinessException("Já existe uma turma cadastrada com o código: " + dto.getCodigo());
         });
@@ -101,6 +105,11 @@ public class TurmaService {
         Turma turma = turmaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + id));
 
+        if (securityService.isEncarregada() && turma.getCurso() != null && turma.getCurso().getEscola() != null
+                && !securityService.temAcessoAEscola(turma.getCurso().getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para alterar turmas desta escola.");
+        }
+
         if (!turma.getCodigo().equals(dto.getCodigo())) {
             turmaRepository.findByCodigo(dto.getCodigo()).ifPresent(t -> {
                 throw new BusinessException("Já existe uma turma cadastrada com o código: " + dto.getCodigo());
@@ -109,6 +118,10 @@ public class TurmaService {
 
         Curso curso = cursoRepository.findById(dto.getCursoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + dto.getCursoId()));
+
+        if (securityService.isEncarregada() && curso.getEscola() != null && !securityService.temAcessoAEscola(curso.getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para vincular esta turma a uma escola não autorizada.");
+        }
 
         turma.setCurso(curso);
         turma.setCodigo(dto.getCodigo());
@@ -229,6 +242,11 @@ public class TurmaService {
         Turma turma = turmaRepository.findById(turmaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + turmaId));
 
+        if (securityService.isEncarregada() && turma.getCurso() != null && turma.getCurso().getEscola() != null
+                && !securityService.temAcessoAEscola(turma.getCurso().getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para adicionar matérias a turmas desta escola.");
+        }
+
         if (dto.getNome() == null || dto.getNome().trim().isEmpty()) {
             throw new BusinessException("O nome da matéria é obrigatório.");
         }
@@ -265,6 +283,12 @@ public class TurmaService {
         TurmaMateria materia = turmaMateriaRepository.findByIdAndTurmaId(materiaId, turmaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Matéria não encontrada nesta turma."));
 
+        Turma turma = materia.getTurma();
+        if (securityService.isEncarregada() && turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null
+                && !securityService.temAcessoAEscola(turma.getCurso().getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para alterar matérias de turmas desta escola.");
+        }
+
         if (dto.getNome() != null && !dto.getNome().trim().isEmpty()) {
             materia.setNome(dto.getNome().trim());
         }
@@ -298,12 +322,17 @@ public class TurmaService {
         TurmaMateria materia = turmaMateriaRepository.findByIdAndTurmaId(materiaId, turmaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Matéria não encontrada nesta turma."));
 
+        Turma turma = materia.getTurma();
+        if (securityService.isEncarregada() && turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null
+                && !securityService.temAcessoAEscola(turma.getCurso().getEscola().getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para excluir matérias de turmas desta escola.");
+        }
+
         long totalPresencas = registroPresencaRepository.countByMateriaId(materiaId);
         if (totalPresencas > 0) {
             throw new BusinessException("Esta matéria já possui " + totalPresencas + " registro(s) de chamada realizada no Diário de Classe e não pode ser excluída para preservar o histórico pedagógico dos alunos.");
         }
 
-        Turma turma = materia.getTurma();
         if (turma != null && turma.getMaterias() != null) {
             turma.getMaterias().remove(materia);
         }

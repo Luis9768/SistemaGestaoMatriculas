@@ -110,10 +110,15 @@ export function TurmasOfertasView({
   onMatricularNaTurma,
   onTurmasAtualizadas,
 }: TurmasOfertasViewProps) {
-  const { abrirModalDetalhesTurma } = useApp();
+  const { abrirModalDetalhesTurma, usuarioLogado } = useApp();
   const [filtroAbertas, setFiltroAbertas] = useState<'todas' | 'abertas' | 'fechadas'>('todas');
   const [buscaCodigo, setBuscaCodigo] = useState(termoBuscaInicial || '');
   const [turmaGerenciarMaterias, setTurmaGerenciarMaterias] = useState<Turma | null>(null);
+
+  const isEncarregada = usuarioLogado?.role === 'ROLE_ENCARREGADA';
+  const permittedSchoolIds: number[] = usuarioLogado?.escolasIds?.length
+    ? usuarioLogado.escolasIds
+    : (usuarioLogado?.escolas?.map((e) => e.id) || (usuarioLogado?.escolaId ? [usuarioLogado.escolaId] : []));
 
   React.useEffect(() => {
     if (termoBuscaInicial) {
@@ -158,6 +163,15 @@ export function TurmasOfertasView({
   };
 
   const pertenceAEscolaAtiva = (t: Turma): boolean => {
+    if (isEncarregada && permittedSchoolIds.length > 0) {
+      if (t.escolaId && !permittedSchoolIds.includes(t.escolaId)) return false;
+      const siglaTurma = getEscolaSigla(t);
+      const escolasPermitidas = escolas.filter((e) => permittedSchoolIds.includes(e.id));
+      const siglasPermitidas = escolasPermitidas.map((e) => e.sigla?.toUpperCase());
+      if (siglaTurma && siglaTurma !== 'GERAL' && !siglasPermitidas.includes(siglaTurma)) {
+        return false;
+      }
+    }
     if (!escolaSelecionada) return true;
     if (t.escolaId && t.escolaId !== escolaSelecionada) return false;
     const escolaAtiva = escolas.find((e) => e.id === escolaSelecionada);
