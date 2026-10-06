@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CadastrarUsuarioDTO {
+public class AtualizarUsuarioDTO {
 
     @NotBlank(message = "O nome é obrigatório")
     private String nome;
@@ -22,19 +22,18 @@ public class CadastrarUsuarioDTO {
     @Email(message = "E-mail com formato inválido")
     private String email;
 
-    @NotBlank(message = "A senha provisória/inicial é obrigatória")
-    private String senha;
-
-    @NotNull(message = "O papel (Role) é obrigatório: ROLE_ENCARREGADA ou ROLE_ADMIN")
+    @NotNull(message = "O papel (Role) é obrigatório")
     private Role role;
 
-    /**
-     * Obrigatório se role == ROLE_ENCARREGADA (pode ser o ID único ou a lista de IDs)
-     */
-    private Long escolaId;
+    private List<Long> escolasIds;
 
     /**
-     * Lista de escolas às quais a encarregada terá acesso
+     * Opcional: preenchido somente se a administração desejar alterar a senha do usuário
      */
-    private List<Long> escolasIds;
+    private String senha;
+
+    /**
+     * Define se o usuário está ativo ou inativo para login
+     */
+    private Boolean ativo;
 }

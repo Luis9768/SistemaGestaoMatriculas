@@ -10,6 +10,7 @@ import com.gestaomatriculas.repository.AlunoRepository;
 import com.gestaomatriculas.repository.MatriculaRepository;
 import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.ResponsavelRepository;
+import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,7 @@ public class AlunoService {
     private final ResponsavelRepository responsavelRepository;
     private final MatriculaRepository matriculaRepository;
     private final RegistroPresencaRepository registroPresencaRepository;
+    private final SecurityService securityService;
 
     @Transactional(readOnly = true)
     public List<AlunoDTO> listarTodos() {
@@ -41,6 +43,7 @@ public class AlunoService {
      */
     @Transactional(readOnly = true)
     public Page<AlunoDTO> listarPaginado(Long escolaId, String busca, String nome, String email, String cpf, Pageable pageable) {
+        escolaId = securityService.resolverEscolaId(escolaId);
         Page<Aluno> pagina;
 
         if (busca != null && !busca.trim().isEmpty()) {

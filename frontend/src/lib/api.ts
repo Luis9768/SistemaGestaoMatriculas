@@ -17,6 +17,8 @@ export interface Usuario {
   escolaId?: number;
   escolaNome?: string;
   escolaSigla?: string;
+  escolasIds?: number[];
+  escolas?: Escola[];
   ativo?: boolean;
 }
 
@@ -26,6 +28,16 @@ export interface CadastrarUsuarioPayload {
   senha: string;
   role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA';
   escolaId?: number;
+  escolasIds?: number[];
+}
+
+export interface AtualizarUsuarioPayload {
+  nome: string;
+  email: string;
+  role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA';
+  escolasIds?: number[];
+  senha?: string;
+  ativo?: boolean;
 }
 
 export interface AtualizarContatoPayload {
@@ -46,6 +58,8 @@ export interface LoginResponse {
   escolaId?: number;
   escolaNome?: string;
   escolaSigla?: string;
+  escolasIds?: number[];
+  escolas?: Escola[];
 }
 
 export interface RecuperacaoResposta {
@@ -584,13 +598,13 @@ export const formatarTelefone = (valor?: string): string => {
   if (!valor) return 'Não informado';
   const digits = valor.replace(/\D/g, '');
   if (digits.length === 11) {
-    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   }
   if (digits.length === 10) {
-    return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   }
   if (digits.length > 2 && digits.length < 10) {
-    return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   }
   return valor;
 };
@@ -829,6 +843,12 @@ export const api = {
     if (apenasAbertas) params.append('apenasAbertas', 'true');
     const res = await fetch(`${API_BASE}/turmas?${params.toString()}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error('Erro ao buscar turmas');
+    return res.json();
+  },
+
+  async getTurmaPorId(id: number): Promise<Turma> {
+    const res = await fetch(`${API_BASE}/turmas/${id}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Erro ao buscar detalhes da turma');
     return res.json();
   },
 
@@ -1137,6 +1157,19 @@ export const api = {
     return res.json();
   },
 
+  async atualizarUsuario(id: number, payload: AtualizarUsuarioPayload): Promise<Usuario> {
+    const res = await fetch(`${API_BASE}/usuarios/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao atualizar usuário' }));
+      throw new Error(err.message || 'Erro ao atualizar usuário');
+    }
+    return res.json();
+  },
+
   async alternarStatusUsuario(id: number): Promise<Usuario> {
     const res = await fetch(`${API_BASE}/usuarios/${id}/status`, {
       method: 'PATCH',
@@ -1243,8 +1276,12 @@ export const api = {
     return res.json();
   },
 
-  async obterNotificacoes(escolaId?: number): Promise<Notificacao[]> {
-    const url = escolaId ? `${API_BASE}/notificacoes?escolaId=${escolaId}` : `${API_BASE}/notificacoes`;
+  async obterNotificacoes(escolaId?: number, turmaId?: number): Promise<Notificacao[]> {
+    const params = new URLSearchParams();
+    if (escolaId) params.append('escolaId', String(escolaId));
+    if (turmaId) params.append('turmaId', String(turmaId));
+    const qs = params.toString();
+    const url = qs ? `${API_BASE}/notificacoes?${qs}` : `${API_BASE}/notificacoes`;
     const res = await fetch(url, {
       headers: getAuthHeaders(),
     });

@@ -18,4 +18,6 @@ public class LoginResponseDTO {
     private Long escolaId;
     private String escolaNome;
     private String escolaSigla;
+    private java.util.List<Long> escolasIds;
+    private java.util.List<EscolaResumoDTO> escolas;
 }

@@ -31,6 +31,7 @@ import { useApp } from '@/context/AppContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 import { NotificacoesPopover } from '@/components/NotificacoesPopover';
+import { ModalDetalhesTurma } from '@/components/ModalDetalhesTurma';
 
 /* ─── Navigation Categorized in Shadcn School Style ─── */
 interface NavItem {
@@ -127,6 +128,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     loading,
     feedbackMsg,
     mostrarFeedback,
+    fecharFeedback,
     handleLogout,
     showModalTurma,
     setShowModalTurma,
@@ -140,6 +142,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     autoDeclaracaoMatriculaId,
     setAutoDeclaracaoMatriculaId,
     carregarMatriculas,
+    turmaDetalhesModal,
+    fecharModalDetalhesTurma,
   } = useApp();
 
   // Sidebar collapse & mobile drawer state
@@ -208,13 +212,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // Se não houver escola selecionada, direciona para o Hub
   useEffect(() => {
     if (!loading && usuarioLogado && escolaSelecionada === null) {
-      if (usuarioLogado.role === 'ROLE_ENCARREGADA' && usuarioLogado.escolaId) {
-        setEscolaSelecionada(usuarioLogado.escolaId);
+      const permittedIds: number[] = usuarioLogado.escolasIds?.length
+        ? usuarioLogado.escolasIds
+        : (usuarioLogado.escolas?.map((e) => e.id) || (usuarioLogado.escolaId ? [usuarioLogado.escolaId] : []));
+
+      if (usuarioLogado.role === 'ROLE_ENCARREGADA' && permittedIds.length === 1) {
+        setEscolaSelecionada(permittedIds[0]);
       } else {
         router.replace('/direcionamento');
       }
     }
-  }, [loading, usuarioLogado, escolaSelecionada, router]);
+  }, [loading, usuarioLogado, escolaSelecionada, router, setEscolaSelecionada]);
 
   if (loading || !usuarioLogado) {
     return (
@@ -230,6 +238,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const schoolColor = getSchoolColorClasses(escolaAtualObj?.sigla);
+
+  const permittedSchoolIds: number[] = usuarioLogado?.escolasIds?.length
+    ? usuarioLogado.escolasIds
+    : (usuarioLogado?.escolas?.map((e) => e.id) || (usuarioLogado?.escolaId ? [usuarioLogado.escolaId] : []));
+
+  const podeTrocarEscola = usuarioLogado?.role === 'ROLE_ADMIN' || permittedSchoolIds.length > 1;
+
+  const escolasDisponiveis = usuarioLogado?.role === 'ROLE_ADMIN'
+    ? escolas
+    : escolas.filter((esc) => permittedSchoolIds.includes(esc.id));
 
   // Mapeamento de Breadcrumb
   const getPageTitle = () => {
@@ -356,13 +374,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
-              onClick={() => setEscolaDropdownOpen((prev) => !prev)}
-              disabled={usuarioLogado?.role === 'ROLE_ENCARREGADA'}
+              onClick={() => podeTrocarEscola && setEscolaDropdownOpen((prev) => !prev)}
+              disabled={!podeTrocarEscola}
               className={`w-full flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all ${
                 schoolColor.bg
               } ${schoolColor.border} hover:opacity-90 ${
                 isCollapsed ? 'justify-center p-2' : 'justify-between'
-              } ${usuarioLogado?.role === 'ROLE_ENCARREGADA' ? 'cursor-default' : 'cursor-pointer'}`}
+              } ${!podeTrocarEscola ? 'cursor-default' : 'cursor-pointer'}`}
               title={escolaAtualObj ? escolaAtualObj.nome : 'Rede Municipal'}
             >
               <div className="flex items-center gap-2 min-w-0">
@@ -378,18 +396,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
               </div>
-              {!isCollapsed && usuarioLogado?.role !== 'ROLE_ENCARREGADA' && (
+              {!isCollapsed && podeTrocarEscola && (
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               )}
             </button>
 
-            {/* Menu Popover para alternar entre as 4 Escolas */}
+            {/* Menu Popover para alternar entre as Escolas Permitidas */}
             {escolaDropdownOpen && (
               <div className="absolute top-full left-0 mt-1.5 w-60 bg-white dark:bg-[#0F1629] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 p-1 text-xs">
                 <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
                   Alternar Unidade
                 </div>
-                {escolas.map((esc) => {
+                {escolasDisponiveis.map((esc) => {
                   const itemColor = getSchoolColorClasses(esc.sigla);
                   const isCurrent = escolaSelecionada === esc.id;
                   return (
@@ -413,21 +431,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     </button>
                   );
                 })}
-                <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-                <button
-                  type="button"
-                  onClick={() => handleTrocarEscola(null)}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
-                    escolaSelecionada === null
-                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-slate-400" />
-                    <span>Todas as Escolas (Rede)</span>
-                  </div>
-                </button>
+                {usuarioLogado?.role === 'ROLE_ADMIN' && (
+                  <>
+                    <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => handleTrocarEscola(null)}
+                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
+                        escolaSelecionada === null
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-slate-400" />
+                        <span>Todas as Escolas (Rede)</span>
+                      </div>
+                    </button>
+                  </>
+                )}
                 <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
                 <Link
                   href="/direcionamento"
@@ -557,14 +579,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Breadcrumb Elegante */}
             <nav className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 truncate">
-              <Link
-                href="/direcionamento"
-                className="hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1"
-                title="Voltar ao Hub de Escolas"
-              >
-                <Building2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Escolas Livres</span>
-              </Link>
+              {podeTrocarEscola ? (
+                <Link
+                  href="/direcionamento"
+                  className="hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1"
+                  title="Voltar ao Hub de Escolas"
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Escolas Livres</span>
+                </Link>
+              ) : (
+                <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Escola Livre</span>
+                </span>
+              )}
               <ChevronRight className="w-3 h-3 text-slate-400" />
               <Link
                 href="/panorama"
@@ -581,21 +610,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Lado Direito: Ações Globais */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Badge de Escola Ativa com Acesso Rápido ao Hub */}
-            {escolaAtualObj && (
-              <Link
-                href="/direcionamento"
-                className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition ${
-                  schoolColor.bg
-                } ${schoolColor.border} ${schoolColor.text} hover:opacity-80`}
-                title="Trocar de Escola no Hub"
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${schoolColor.dot}`} />
-                <span>{escolaAtualObj.sigla}</span>
-                <span className="text-[10px] opacity-75 font-normal">· Trocar</span>
-              </Link>
-            )}
-
             {/* Central de Notificações */}
             <NotificacoesPopover escolaId={escolaSelecionada} />
 
@@ -614,24 +628,47 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Feedback Alert Toast do Sistema */}
+        {/* Feedback Alert Toast Flutuante do Sistema */}
         {feedbackMsg && (
-          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 mt-4">
+          <div className="fixed top-6 right-6 z-[100] max-w-md w-[calc(100vw-3rem)] animate-in slide-in-from-top-3 fade-in duration-200">
             <div
-              className={`p-3.5 rounded-2xl flex items-center justify-between shadow-xs border ${
+              className={`p-4 rounded-2xl shadow-2xl flex items-start justify-between gap-3 border bg-white dark:bg-[#0E1526] ${
                 feedbackMsg.tipo === 'sucesso'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
-                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+                  ? 'border-emerald-500/40 dark:border-emerald-500/40 text-slate-900 dark:text-white ring-1 ring-emerald-500/10'
+                  : 'border-rose-500/40 dark:border-rose-500/40 text-slate-900 dark:text-white ring-1 ring-rose-500/10'
               }`}
             >
-              <div className="flex items-center space-x-3">
-                {feedbackMsg.tipo === 'sucesso' ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
-                )}
-                <span className="text-xs font-semibold">{feedbackMsg.texto}</span>
+              <div className="flex items-start gap-3 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                    feedbackMsg.tipo === 'sucesso'
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  }`}
+                >
+                  {feedbackMsg.tipo === 'sucesso' ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold leading-tight">
+                    {feedbackMsg.tipo === 'sucesso' ? 'Operação Concluída' : 'Atenção / Falha'}
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                    {feedbackMsg.texto}
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={fecharFeedback}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shrink-0"
+                title="Fechar notificação"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )}
@@ -890,6 +927,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           }}
           onUpdate={() => {
             carregarMatriculas();
+          }}
+        />
+      )}
+
+      {/* Modal Detalhes da Turma Global */}
+      {turmaDetalhesModal && (
+        <ModalDetalhesTurma
+          isOpen={Boolean(turmaDetalhesModal)}
+          turma={turmaDetalhesModal}
+          onClose={fecharModalDetalhesTurma}
+          onMatricular={(id) => {
+            fecharModalDetalhesTurma();
+            router.push(`/inscricao?turma=${id}`);
+          }}
+          onGerenciarMaterias={(turma) => {
+            fecharModalDetalhesTurma();
+            router.push(`/turmas?turmaId=${turma.id}`);
           }}
         />
       )}

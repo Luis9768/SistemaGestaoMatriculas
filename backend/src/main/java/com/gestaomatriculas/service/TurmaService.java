@@ -12,6 +12,7 @@ import com.gestaomatriculas.repository.CursoRepository;
 import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.TurmaMateriaRepository;
 import com.gestaomatriculas.repository.TurmaRepository;
+import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +30,11 @@ public class TurmaService {
     private final CursoRepository cursoRepository;
     private final TurmaMateriaRepository turmaMateriaRepository;
     private final RegistroPresencaRepository registroPresencaRepository;
+    private final SecurityService securityService;
 
     @Transactional(readOnly = true)
     public List<TurmaDTO> listarTodas(Long cursoId, Long escolaId, Boolean apenasAbertas) {
+        escolaId = securityService.resolverEscolaId(escolaId);
         List<Turma> turmas;
         LocalDate hoje = LocalDate.now();
 

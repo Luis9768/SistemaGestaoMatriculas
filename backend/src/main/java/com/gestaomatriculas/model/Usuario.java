@@ -43,12 +43,23 @@ public class Usuario {
     private Role role;
 
     /**
-     * Se for ROLE_ENCARREGADA, aponta obrigatoriamente para a escola atribuída.
-     * Se for ROLE_ADMIN, pode ser nulo (acesso global a todas as escolas).
+     * Escola principal de lotação (compatibilidade e escopo primário)
      */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "escola_id")
     private Escola escola;
+
+    /**
+     * Conjunto de escolas às quais o usuário tem permissão de acesso e gestão.
+     */
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "usuarios_escolas",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "escola_id")
+    )
+    @Builder.Default
+    private java.util.Set<Escola> escolas = new java.util.HashSet<>();
 
     @Builder.Default
     @Column(nullable = false)
@@ -61,4 +72,31 @@ public class Usuario {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public java.util.Set<Escola> getTodasEscolas() {
+        java.util.Set<Escola> todas = new java.util.HashSet<>();
+        if (escolas != null) {
+            todas.addAll(escolas);
+        }
+        if (escola != null) {
+            todas.add(escola);
+        }
+        return todas;
+    }
+
+    public boolean temAcessoAEscola(Long escolaId) {
+        if (this.role == Role.ROLE_ADMIN) {
+            return true;
+        }
+        if (escolaId == null) {
+            return false;
+        }
+        if (escola != null && escolaId.equals(escola.getId())) {
+            return true;
+        }
+        if (escolas != null) {
+            return escolas.stream().anyMatch(e -> e.getId().equals(escolaId));
+        }
+        return false;
+    }
 }

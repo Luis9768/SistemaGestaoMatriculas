@@ -39,6 +39,12 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.cadastrar(dto));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UsuarioDTO> atualizar(@PathVariable Long id, @Valid @RequestBody com.gestaomatriculas.dto.AtualizarUsuarioDTO dto) {
+        return ResponseEntity.ok(usuarioService.atualizar(id, dto));
+    }
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UsuarioDTO> alternarStatus(@PathVariable Long id) {

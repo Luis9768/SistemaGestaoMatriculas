@@ -18,7 +18,9 @@ public class NotificacaoController {
     private final NotificacaoService notificacaoService;
 
     @GetMapping
-    public ResponseEntity<List<NotificacaoDTO>> listar(@RequestParam(required = false) Long escolaId) {
-        return ResponseEntity.ok(notificacaoService.listarNotificacoes(escolaId));
+    public ResponseEntity<List<NotificacaoDTO>> listar(
+            @RequestParam(required = false) Long escolaId,
+            @RequestParam(required = false) Long turmaId) {
+        return ResponseEntity.ok(notificacaoService.listarNotificacoes(escolaId, turmaId));
     }
 }

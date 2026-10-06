@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api, Escola, CadastrarUsuarioPayload } from '@/lib/api';
+import { useApp } from '@/context/AppContext';
 import { X, ShieldCheck, AlertCircle, Building2, Mail, Lock, User, Users2, Sparkles } from 'lucide-react';
 
 interface ModalCadastrarUsuarioProps {
@@ -15,6 +16,7 @@ export function ModalCadastrarUsuario({
   onClose,
   onUsuarioCadastrado,
 }: ModalCadastrarUsuarioProps) {
+  const { mostrarFeedback } = useApp();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -22,6 +24,7 @@ export function ModalCadastrarUsuario({
   const [escolaId, setEscolaId] = useState<number | ''>('');
 
   const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [escolasIds, setEscolasIds] = useState<number[]>([]);
   const [loadingDados, setLoadingDados] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -39,6 +42,7 @@ export function ModalCadastrarUsuario({
     setSenha('');
     setRole('ROLE_ENCARREGADA');
     setEscolaId('');
+    setEscolasIds([]);
     setErro(null);
   };
 
@@ -47,7 +51,8 @@ export function ModalCadastrarUsuario({
       setLoadingDados(true);
       const listaEscolas = await api.getEscolas();
       setEscolas(listaEscolas);
-      if (listaEscolas.length > 0 && !escolaId) {
+      if (listaEscolas.length > 0 && escolasIds.length === 0) {
+        setEscolasIds([listaEscolas[0].id]);
         setEscolaId(listaEscolas[0].id);
       }
     } catch {
@@ -57,17 +62,27 @@ export function ModalCadastrarUsuario({
     }
   };
 
+  const handleToggleEscola = (id: number) => {
+    setEscolasIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
 
     if (!nome.trim() || !email.trim() || !senha.trim()) {
-      setErro('Preencha todos os campos obrigatórios (nome, e-mail e senha).');
+      const msg = 'Preencha todos os campos obrigatórios (nome, e-mail e senha).';
+      setErro(msg);
+      mostrarFeedback('erro', msg);
       return;
     }
 
-    if (role === 'ROLE_ENCARREGADA' && !escolaId) {
-      setErro('Selecione a escola da qual a encarregada será responsável.');
+    if (role === 'ROLE_ENCARREGADA' && escolasIds.length === 0) {
+      const msg = 'Selecione pelo menos uma escola de atuação para a encarregada.';
+      setErro(msg);
+      mostrarFeedback('erro', msg);
       return;
     }
 
@@ -78,16 +93,33 @@ export function ModalCadastrarUsuario({
         email: email.trim().toLowerCase(),
         senha: senha.trim(),
         role: role,
-        escolaId: role === 'ROLE_ENCARREGADA' ? Number(escolaId) : undefined,
+        escolaId: role === 'ROLE_ENCARREGADA' && escolasIds.length > 0 ? escolasIds[0] : undefined,
+        escolasIds: role === 'ROLE_ENCARREGADA' ? escolasIds : [],
       };
 
       await api.cadastrarUsuario(payload);
+
+      const escolasNomes = role === 'ROLE_ENCARREGADA'
+        ? escolas.filter((e) => escolasIds.includes(e.id)).map((e) => e.sigla).join(', ')
+        : '';
+
+      const perfilDescricao = role === 'ROLE_ADMIN'
+        ? 'Administrador(a) da Coordenação Geral'
+        : `Encarregada da Secretaria [${escolasNomes}]`;
+
+      mostrarFeedback(
+        'sucesso',
+        `Cadastro realizado com sucesso! ${nome.trim()} foi cadastrado(a) como ${perfilDescricao}. O acesso já está liberado para login com ${email.trim().toLowerCase()}.`
+      );
+
       if (onUsuarioCadastrado) {
         onUsuarioCadastrado();
       }
       onClose();
     } catch (err: any) {
-      setErro(err.message || 'Falha ao cadastrar usuário.');
+      const msgErro = err.message || 'Falha ao cadastrar usuário. Verifique se o e-mail já está em uso.';
+      setErro(msgErro);
+      mostrarFeedback('erro', `Erro no cadastro: ${msgErro}`);
     } finally {
       setSalvando(false);
     }
@@ -237,26 +269,53 @@ export function ModalCadastrarUsuario({
 
           {/* Seleção de Escola (apenas para Encarregada) */}
           {role === 'ROLE_ENCARREGADA' ? (
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                Escola de Lotação *
-              </label>
-              <div className="relative">
-                <Building2 className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
-                <select
-                  value={escolaId}
-                  onChange={(e) => setEscolaId(Number(e.target.value))}
-                  required
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-slate-400"
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Escolas de Atuação & Gestão *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setEscolasIds(escolas.map((e) => e.id))}
+                  className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-semibold cursor-pointer"
                 >
-                  <option value="">Selecione uma Escola Livre...</option>
-                  {escolas.map((esc) => (
-                    <option key={esc.id} value={esc.id}>
-                      [{esc.sigla}] {esc.nome}
-                    </option>
-                  ))}
-                </select>
+                  Marcar Todas
+                </button>
               </div>
+
+              <div className="grid grid-cols-1 gap-1.5">
+                {escolas.map((esc) => {
+                  const sel = escolasIds.includes(esc.id);
+                  return (
+                    <div
+                      key={esc.id}
+                      onClick={() => handleToggleEscola(esc.id)}
+                      className={`p-2 rounded-xl border text-xs flex items-center justify-between cursor-pointer select-none transition ${
+                        sel
+                          ? 'border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/40 text-slate-900 dark:text-white font-medium'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                          sel ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600'
+                        }`}>
+                          {esc.sigla}
+                        </span>
+                        <span>{esc.nome}</span>
+                      </div>
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
+                        sel ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-700'
+                      }`}>
+                        {sel && '✓'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <span className="text-[10px] text-slate-400 block">
+                {escolasIds.length === 0 ? 'Nenhuma escola marcada.' : `${escolasIds.length} unidade(s) selecionada(s).`}
+              </span>
             </div>
           ) : (
             <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/60 flex items-start gap-2.5">

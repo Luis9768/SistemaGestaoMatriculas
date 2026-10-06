@@ -12,6 +12,7 @@ import com.gestaomatriculas.repository.AlunoRepository;
 import com.gestaomatriculas.repository.MatriculaRepository;
 import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.TurmaRepository;
+import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,9 +35,11 @@ public class MatriculaService {
     private final AlunoRepository alunoRepository;
     private final AlunoService alunoService;
     private final RegistroPresencaRepository registroPresencaRepository;
+    private final SecurityService securityService;
 
     @Transactional(readOnly = true)
     public List<MatriculaDTO> listar(Long escolaId, Long turmaId, Long alunoId, CanalOrigem canal, StatusMatricula status) {
+        escolaId = securityService.resolverEscolaId(escolaId);
         List<Matricula> matriculas;
 
         if (escolaId != null) {

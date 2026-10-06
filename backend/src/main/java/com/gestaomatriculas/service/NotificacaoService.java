@@ -7,6 +7,7 @@ import com.gestaomatriculas.model.enums.StatusPresenca;
 import com.gestaomatriculas.repository.MatriculaRepository;
 import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.TurmaRepository;
+import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,16 +23,28 @@ public class NotificacaoService {
     private final MatriculaRepository matriculaRepository;
     private final RegistroPresencaRepository registroPresencaRepository;
     private final TurmaRepository turmaRepository;
+    private final SecurityService securityService;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @Transactional(readOnly = true)
     public List<NotificacaoDTO> listarNotificacoes(Long escolaId) {
+        return listarNotificacoes(escolaId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotificacaoDTO> listarNotificacoes(Long escolaId, Long turmaId) {
+        escolaId = securityService.resolverEscolaId(escolaId);
         List<NotificacaoDTO> notificacoes = new ArrayList<>();
 
-        List<Matricula> matriculas = escolaId != null
-                ? matriculaRepository.findByTurmaCursoEscolaId(escolaId)
-                : matriculaRepository.findAll();
+        List<Matricula> matriculas;
+        if (turmaId != null) {
+            matriculas = matriculaRepository.findByTurmaId(turmaId);
+        } else if (escolaId != null) {
+            matriculas = matriculaRepository.findByTurmaCursoEscolaId(escolaId);
+        } else {
+            matriculas = matriculaRepository.findAll();
+        }
 
         // Filtrar apenas matrículas confirmadas para processamento de faltas
         List<Matricula> confirmadas = matriculas.stream()
@@ -166,9 +179,14 @@ public class NotificacaoService {
         }
 
         // 4. Notificações de Vagas & Fila de Suplência das Turmas
-        List<Turma> turmas = escolaId != null
-                ? turmaRepository.findByCursoEscolaId(escolaId)
-                : turmaRepository.findAll();
+        List<Turma> turmas;
+        if (turmaId != null) {
+            turmas = turmaRepository.findById(turmaId).map(List::of).orElse(Collections.emptyList());
+        } else if (escolaId != null) {
+            turmas = turmaRepository.findByCursoEscolaId(escolaId);
+        } else {
+            turmas = turmaRepository.findAll();
+        }
 
         for (Turma t : turmas) {
             long matriculados = matriculaRepository.countByTurmaIdAndStatus(t.getId(), StatusMatricula.CONFIRMADA);

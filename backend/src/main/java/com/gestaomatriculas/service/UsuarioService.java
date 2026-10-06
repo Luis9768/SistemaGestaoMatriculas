@@ -52,13 +52,27 @@ public class UsuarioService {
             throw new BusinessException("Já existe um usuário cadastrado com o e-mail: " + dto.getEmail());
         }
 
-        Escola escola = null;
+        java.util.Set<Escola> escolasEncontradas = new java.util.HashSet<>();
+        Escola escolaPrimaria = null;
+
         if (dto.getRole() == Role.ROLE_ENCARREGADA) {
-            if (dto.getEscolaId() == null) {
-                throw new BusinessException("Para o perfil Encarregada, é obrigatório selecionar a Escola de atuação.");
+            java.util.List<Long> ids = new java.util.ArrayList<>();
+            if (dto.getEscolasIds() != null && !dto.getEscolasIds().isEmpty()) {
+                ids.addAll(dto.getEscolasIds());
+            } else if (dto.getEscolaId() != null) {
+                ids.add(dto.getEscolaId());
             }
-            escola = escolaRepository.findById(dto.getEscolaId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Escola não encontrada com id: " + dto.getEscolaId()));
+
+            if (ids.isEmpty()) {
+                throw new BusinessException("Para o perfil Encarregada, é obrigatório selecionar ao menos uma Escola de atuação.");
+            }
+
+            java.util.List<Escola> lista = escolaRepository.findAllById(ids);
+            if (lista.isEmpty()) {
+                throw new BusinessException("Nenhuma das escolas selecionadas foi encontrada no sistema.");
+            }
+            escolasEncontradas.addAll(lista);
+            escolaPrimaria = lista.get(0);
         }
 
         Usuario novo = Usuario.builder()
@@ -66,12 +80,63 @@ public class UsuarioService {
                 .email(emailFormatado)
                 .senha(passwordEncoder.encode(dto.getSenha().trim()))
                 .role(dto.getRole())
-                .escola(escola)
+                .escola(escolaPrimaria)
+                .escolas(escolasEncontradas)
                 .ativo(true)
                 .build();
 
         Usuario salvo = usuarioRepository.save(novo);
-        log.info("Novo usuário cadastrado pelo administrador: {} ({})", salvo.getEmail(), salvo.getRole());
+        log.info("Novo usuário cadastrado pelo administrador: {} ({}) com {} escolas vinculadas",
+                salvo.getEmail(), salvo.getRole(), salvo.getTodasEscolas().size());
+        return toDTO(salvo);
+    }
+
+    @Transactional
+    public UsuarioDTO atualizar(Long id, com.gestaomatriculas.dto.AtualizarUsuarioDTO dto) {
+        Usuario u = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
+
+        if (!Boolean.TRUE.equals(u.getAtivo()) && !Boolean.TRUE.equals(dto.getAtivo())) {
+            throw new BusinessException("Só é permitido alterar dados cadastrais de usuários que estejam ativos no sistema. Reative o acesso do usuário primeiro para poder editar suas informações.");
+        }
+
+        String emailFormatado = dto.getEmail().trim().toLowerCase();
+        if (!u.getEmail().equalsIgnoreCase(emailFormatado) && usuarioRepository.existsByEmail(emailFormatado)) {
+            throw new BusinessException("Já existe outro usuário cadastrado com o e-mail: " + dto.getEmail());
+        }
+
+        u.setNome(dto.getNome().trim());
+        u.setEmail(emailFormatado);
+        u.setRole(dto.getRole());
+
+        if (dto.getAtivo() != null) {
+            u.setAtivo(dto.getAtivo());
+        }
+
+        if (dto.getSenha() != null && !dto.getSenha().trim().isEmpty()) {
+            u.setSenha(passwordEncoder.encode(dto.getSenha().trim()));
+            log.info("Senha redefinida para o usuário: {}", u.getEmail());
+        }
+
+        if (dto.getRole() == Role.ROLE_ENCARREGADA) {
+            if (dto.getEscolasIds() == null || dto.getEscolasIds().isEmpty()) {
+                throw new BusinessException("Para o perfil Encarregada, é obrigatório selecionar ao menos uma Escola de atuação.");
+            }
+            java.util.List<Escola> lista = escolaRepository.findAllById(dto.getEscolasIds());
+            if (lista.isEmpty()) {
+                throw new BusinessException("Nenhuma das escolas selecionadas foi encontrada.");
+            }
+            u.getEscolas().clear();
+            u.getEscolas().addAll(lista);
+            u.setEscola(lista.get(0));
+        } else {
+            u.getEscolas().clear();
+            u.setEscola(null);
+        }
+
+        Usuario salvo = usuarioRepository.save(u);
+        log.info("Usuário atualizado com sucesso: {} (Role: {}, Ativo: {}, Escolas: {})",
+                salvo.getEmail(), salvo.getRole(), salvo.getAtivo(), salvo.getTodasEscolas().size());
         return toDTO(salvo);
     }
 
@@ -81,18 +146,41 @@ public class UsuarioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
 
         u.setAtivo(!Boolean.TRUE.equals(u.getAtivo()));
-        return toDTO(usuarioRepository.save(u));
+        Usuario salvo = usuarioRepository.save(u);
+        log.info("Status de acesso do usuário {} alterado para: {}", salvo.getEmail(), salvo.getAtivo() ? "ATIVO" : "INATIVO");
+        return toDTO(salvo);
     }
 
     public UsuarioDTO toDTO(Usuario u) {
+        java.util.Set<Escola> todas = u.getTodasEscolas();
+        java.util.List<com.gestaomatriculas.dto.EscolaResumoDTO> escolasDTO = todas.stream()
+                .map(e -> com.gestaomatriculas.dto.EscolaResumoDTO.builder()
+                        .id(e.getId())
+                        .sigla(e.getSigla())
+                        .nome(e.getNome())
+                        .corTema(e.getCorTema())
+                        .build())
+                .sorted(java.util.Comparator.comparing(com.gestaomatriculas.dto.EscolaResumoDTO::getId))
+                .toList();
+
+        java.util.List<Long> ids = escolasDTO.stream()
+                .map(com.gestaomatriculas.dto.EscolaResumoDTO::getId)
+                .toList();
+
+        Long primId = u.getEscola() != null ? u.getEscola().getId() : (!ids.isEmpty() ? ids.get(0) : null);
+        String primNome = u.getEscola() != null ? u.getEscola().getNome() : (!escolasDTO.isEmpty() ? escolasDTO.get(0).getNome() : null);
+        String primSigla = u.getEscola() != null ? u.getEscola().getSigla() : (!escolasDTO.isEmpty() ? escolasDTO.get(0).getSigla() : null);
+
         return UsuarioDTO.builder()
                 .id(u.getId())
                 .nome(u.getNome())
                 .email(u.getEmail())
                 .role(u.getRole())
-                .escolaId(u.getEscola() != null ? u.getEscola().getId() : null)
-                .escolaNome(u.getEscola() != null ? u.getEscola().getNome() : null)
-                .escolaSigla(u.getEscola() != null ? u.getEscola().getSigla() : null)
+                .escolaId(primId)
+                .escolaNome(primNome)
+                .escolaSigla(primSigla)
+                .escolasIds(ids)
+                .escolas(escolasDTO)
                 .ativo(u.getAtivo())
                 .build();
     }

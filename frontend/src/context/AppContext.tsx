@@ -29,6 +29,7 @@ interface AppContextType {
   feedbackMsg: { tipo: 'sucesso' | 'erro'; texto: string } | null;
   tempoRestanteMin: number;
   mostrarFeedback: (tipo: 'sucesso' | 'erro', texto: string) => void;
+  fecharFeedback: () => void;
   carregarDadosEscola: () => Promise<void>;
   carregarMatriculas: () => Promise<void>;
   carregarDadosIniciais: (userAtivo?: LoginResponse | null) => Promise<void>;
@@ -62,6 +63,9 @@ interface AppContextType {
   perfilAlunoId: number | null;
   autoDeclaracaoMatriculaId: number | null;
   setAutoDeclaracaoMatriculaId: (id: number | null) => void;
+  turmaDetalhesModal: Turma | null;
+  abrirModalDetalhesTurma: (turmaOuId: Turma | number) => Promise<void>;
+  fecharModalDetalhesTurma: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -121,7 +125,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [showModalLgpd, setShowModalLgpd] = useState(false);
   const [lgpdAbaInicial, setLgpdAbaInicial] = useState<'geral' | 'alunos'>('geral');
 
+  // Modal Detalhes Turma
+  const [turmaDetalhesModal, setTurmaDetalhesModal] = useState<Turma | null>(null);
+
   const setEscolaSelecionada = (id: number | null) => {
+    const user = usuarioLogado || api.getUsuarioSalvo();
+    if (user?.role === 'ROLE_ENCARREGADA') {
+      const permittedIds: number[] = user.escolasIds?.length
+        ? user.escolasIds
+        : (user.escolas?.map((e) => e.id) || (user.escolaId ? [user.escolaId] : []));
+
+      if (id !== null && permittedIds.includes(id)) {
+        setEscolaSelecionadaState(id);
+        api.setEscolaAtivaId(id);
+        return;
+      }
+      if (id === null) {
+        setEscolaSelecionadaState(null);
+        api.setEscolaAtivaId(null);
+        return;
+      }
+      const fallback = permittedIds[0] || null;
+      setEscolaSelecionadaState(fallback);
+      api.setEscolaAtivaId(fallback);
+      return;
+    }
     setEscolaSelecionadaState(id);
     api.setEscolaAtivaId(id);
   };
@@ -130,12 +158,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const user = api.getUsuarioSalvo();
     if (user) {
       setUsuarioLogado(user);
-      const savedEscolaId = api.getEscolaAtivaId();
-      if (savedEscolaId) {
-        setEscolaSelecionadaState(savedEscolaId);
-      } else if (user.role === 'ROLE_ENCARREGADA' && user.escolaId) {
-        setEscolaSelecionadaState(user.escolaId);
-        api.setEscolaAtivaId(user.escolaId);
+      if (user.role === 'ROLE_ENCARREGADA') {
+        const permittedIds: number[] = user.escolasIds?.length
+          ? user.escolasIds
+          : (user.escolas?.map((e) => e.id) || (user.escolaId ? [user.escolaId] : []));
+
+        const savedEscolaId = api.getEscolaAtivaId();
+        if (savedEscolaId && permittedIds.includes(savedEscolaId)) {
+          setEscolaSelecionadaState(savedEscolaId);
+        } else if (permittedIds.length === 1) {
+          setEscolaSelecionadaState(permittedIds[0]);
+          api.setEscolaAtivaId(permittedIds[0]);
+        } else {
+          setEscolaSelecionadaState(null);
+          api.setEscolaAtivaId(null);
+        }
+      } else {
+        const savedEscolaId = api.getEscolaAtivaId();
+        if (savedEscolaId) {
+          setEscolaSelecionadaState(savedEscolaId);
+        }
       }
       const { minutos } = api.getTempoRestanteSessao();
       setTempoRestanteMin(minutos);
@@ -181,11 +223,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const activeUser = userAtivo !== undefined ? userAtivo : (usuarioLogado || api.getUsuarioSalvo());
+      let escolaFiltro: number | undefined = undefined;
+
       if (activeUser) {
         setUsuarioLogado(activeUser);
-        if (activeUser.role === 'ROLE_ENCARREGADA' && activeUser.escolaId) {
-          setEscolaSelecionadaState(activeUser.escolaId);
-          api.setEscolaAtivaId(activeUser.escolaId);
+        if (activeUser.role === 'ROLE_ENCARREGADA') {
+          const permittedIds: number[] = activeUser.escolasIds?.length
+            ? activeUser.escolasIds
+            : (activeUser.escolas?.map((e) => e.id) || (activeUser.escolaId ? [activeUser.escolaId] : []));
+
+          const savedEscolaId = api.getEscolaAtivaId();
+          if (savedEscolaId && permittedIds.includes(savedEscolaId)) {
+            escolaFiltro = savedEscolaId;
+            setEscolaSelecionadaState(savedEscolaId);
+          } else if (permittedIds.length === 1) {
+            escolaFiltro = permittedIds[0];
+            setEscolaSelecionadaState(permittedIds[0]);
+            api.setEscolaAtivaId(permittedIds[0]);
+          } else {
+            escolaFiltro = undefined;
+            setEscolaSelecionadaState(null);
+            api.setEscolaAtivaId(null);
+          }
+        } else {
+          const savedEscolaId = api.getEscolaAtivaId();
+          if (savedEscolaId) {
+            escolaFiltro = savedEscolaId;
+            setEscolaSelecionadaState(savedEscolaId);
+          }
         }
         const { minutos } = api.getTempoRestanteSessao();
         setTempoRestanteMin(minutos);
@@ -198,8 +263,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setEscolas(esc);
       const isAuth = !!activeUser;
       const [c, t] = await Promise.all([
-        api.getCursos(),
-        api.getTurmas(undefined, undefined, !isAuth),
+        api.getCursos(escolaFiltro),
+        api.getTurmas(undefined, escolaFiltro, !isAuth),
       ]);
       setCursos(c);
       setTurmas(t);
@@ -214,10 +279,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const carregarDadosEscola = async () => {
     setRefreshing(true);
     try {
-      if (usuarioLogado || api.getUsuarioSalvo()) {
+      const activeUser = usuarioLogado || api.getUsuarioSalvo();
+      const escolaFiltro = (activeUser?.role === 'ROLE_ENCARREGADA' && activeUser.escolaId)
+        ? activeUser.escolaId
+        : (escolaSelecionada || undefined);
+
+      if (activeUser) {
         const [c, t] = await Promise.all([
-          api.getCursos(escolaSelecionada || undefined),
-          api.getTurmas(undefined, escolaSelecionada || undefined),
+          api.getCursos(escolaFiltro),
+          api.getTurmas(undefined, escolaFiltro),
         ]);
         setCursos(c);
         setTurmas(t);
@@ -227,8 +297,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         const [c, t] = await Promise.all([
-          api.getCursos(escolaSelecionada || undefined),
-          api.getTurmas(undefined, escolaSelecionada || undefined, true),
+          api.getCursos(escolaFiltro),
+          api.getTurmas(undefined, escolaFiltro, true),
         ]);
         setCursos(c);
         setTurmas(t);
@@ -274,6 +344,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const mostrarFeedback = (tipo: 'sucesso' | 'erro', texto: string) => {
     setFeedbackMsg({ tipo, texto });
     setTimeout(() => setFeedbackMsg(null), 6000);
+  };
+
+  const fecharFeedback = () => {
+    setFeedbackMsg(null);
   };
 
   const handleLogout = async () => {
@@ -378,6 +452,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShowModalLgpd(true);
   };
 
+  const abrirModalDetalhesTurma = async (turmaOuId: Turma | number) => {
+    if (typeof turmaOuId === 'object' && turmaOuId !== null) {
+      setTurmaDetalhesModal(turmaOuId);
+      return;
+    }
+    const id = Number(turmaOuId);
+    if (!id) return;
+    const jaCarregada = turmas.find((t) => t.id === id);
+    if (jaCarregada) {
+      setTurmaDetalhesModal(jaCarregada);
+      return;
+    }
+    try {
+      const turmaBuscada = await api.getTurmaPorId(id);
+      setTurmaDetalhesModal(turmaBuscada);
+    } catch (e) {
+      console.warn('Erro ao carregar turma por ID:', e);
+    }
+  };
+
+  const fecharModalDetalhesTurma = () => {
+    setTurmaDetalhesModal(null);
+  };
+
   const escolaAtualObj = escolas.find((e) => e.id === escolaSelecionada) || null;
 
   return (
@@ -396,6 +494,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         feedbackMsg,
         tempoRestanteMin,
         mostrarFeedback,
+        fecharFeedback,
         carregarDadosEscola,
         carregarMatriculas,
         carregarDadosIniciais,
@@ -427,6 +526,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         perfilAlunoId,
         autoDeclaracaoMatriculaId,
         setAutoDeclaracaoMatriculaId,
+        turmaDetalhesModal,
+        abrirModalDetalhesTurma,
+        fecharModalDetalhesTurma,
       }}
     >
       {children}

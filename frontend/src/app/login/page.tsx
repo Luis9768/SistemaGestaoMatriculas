@@ -17,7 +17,12 @@ export default function LoginPage() {
 
   const handleLoginSucesso = async (user: LoginResponse) => {
     await carregarDadosIniciais(user);
-    router.push('/direcionamento');
+    const qtdEscolas = user.escolasIds?.length || user.escolas?.length || (user.escolaId ? 1 : 0);
+    if (user.role === 'ROLE_ENCARREGADA' && qtdEscolas === 1 && user.escolaId) {
+      router.push('/turmas');
+    } else {
+      router.push('/direcionamento');
+    }
   };
 
   if (!mounted) {

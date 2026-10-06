@@ -53,6 +53,25 @@ public class AuthService {
 
         String token = jwtTokenProvider.gerarToken(usuario);
 
+        java.util.Set<com.gestaomatriculas.model.Escola> todasEscolas = usuario.getTodasEscolas();
+        java.util.List<com.gestaomatriculas.dto.EscolaResumoDTO> escolasDTO = todasEscolas.stream()
+                .map(e -> com.gestaomatriculas.dto.EscolaResumoDTO.builder()
+                        .id(e.getId())
+                        .sigla(e.getSigla())
+                        .nome(e.getNome())
+                        .corTema(e.getCorTema())
+                        .build())
+                .sorted(java.util.Comparator.comparing(com.gestaomatriculas.dto.EscolaResumoDTO::getId))
+                .toList();
+
+        java.util.List<Long> escolasIds = escolasDTO.stream()
+                .map(com.gestaomatriculas.dto.EscolaResumoDTO::getId)
+                .toList();
+
+        Long primId = usuario.getEscola() != null ? usuario.getEscola().getId() : (!escolasIds.isEmpty() ? escolasIds.get(0) : null);
+        String primNome = usuario.getEscola() != null ? usuario.getEscola().getNome() : (!escolasDTO.isEmpty() ? escolasDTO.get(0).getNome() : "Todas as Escolas (Administrador Geral)");
+        String primSigla = usuario.getEscola() != null ? usuario.getEscola().getSigla() : (!escolasDTO.isEmpty() ? escolasDTO.get(0).getSigla() : "ADMIN");
+
         return LoginResponseDTO.builder()
                 .token(token)
                 .tipo("Bearer")
@@ -60,9 +79,11 @@ public class AuthService {
                 .nome(usuario.getNome())
                 .email(usuario.getEmail())
                 .role(usuario.getRole())
-                .escolaId(usuario.getEscola() != null ? usuario.getEscola().getId() : null)
-                .escolaNome(usuario.getEscola() != null ? usuario.getEscola().getNome() : "Todas as Escolas (Administrador Geral)")
-                .escolaSigla(usuario.getEscola() != null ? usuario.getEscola().getSigla() : "ADMIN")
+                .escolaId(primId)
+                .escolaNome(primNome)
+                .escolaSigla(primSigla)
+                .escolasIds(escolasIds)
+                .escolas(escolasDTO)
                 .build();
     }
 

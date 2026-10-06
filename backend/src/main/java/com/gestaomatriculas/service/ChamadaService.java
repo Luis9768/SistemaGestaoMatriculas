@@ -33,11 +33,25 @@ public class ChamadaService {
     private final TurmaRepository turmaRepository;
     private final TurmaMateriaRepository turmaMateriaRepository;
     private final MatriculaRepository matriculaRepository;
+    private final com.gestaomatriculas.security.SecurityService securityService;
+
+    private void validarAcessoEscola(Turma turma) {
+        if (securityService.isEncarregada()) {
+            Long escolaPermitida = securityService.getEscolaIdEncarregada();
+            if (escolaPermitida != null && turma.getCurso() != null && turma.getCurso().getEscola() != null) {
+                if (!escolaPermitida.equals(turma.getCurso().getEscola().getId())) {
+                    throw new BusinessException("Acesso negado: você não tem permissão para gerenciar chamadas de outra unidade escolar.");
+                }
+            }
+        }
+    }
 
     @Transactional(readOnly = true)
     public List<ChamadaItemDTO> obterAlunosParaChamada(Long turmaId, Long materiaId, LocalDate dataAula) {
         Turma turma = turmaRepository.findById(turmaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com ID: " + turmaId));
+
+        validarAcessoEscola(turma);
 
         TurmaMateria materia = turmaMateriaRepository.findById(materiaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Matéria não encontrada com ID: " + materiaId));
@@ -79,6 +93,8 @@ public class ChamadaService {
     public List<ChamadaResumoDTO> listarChamadas(Long turmaId, Long materiaId) {
         TurmaMateria materia = turmaMateriaRepository.findById(materiaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Matéria não encontrada com ID: " + materiaId));
+
+        validarAcessoEscola(materia.getTurma());
 
         List<RegistroPresenca> registros = registroPresencaRepository.findByMateriaIdOrderByDataAulaDesc(materiaId);
 
@@ -127,6 +143,8 @@ public class ChamadaService {
     public ChamadaDetalheDTO obterDetalheChamada(Long materiaId, LocalDate dataAula) {
         TurmaMateria materia = turmaMateriaRepository.findById(materiaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Matéria não encontrada com ID: " + materiaId));
+
+        validarAcessoEscola(materia.getTurma());
 
         List<RegistroPresenca> registros = registroPresencaRepository.findByMateriaIdAndDataAula(materiaId, dataAula);
         if (registros.isEmpty()) {
@@ -200,6 +218,8 @@ public class ChamadaService {
     public ChamadaDetalheDTO salvarChamada(SalvarChamadaDTO dto) {
         Turma turma = turmaRepository.findById(dto.getTurmaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com ID: " + dto.getTurmaId()));
+
+        validarAcessoEscola(turma);
 
         TurmaMateria materia = turmaMateriaRepository.findById(dto.getMateriaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Matéria não encontrada com ID: " + dto.getMateriaId()));

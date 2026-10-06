@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { AppLayout } from '@/components/AppLayout';
 import { ModalCadastrarUsuario } from '@/components/ModalCadastrarUsuario';
+import { ModalEditarUsuario } from '@/components/ModalEditarUsuario';
+import { ModalUsuarioDetalhes } from '@/components/ModalUsuarioDetalhes';
+import { UsuarioCard } from '@/components/UsuarioCard';
 import { api, Usuario } from '@/lib/api';
 import {
   Users2,
@@ -16,15 +19,20 @@ import {
   CheckCircle2,
   XCircle,
   BookOpen,
+  Edit2,
+  Lock,
 } from 'lucide-react';
 
 export default function UsuariosPage() {
   const router = useRouter();
-  const { usuarioLogado } = useApp();
+  const { usuarioLogado, escolas, mostrarFeedback } = useApp();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroRole, setFiltroRole] = useState<'TODOS' | 'ROLE_ADMIN' | 'ROLE_ENCARREGADA'>('TODOS');
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  const [usuarioParaEditar, setUsuarioParaEditar] = useState<Usuario | null>(null);
+  const [usuarioDetalhes, setUsuarioDetalhes] = useState<Usuario | null>(null);
   const [atualizandoStatusId, setAtualizandoStatusId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -49,13 +57,21 @@ export default function UsuariosPage() {
     }
   };
 
-  const handleAlternarStatus = async (id: number) => {
+  const handleAlternarStatus = async (id: number, statusAtual?: boolean) => {
     try {
       setAtualizandoStatusId(id);
-      await api.alternarStatusUsuario(id);
+      const atualizado = await api.alternarStatusUsuario(id);
+      mostrarFeedback(
+        'sucesso',
+        `Acesso de "${atualizado.nome}" ${atualizado.ativo ? 'reativado' : 'desativado'} com sucesso.`
+      );
+      // Atualiza o estado do modal se estiver aberto
+      if (usuarioDetalhes && usuarioDetalhes.id === id) {
+        setUsuarioDetalhes(atualizado);
+      }
       await carregarUsuarios();
     } catch (err: any) {
-      alert(err.message || 'Erro ao alterar status do usuário');
+      mostrarFeedback('erro', err.message || 'Erro ao alterar status do usuário.');
     } finally {
       setAtualizandoStatusId(null);
     }
@@ -112,10 +128,10 @@ export default function UsuariosPage() {
 
         {/* Barra de Filtros e Segmentos */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl text-xs w-fit">
+          <div className="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl text-xs w-fit">
             <button
               onClick={() => setFiltroRole('TODOS')}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
                 filtroRole === 'TODOS'
                   ? 'bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white shadow-2xs font-semibold'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -129,7 +145,7 @@ export default function UsuariosPage() {
 
             <button
               onClick={() => setFiltroRole('ROLE_ADMIN')}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
                 filtroRole === 'ROLE_ADMIN'
                   ? 'bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white shadow-2xs font-semibold'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -144,7 +160,7 @@ export default function UsuariosPage() {
 
             <button
               onClick={() => setFiltroRole('ROLE_ENCARREGADA')}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
                 filtroRole === 'ROLE_ENCARREGADA'
                   ? 'bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white shadow-2xs font-semibold'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -185,111 +201,58 @@ export default function UsuariosPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {usuariosFiltrados.map((u) => {
-              const isEncarregada = u.role === 'ROLE_ENCARREGADA';
-              const isAdmin = u.role === 'ROLE_ADMIN';
-
-              return (
-                <div
-                  key={u.id}
-                  className="bg-white dark:bg-[#0D1220] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-5 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-2xs space-y-4 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    {/* Topo do Card */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-sm border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-center shrink-0">
-                          {u.nome.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-900 dark:text-white text-sm">
-                            {u.nome}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-                            <Mail className="w-3 h-3 text-slate-400" />
-                            <span>{u.email}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        {isEncarregada && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200/60 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800/40">
-                            Encarregada
-                          </span>
-                        )}
-                        {isAdmin && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/40">
-                            Administrador
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Vínculo de Encarregada */}
-                    {isEncarregada && (
-                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#070A11] border border-slate-200/70 dark:border-slate-800/70 text-xs text-slate-600 dark:text-slate-400">
-                        <strong className="text-slate-500 block text-[10px] uppercase tracking-wider mb-0.5">
-                          Escola de Atuação
-                        </strong>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">
-                          {u.escolaNome ? `[${u.escolaSigla}] ${u.escolaNome}` : 'Geral'}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Escopo de Administrador */}
-                    {isAdmin && (
-                      <div className="p-2.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200">
-                        <strong className="text-amber-600 dark:text-amber-400 block text-[10px] uppercase tracking-wider mb-0.5">
-                          Escopo Institucional
-                        </strong>
-                        <span className="font-medium text-amber-950 dark:text-amber-200">
-                          Coordenação Geral • Acesso Unificado a Todas as Escolas
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Rodapé do Card com Status e Ações */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800/70 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5">
-                      {u.ativo ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Ativo</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Desativado</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {!isAdmin && (
-                      <button
-                        onClick={() => handleAlternarStatus(u.id)}
-                        disabled={atualizandoStatusId === u.id}
-                        className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white underline cursor-pointer disabled:opacity-50"
-                      >
-                        {u.ativo ? 'Desativar acesso' : 'Reativar acesso'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {usuariosFiltrados.map((u) => (
+              <UsuarioCard
+                key={u.id}
+                usuario={u}
+                onClick={(usr) => setUsuarioDetalhes(usr)}
+              />
+            ))}
           </div>
         )}
 
       </div>
 
-      {/* Modal de Cadastro de Professor / Encarregada */}
+      {/* Modal de Detalhes do Usuário (com Ativar/Inativar dinâmico) */}
+      <ModalUsuarioDetalhes
+        isOpen={Boolean(usuarioDetalhes)}
+        usuario={usuarioDetalhes}
+        escolas={escolas}
+        onClose={() => setUsuarioDetalhes(null)}
+        onAlternarStatus={async (id) => {
+          await handleAlternarStatus(id);
+        }}
+        onAbrirEdicao={(u) => {
+          if (!u.ativo) {
+            mostrarFeedback('erro', 'Usuário inativo. Reative o acesso do usuário primeiro para poder editar suas informações.');
+            return;
+          }
+          setUsuarioDetalhes(null);
+          setUsuarioParaEditar(u);
+          setModalEditarAberto(true);
+        }}
+      />
+
+      {/* Modal de Cadastro de Novo Usuário */}
       <ModalCadastrarUsuario
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
         onUsuarioCadastrado={() => {
+          carregarUsuarios();
+        }}
+      />
+
+      {/* Modal de Edição de Usuário & Permissões */}
+      <ModalEditarUsuario
+        isOpen={modalEditarAberto}
+        usuario={usuarioParaEditar}
+        escolas={escolas}
+        onClose={() => {
+          setModalEditarAberto(false);
+          setUsuarioParaEditar(null);
+        }}
+        onUsuarioAtualizado={() => {
+          mostrarFeedback('sucesso', 'Dados do usuário e permissões atualizados com sucesso!');
           carregarUsuarios();
         }}
       />

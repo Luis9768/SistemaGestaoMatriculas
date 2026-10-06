@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Building2,
   ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import { Escola, Curso, Turma, Matricula, LoginResponse } from '@/lib/api';
 import { GraffitiBannerHeader } from '@/components/GraffitiBannerHeader';
@@ -200,19 +201,42 @@ export function DirecionamentoEscolasView({
             );
             const turmasCount = turmasDaEscola.length;
             const vagasCount = turmasDaEscola.reduce((acc, t) => acc + (t.vagasTotais || 0), 0) || 60;
+            const isEncarregada = usuarioLogado.role === 'ROLE_ENCARREGADA';
+            const permittedIds: number[] = usuarioLogado.escolasIds?.length
+              ? usuarioLogado.escolasIds
+              : (usuarioLogado.escolas?.map((e) => e.id) || (usuarioLogado.escolaId ? [usuarioLogado.escolaId] : []));
+            const isPermitido = !isEncarregada || permittedIds.includes(escola.id);
 
             return (
               <div
                 key={escola.id}
-                className={`group relative rounded-3xl p-5 sm:p-5.5 flex flex-col justify-between transition-all duration-300 overflow-hidden border bg-white dark:bg-[#0D121F] border-slate-200/90 dark:border-slate-800 shadow-md hover:-translate-y-1.5 ${config.hoverGlow}`}
+                className={`group relative rounded-3xl p-5 sm:p-5.5 flex flex-col justify-between transition-all duration-300 overflow-hidden border bg-white dark:bg-[#0D121F] border-slate-200/90 dark:border-slate-800 shadow-md ${
+                  isPermitido
+                    ? `hover:-translate-y-1.5 ${config.hoverGlow}`
+                    : 'opacity-60 saturate-50'
+                }`}
               >
-                {/* Linha Superior com Cor de Destaque da Escola */}
-                <div className={`absolute top-0 left-0 right-0 h-1.5 ${config.accentBar}`} />
 
                 <div>
+                  {/* Badge de escopo quando for Encarregada */}
+                  {isEncarregada && (
+                    <div className="mb-2">
+                      {isPermitido ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                          Unidade Autorizada
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+                          <Lock className="w-2.5 h-2.5" />
+                          Acesso Restrito
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Nome da Escola e Ícone com Container Duplo */}
                   <div className="flex items-start gap-3 mb-3 pt-1">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-105 ${config.iconeEstilo}`}>
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 ${isPermitido ? 'group-hover:scale-105' : ''} ${config.iconeEstilo}`}>
                       <IconeComponent className="w-5 h-5" />
                     </div>
 
@@ -264,11 +288,25 @@ export function DirecionamentoEscolasView({
                 <div className="pt-1">
                   <button
                     type="button"
-                    onClick={() => onSelecionarEscola(escola.id)}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-98 ${config.btnAtivo}`}
+                    disabled={!isPermitido}
+                    onClick={() => isPermitido && onSelecionarEscola(escola.id)}
+                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 ${
+                      isPermitido
+                        ? `cursor-pointer shadow-sm hover:shadow-md active:scale-98 ${config.btnAtivo}`
+                        : 'bg-slate-200/70 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed'
+                    }`}
                   >
-                    <span>Acessar {config.sigla}</span>
-                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                    {isPermitido ? (
+                      <>
+                        <span>Acessar {config.sigla}</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Acesso Bloqueado</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

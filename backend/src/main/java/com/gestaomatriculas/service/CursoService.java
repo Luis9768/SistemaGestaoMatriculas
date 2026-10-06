@@ -11,6 +11,7 @@ import com.gestaomatriculas.model.enums.TipoCurso;
 import com.gestaomatriculas.repository.CursoRepository;
 import com.gestaomatriculas.repository.DisciplinaRepository;
 import com.gestaomatriculas.repository.EscolaRepository;
+import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +27,11 @@ public class CursoService {
     private final CursoRepository cursoRepository;
     private final EscolaRepository escolaRepository;
     private final DisciplinaRepository disciplinaRepository;
+    private final SecurityService securityService;
 
     @Transactional(readOnly = true)
     public List<CursoDTO> listarTodos(Long escolaId, TipoCurso tipo) {
+        escolaId = securityService.resolverEscolaId(escolaId);
         List<Curso> cursos;
         if (escolaId != null && tipo != null) {
             cursos = cursoRepository.findByEscolaIdAndTipo(escolaId, tipo);

@@ -12,6 +12,9 @@ import {
   formatarCpfMascara,
 } from '@/lib/api';
 import Link from 'next/link';
+import { NotificacoesPopover } from '@/components/NotificacoesPopover';
+import { ModalGerenciarMaterias } from '@/components/ModalGerenciarMaterias';
+import { useApp } from '@/context/AppContext';
 import {
   Calendar,
   BookOpen,
@@ -90,6 +93,11 @@ export function DiarioChamadasView({
   const [itensChamada, setItensChamada] = useState<ChamadaItem[]>([]);
   const [loadingItens, setLoadingItens] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const { carregarDadosEscola } = useApp();
+
+  // Modal para cadastrar e gerenciar matérias da turma
+  const [modalMateriasAberto, setModalMateriasAberto] = useState(false);
+  const [materiasLocaisMap, setMateriasLocaisMap] = useState<Record<number, TurmaMateria[]>>({});
 
   // Estado para visualização focada do dia
   const [chamadaFocada, setChamadaFocada] = useState<ChamadaDetalhe | null>(
@@ -115,10 +123,44 @@ export function DiarioChamadasView({
     return turmasEscola.find((t) => t.id === turmaSelecionadaId) || null;
   }, [turmasEscola, turmaSelecionadaId]);
 
-  // Matérias da turma atual
+  // Carregar matérias atualizadas da turma selecionada
+  useEffect(() => {
+    if (turmaSelecionadaId) {
+      api.getMateriasTurma(turmaSelecionadaId)
+        .then((mats) => {
+          setMateriasLocaisMap((prev) => ({ ...prev, [turmaSelecionadaId]: mats }));
+        })
+        .catch(() => {});
+    }
+  }, [turmaSelecionadaId]);
+
+  // Matérias da turma atual (com fallback para cache em memória ou dados da turma)
   const materiasTurma = useMemo(() => {
-    return turmaAtual?.materias || [];
-  }, [turmaAtual]);
+    if (!turmaAtual?.id) return [];
+    if (materiasLocaisMap[turmaAtual.id] !== undefined) {
+      return materiasLocaisMap[turmaAtual.id];
+    }
+    return turmaAtual.materias || [];
+  }, [turmaAtual, materiasLocaisMap]);
+
+  // Sincroniza após cadastro ou edição de matéria
+  const handleMateriasAtualizadas = async () => {
+    if (turmaAtual && turmaAtual.id) {
+      const idTurma = turmaAtual.id;
+      try {
+        const mats = await api.getMateriasTurma(idTurma);
+        setMateriasLocaisMap((prev) => ({ ...prev, [idTurma]: mats }));
+        if (mats.length > 0 && !mats.some((m) => m.id === materiaSelecionadaId)) {
+          setMateriaSelecionadaId(mats[0].id || null);
+        }
+      } catch {}
+    }
+    carregarDadosEscola();
+    setMensagemFeedback({
+      tipo: 'sucesso',
+      texto: 'Grade de matérias da turma sincronizada com sucesso!',
+    });
+  };
 
   // Seleciona primeira matéria da turma automaticamente quando a turma muda
   useEffect(() => {
@@ -406,16 +448,28 @@ export function DiarioChamadasView({
               </p>
             </div>
 
-            {turmaAtual && materiaAtual && modo === 'lista' && (
-              <button
-                type="button"
-                onClick={() => handleIniciarNovaChamada()}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nova Chamada</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2.5 shrink-0">
+              {turmaAtual && (
+                <div title={`Alertas e Notificações da Turma ${turmaAtual.codigo}`}>
+                  <NotificacoesPopover
+                    escolaId={escolaId}
+                    turmaId={turmaAtual.id}
+                    turmaNome={turmaAtual.codigo}
+                  />
+                </div>
+              )}
+
+              {turmaAtual && materiaAtual && modo === 'lista' && (
+                <button
+                  type="button"
+                  onClick={() => handleIniciarNovaChamada()}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nova Chamada</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Grid de Seletores */}
@@ -460,26 +514,49 @@ export function DiarioChamadasView({
                 2. Selecione a Matéria (Componente Curricular)
               </label>
               {materiasTurma.length === 0 ? (
-                <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2.5 border border-amber-200 dark:border-amber-800/70 rounded-xl">
-                  <Info className="w-4 h-4 shrink-0" />
-                  <span>Esta turma ainda não possui matérias cadastradas.</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>Esta turma ainda não possui matérias cadastradas.</span>
+                  </div>
+                  {turmaAtual && (
+                    <button
+                      type="button"
+                      onClick={() => setModalMateriasAberto(true)}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-lg font-bold text-xs shadow-xs transition cursor-pointer shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Cadastrar Matéria</span>
+                    </button>
+                  )}
                 </div>
               ) : (
-                <select
-                  id="select-materia"
-                  value={materiaSelecionadaId || ''}
-                  onChange={(e) => {
-                    setMateriaSelecionadaId(Number(e.target.value));
-                    setModo('lista');
-                  }}
-                  className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition cursor-pointer"
-                >
-                  {materiasTurma.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nome}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    id="select-materia"
+                    value={materiaSelecionadaId || ''}
+                    onChange={(e) => {
+                      setMateriaSelecionadaId(Number(e.target.value));
+                      setModo('lista');
+                    }}
+                    className="flex-1 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition cursor-pointer"
+                  >
+                    {materiasTurma.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setModalMateriasAberto(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700"
+                    title="Adicionar ou gerenciar matérias desta turma"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span className="hidden sm:inline">Nova Matéria</span>
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -510,6 +587,15 @@ export function DiarioChamadasView({
                   </button>
                 );
               })}
+              <button
+                type="button"
+                onClick={() => setModalMateriasAberto(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition cursor-pointer"
+                title="Cadastrar mais matérias nesta turma"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Adicionar Matéria</span>
+              </button>
             </div>
           )}
         </section>
@@ -1220,6 +1306,14 @@ export function DiarioChamadasView({
           </div>
         </section>
       )}
+
+      {/* Modal de Cadastro / Gestão de Matérias */}
+      <ModalGerenciarMaterias
+        isOpen={modalMateriasAberto}
+        turma={turmaAtual}
+        onClose={() => setModalMateriasAberto(false)}
+        onMateriasAtualizadas={handleMateriasAtualizadas}
+      />
     </main>
   );
 }

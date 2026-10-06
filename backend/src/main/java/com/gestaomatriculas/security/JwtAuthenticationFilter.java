@@ -23,6 +23,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.gestaomatriculas.repository.UsuarioRepository usuarioRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,6 +34,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token) && jwtTokenProvider.validarToken(token)) {
             Claims claims = jwtTokenProvider.obterClaims(token);
             String email = claims.getSubject();
+
+            var usuarioOpt = usuarioRepository.findByEmail(email);
+            if (usuarioOpt.isEmpty() || !Boolean.TRUE.equals(usuarioOpt.get().getAtivo())) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"erro\":\"Acesso negado: seu usuário foi desativado pela administração.\"}");
+                return;
+            }
+
             String role = claims.get("role", String.class);
 
             List<SimpleGrantedAuthority> authorities = (role != null)
