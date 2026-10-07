@@ -21,7 +21,7 @@ public interface AlunoRepository extends JpaRepository<Aluno, Long> {
 
     /**
      * Consulta paginada com filtro opcional por Escola e busca rápida unificada por nome, e-mail ou CPF.
-     * Se escolaId for nulo, a pesquisa é global em todas as 4 escolas.
+     * Suporta busca por CPF limpo (dígitos), CPF formatado ou padrão mascarado (ex: 100%00).
      */
     @Query("SELECT DISTINCT a FROM Aluno a " +
            "LEFT JOIN Matricula m ON m.aluno = a " +
@@ -31,10 +31,14 @@ public interface AlunoRepository extends JpaRepository<Aluno, Long> {
            "AND (:termo IS NULL OR :termo = '' OR " +
            "     LOWER(a.nome) LIKE LOWER(CONCAT('%', :termo, '%')) OR " +
            "     LOWER(a.email) LIKE LOWER(CONCAT('%', :termo, '%')) OR " +
+           "     (:cpfBusca IS NOT NULL AND :cpfBusca != '' AND a.cpf LIKE CONCAT('%', :cpfBusca, '%')) OR " +
+           "     (:cpfPattern IS NOT NULL AND :cpfPattern != '' AND a.cpf LIKE :cpfPattern) OR " +
            "     a.cpf LIKE CONCAT('%', :termo, '%'))")
     Page<Aluno> buscarAlunosPaginado(
             @Param("escolaId") Long escolaId,
             @Param("termo") String termo,
+            @Param("cpfBusca") String cpfBusca,
+            @Param("cpfPattern") String cpfPattern,
             Pageable pageable
     );
 

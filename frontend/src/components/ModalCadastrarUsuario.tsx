@@ -129,13 +129,13 @@ export function ModalCadastrarUsuario({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-white dark:bg-[#0B0F19] rounded-2xl shadow-xl border border-slate-200/90 dark:border-slate-800/90 max-w-md w-full overflow-hidden animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-[#121214] rounded-2xl shadow-xl border border-slate-200/90 dark:border-[#27272a] max-w-md w-full overflow-hidden animate-in fade-in duration-150">
         {/* Cabeçalho do Modal */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0D1220] flex items-start justify-between gap-4">
+        <div className="p-6 border-b border-slate-100 dark:border-[#27272a]/80 bg-white dark:bg-[#121214] flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-5 h-5" />

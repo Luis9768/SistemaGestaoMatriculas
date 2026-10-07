@@ -432,7 +432,7 @@ export function DiarioChamadasView({
 
       {/* SELETOR DE ESCOPO: TURMA E MATÉRIA (Sempre disponível no topo quando não estiver em foco_dia) */}
       {modo !== 'foco_dia' && (
-        <section className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
+        <section className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60 pb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -623,14 +623,14 @@ export function DiarioChamadasView({
           </div>
 
           {loadingHistorico ? (
-            <div className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-8 text-center">
+            <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-8 text-center">
               <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
                 Carregando diário de chamadas...
               </p>
             </div>
           ) : historicoChamadas.length === 0 ? (
-            <div className="bg-white dark:bg-[#0D1322] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 text-center space-y-3">
+            <div className="bg-white dark:bg-[#121214] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
                 <BookOpen className="w-6 h-6" />
               </div>
@@ -658,7 +658,7 @@ export function DiarioChamadasView({
               {historicoChamadas.map((ch) => (
                 <div
                   key={`${ch.materiaId}-${ch.dataAula}`}
-                  className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 hover:border-amber-400/80 dark:hover:border-amber-600/80 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between space-y-4 group"
+                  className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 hover:border-amber-400/80 dark:hover:border-amber-600/80 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between space-y-4 group"
                 >
                   <div>
                     {/* Topo do card: Data + Badge de Presença */}
@@ -763,7 +763,7 @@ export function DiarioChamadasView({
       {modo === 'nova_chamada' && (
         <form onSubmit={handleSalvarChamada} className="space-y-6">
           {/* Barra de Ações Superior */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xs">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -818,7 +818,7 @@ export function DiarioChamadasView({
           </div>
 
           {/* CAIXINHA DO RESPONSÁVEL (SOLICITAÇÃO PRINCIPAL DO USUÁRIO) + DADOS DA AULA */}
-          <div className="bg-white dark:bg-[#0D1322] border border-amber-300 dark:border-amber-700/60 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="bg-white dark:bg-[#121214] border border-amber-300 dark:border-amber-700/60 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
             <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
               <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <Shield className="w-4 h-4" />
@@ -974,7 +974,7 @@ export function DiarioChamadasView({
 
           {/* Lista de Alunos da Chamada / Aviso Amigável de Turma Sem Alunos */}
           {loadingItens ? (
-            <div className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-8 text-center">
+            <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-8 text-center">
               <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
                 Carregando lista de alunos da turma...
@@ -1020,7 +1020,7 @@ export function DiarioChamadasView({
               </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800/80 shadow-xs overflow-hidden">
+            <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800/80 shadow-xs overflow-hidden">
               {itensChamada.map((item, index) => {
                 const isPresente = item.status === 'PRESENTE';
                 const isFalta = item.status === 'FALTA';
@@ -1157,7 +1157,7 @@ export function DiarioChamadasView({
           </div>
 
           {/* Painel Cabeçalho da Chamada Focada */}
-          <div className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-6">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-amber-600 dark:text-amber-400">
@@ -1244,7 +1244,7 @@ export function DiarioChamadasView({
           </div>
 
           {/* LISTA DE ALUNOS COM PRESENTE OU FALTOU */}
-          <div className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl overflow-hidden shadow-xs">
+          <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl overflow-hidden shadow-xs">
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/60 flex items-center justify-between">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Lista de Presença Individual dos Alunos

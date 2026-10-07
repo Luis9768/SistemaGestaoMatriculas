@@ -200,48 +200,14 @@ public class NotificacaoService {
             Long escId = escola != null ? escola.getId() : null;
             String turmaDescricao = t.getCodigo() + (curso != null ? " - " + curso.getNome() : "");
 
-            if (vagasAbertas > 0 && emEspera > 0) {
-                // Caso A: Há vagas e há candidatos na fila de espera (Ação prioritária de convocação de suplentes)
-                notificacoes.add(NotificacaoDTO.builder()
-                        .id("VAGA-SUPLENCIA-" + t.getId())
-                        .tipo("VAGA_SUPLENCIA")
-                        .nivel("ALERTA")
-                        .titulo("Vaga Disponível na Fila de Suplência")
-                        .mensagem(String.format("A turma %s (%s) possui %d vaga(s) remanescente(s) e %d candidato(s) aguardando convocação na fila de espera.",
-                                turmaDescricao, sigla, vagasAbertas, emEspera))
-                        .escolaId(escId)
-                        .escolaSigla(sigla)
-                        .turmaId(t.getId())
-                        .turmaNome(turmaDescricao)
-                        .acaoRotulo("Ver Turma & Vagas")
-                        .acaoTipo("ABRIR_TURMA")
-                        .dataHora("Tempo real")
-                        .build());
-            } else if (vagasAbertas == 0 && emEspera > 0) {
-                // Caso B: Turma cheia mas com fila de espera ativa
-                notificacoes.add(NotificacaoDTO.builder()
-                        .id("FILA-ATIVA-" + t.getId())
-                        .tipo("VAGA_SUPLENCIA")
-                        .nivel("INFO")
-                        .titulo(String.format("Fila de Espera Ativa (%d Candidatos)", emEspera))
-                        .mensagem(String.format("A turma %s (%s) está com capacidade total preenchida e possui %d candidato(s) aguardando na fila de suplência.",
-                                turmaDescricao, sigla, emEspera))
-                        .escolaId(escId)
-                        .escolaSigla(sigla)
-                        .turmaId(t.getId())
-                        .turmaNome(turmaDescricao)
-                        .acaoRotulo("Ver Turma")
-                        .acaoTipo("ABRIR_TURMA")
-                        .dataHora("Tempo real")
-                        .build());
-            } else if (vagasAbertas >= 5 && emEspera == 0) {
-                // Caso C: Vagas abertas disponíveis sem fila de espera
+            if (vagasAbertas >= 5) {
+                // Vagas abertas disponíveis para novas matrículas
                 notificacoes.add(NotificacaoDTO.builder()
                         .id("VAGA-ABERTA-" + t.getId())
-                        .tipo("VAGA_SUPLENCIA")
+                        .tipo("VAGA_DISPONIVEL")
                         .nivel("INFO")
-                        .titulo(String.format("Vagas Disponíveis (%d Vagas Abertas)", vagasAbertas))
-                        .mensagem(String.format("A turma %s (%s) possui %d vaga(s) livre(s) de um total de %d vagas ofertadas.",
+                        .titulo(String.format("Vagas Disponíveis (%d Vagas Livres)", vagasAbertas))
+                        .mensagem(String.format("A turma %s (%s) possui %d vaga(s) livre(s) de um total de %d vagas ofertadas para matrícula.",
                                 turmaDescricao, sigla, vagasAbertas, vagasTotais))
                         .escolaId(escId)
                         .escolaSigla(sigla)

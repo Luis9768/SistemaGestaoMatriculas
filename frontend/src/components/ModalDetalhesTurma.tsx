@@ -84,10 +84,10 @@ export function ModalDetalhesTurma({
     >
       <div
         ref={modalRef}
-        className="w-full max-w-2xl max-h-[90vh] bg-white dark:bg-[#0D121F] rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl max-h-[90vh] bg-white dark:bg-[#121214] rounded-3xl border border-slate-200/90 dark:border-[#27272a] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
       >
         {/* CABEÇALHO DO MODAL */}
-        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/40 flex items-start justify-between gap-4">
+        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-[#27272a]/80 bg-slate-50/70 dark:bg-[#18181b]/40 flex items-start justify-between gap-4">
           <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-md font-mono text-[11px] font-bold bg-slate-200/80 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-300/80 dark:border-slate-700 uppercase tracking-wider">

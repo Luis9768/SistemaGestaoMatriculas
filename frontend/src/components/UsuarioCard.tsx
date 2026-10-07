@@ -46,8 +46,8 @@ export function UsuarioCard({ usuario, onClick }: UsuarioCardProps) {
       }}
       className={`relative group rounded-2xl p-5 border transition-all duration-200 flex flex-col justify-between gap-4 cursor-pointer select-none hover:-translate-y-0.5 hover:shadow-lg focus:outline-hidden focus:ring-2 focus:ring-slate-500/40 ${
         isAtivo
-          ? 'bg-white dark:bg-[#0E1424] border-slate-200/90 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
-          : 'bg-slate-50/70 dark:bg-[#0B0F19]/80 border-slate-200/60 dark:border-slate-800/60 opacity-80 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs'
+          ? 'bg-white dark:bg-[#121214] border-slate-200/90 dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 shadow-xs'
+          : 'bg-slate-50/70 dark:bg-[#09090b]/80 border-slate-200/60 dark:border-[#27272a]/60 opacity-80 hover:border-slate-300 dark:hover:border-zinc-700 shadow-2xs'
       }`}
       aria-label={`Ver e gerenciar perfil de ${usuario.nome}`}
     >
@@ -55,7 +55,7 @@ export function UsuarioCard({ usuario, onClick }: UsuarioCardProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3.5 min-w-0">
           {/* Avatar Neutro Limpo (sem ponto verde sobreposto) */}
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm tracking-tight border bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border-slate-200/90 dark:border-slate-700/80 shrink-0">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm tracking-tight border bg-slate-100 dark:bg-[#18181b] text-slate-800 dark:text-zinc-100 border-slate-200/90 dark:border-[#27272a] shrink-0">
             {usuario.nome.charAt(0).toUpperCase()}
           </div>
 

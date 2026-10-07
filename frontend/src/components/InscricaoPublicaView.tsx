@@ -135,7 +135,7 @@ export function InscricaoPublicaView({
 
       setSucesso(true);
     } catch (err: any) {
-      setErro(err.message || 'Falha ao efetuar inscrição.');
+      setErro(err.message || 'Falha ao efetuar matrícula.');
     } finally {
       setSubmitting(false);
     }
@@ -143,11 +143,11 @@ export function InscricaoPublicaView({
 
   if (sucesso) {
     return (
-      <div className="max-w-xl mx-auto my-12 bg-white dark:bg-[#0E1424] rounded-3xl p-8 border border-emerald-300 dark:border-emerald-800/80 shadow-xl text-center space-y-4 animate-in fade-in">
+      <div className="max-w-xl mx-auto my-12 bg-white dark:bg-[#121214] rounded-3xl p-8 border border-emerald-300 dark:border-emerald-800/80 shadow-xl text-center space-y-4 animate-in fade-in">
         <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
           <CheckCircle2 className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Inscrição Confirmada com Sucesso!</h2>
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Matrícula Confirmada com Sucesso!</h2>
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
           Os dados de <strong>{nome}</strong> foram registrados com sucesso no SIGMA das Escolas Livres de Santo André. Um e-mail com as instruções de início das aulas e confirmação pedagógica foi encaminhado.
         </p>
@@ -176,7 +176,7 @@ export function InscricaoPublicaView({
           }}
           className="px-6 py-2.5 bg-slate-900 dark:bg-slate-800 text-white font-bold text-xs rounded-xl hover:bg-slate-800 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700 transition cursor-pointer"
         >
-          Realizar Nova Inscrição
+          Realizar Nova Matrícula
         </button>
       </div>
     );
@@ -185,7 +185,7 @@ export function InscricaoPublicaView({
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-200">
       {/* Header Acolhedor */}
-      <div className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] rounded-3xl p-8 text-white border border-slate-800 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#121214] via-[#18181b] to-[#121214] rounded-3xl p-8 text-white border border-[#27272a] shadow-xl relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider mb-2">
@@ -193,7 +193,7 @@ export function InscricaoPublicaView({
               <span>Educação Pública Municipal e Acolhimento</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white">
-              Ficha de Inscrição — Escolas Livres de Santo André
+              Ficha de Matrícula — Escolas Livres de Santo André
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl leading-relaxed">
               Preencha os dados cadastrais para ingressar nos cursos gratuitos de Teatro, Dança, Cinema e Iniciação Artística da Prefeitura Municipal de Santo André.
@@ -221,7 +221,7 @@ export function InscricaoPublicaView({
       {/* Formulário em Seções Elegantes */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* SEÇÃO 1: OFERTA DA TURMA */}
-        <div className="bg-white dark:bg-[#0E1424] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-[#121214] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
             <span className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 flex items-center justify-center text-xs font-black">
               1
@@ -250,7 +250,7 @@ export function InscricaoPublicaView({
         </div>
 
         {/* SEÇÃO 2: DADOS PESSOAIS DO ALUNO */}
-        <div className="bg-white dark:bg-[#0E1424] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-sm space-y-5">
+        <div className="bg-white dark:bg-[#121214] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-sm space-y-5">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
             <span className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 flex items-center justify-center text-xs font-black">
               2
@@ -436,7 +436,7 @@ export function InscricaoPublicaView({
         )}
 
         {/* SEÇÃO: ENDEREÇO RESIDENCIAL */}
-        <div className="bg-white dark:bg-[#0E1424] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-[#121214] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-sm space-y-4">
           <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm">
             <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <span>Endereço Residencial</span>
@@ -494,7 +494,7 @@ export function InscricaoPublicaView({
         </div>
 
         {/* SEÇÃO: INCLUSÃO, ACESSIBILIDADE & CONTATO DE EMERGÊNCIA */}
-        <div className="bg-white dark:bg-[#0E1424] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-[#121214] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800/90 shadow-sm space-y-4">
           <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm">
             <HeartHandshake className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             <span>Inclusão, Acessibilidade & Contato de Emergência</span>
@@ -649,7 +649,7 @@ export function InscricaoPublicaView({
           className="w-full py-4 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-sm rounded-2xl shadow-xl shadow-amber-950/20 transition cursor-pointer flex items-center justify-center space-x-2"
         >
           <Send className="w-5 h-5 text-slate-950" />
-          <span>{submitting ? 'Confirmando Inscrição...' : 'Concluir Inscrição do Aluno'}</span>
+          <span>{submitting ? 'Confirmando Matrícula...' : 'Efetivar Matrícula do Aluno'}</span>
         </button>
       </form>
     </div>

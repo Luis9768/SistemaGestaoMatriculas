@@ -36,12 +36,10 @@ public class ChamadaService {
     private final com.gestaomatriculas.security.SecurityService securityService;
 
     private void validarAcessoEscola(Turma turma) {
-        if (securityService.isEncarregada()) {
-            Long escolaPermitida = securityService.getEscolaIdEncarregada();
-            if (escolaPermitida != null && turma.getCurso() != null && turma.getCurso().getEscola() != null) {
-                if (!escolaPermitida.equals(turma.getCurso().getEscola().getId())) {
-                    throw new BusinessException("Acesso negado: você não tem permissão para gerenciar chamadas de outra unidade escolar.");
-                }
+        if (securityService.isEncarregada() && turma.getCurso() != null && turma.getCurso().getEscola() != null) {
+            Long escolaId = turma.getCurso().getEscola().getId();
+            if (!securityService.temAcessoAEscola(escolaId)) {
+                throw new BusinessException("Acesso negado: você não tem permissão para gerenciar chamadas desta unidade escolar.");
             }
         }
     }
@@ -197,7 +195,8 @@ public class ChamadaService {
         int presentes = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.PRESENTE).count();
         int faltas = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.FALTA).count();
         int justificadas = (int) lista.stream().filter(r -> r.getStatus() == StatusPresenca.JUSTIFICADA).count();
-        double pct = total > 0 ? ((double) presentes / total) * 100.0 : 0.0;
+        int presencasValidas = presentes + justificadas;
+        double pct = total > 0 ? ((double) presencasValidas / total) * 100.0 : 0.0;
         return new EstatisticasPresenca(total, presentes, faltas, justificadas, Math.round(pct * 10.0) / 10.0);
     }
 

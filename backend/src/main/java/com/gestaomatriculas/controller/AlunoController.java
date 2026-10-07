@@ -74,7 +74,7 @@ public class AlunoController {
     @PutMapping("/{id}")
     public ResponseEntity<AlunoDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody AlunoDTO dto) {
+            @Valid @RequestBody AlunoDTO dto) {
         return ResponseEntity.ok(alunoService.atualizar(id, dto));
     }
 

@@ -188,6 +188,8 @@ export interface Matricula {
   alunoNome: string;
   alunoCpf: string;
   alunoEmail: string;
+  alunoTelefone?: string;
+  alunoMenorDeIdade?: boolean;
   turmaId: number;
   turmaCodigo: string;
   cursoNome: string;

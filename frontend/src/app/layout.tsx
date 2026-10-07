@@ -31,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} ${fighterAttack.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#FAF9F7] dark:bg-[#090D16]">
+      <body className="min-h-full flex flex-col bg-[#FAF9F7] dark:bg-[#000000]">
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

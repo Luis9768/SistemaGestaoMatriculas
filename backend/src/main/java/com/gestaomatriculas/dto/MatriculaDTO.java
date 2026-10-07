@@ -20,6 +20,8 @@ public class MatriculaDTO {
     private String alunoNome;
     private String alunoCpf;
     private String alunoEmail;
+    private String alunoTelefone;
+    private Boolean alunoMenorDeIdade;
 
     @NotNull(message = "O ID da turma é obrigatório")
     private Long turmaId;

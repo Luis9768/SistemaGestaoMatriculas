@@ -5,6 +5,13 @@ import { Search, Plus, X, ArrowRight, Layers, BookOpen, User, Clock, Info } from
 import { Turma, Curso, Escola } from '@/lib/api';
 import { ModalGerenciarMaterias } from '@/components/ModalGerenciarMaterias';
 import { useApp } from '@/context/AppContext';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TurmasOfertasViewProps {
   turmas: Turma[];
@@ -212,8 +219,8 @@ export function TurmasOfertasView({
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Turmas & Ofertas Letivas
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Acompanhe períodos de inscrição, tolerância de suplência e taxa de ocupação de vagas por turma.
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 mt-1">
+            Acompanhe turmas abertas, carga horária e taxa de ocupação de vagas por turma.
           </p>
         </div>
 
@@ -227,57 +234,16 @@ export function TurmasOfertasView({
       </div>
 
       {/* Controles de Filtragem e Busca */}
-      <div className="bg-white dark:bg-[#0D121F] p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
-        {/* Filtros em Abas Segmentadas */}
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-          <button
-            type="button"
-            onClick={() => setFiltroAbertas('todas')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-              filtroAbertas === 'todas'
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/80 border border-slate-200/60 dark:border-slate-700/60'
-            }`}
-          >
-            Todas ({turmas.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFiltroAbertas('abertas')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-              filtroAbertas === 'abertas'
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/80 border border-slate-200/60 dark:border-slate-700/60'
-            }`}
-          >
-            Inscrições Abertas ({abertasCount})
-          </button>
-
-          {fechadasCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setFiltroAbertas('fechadas')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                filtroAbertas === 'fechadas'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/80 border border-slate-200/60 dark:border-slate-700/60'
-              }`}
-            >
-              Período Fechado ({fechadasCount})
-            </button>
-          )}
-        </div>
-
-        {/* Campo de Busca */}
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+      <div className="bg-white dark:bg-[#121214] p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 dark:border-[#27272a] shadow-xs flex flex-col md:flex-row items-center gap-3">
+        {/* Campo de Busca à Esquerda */}
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar por código, curso ou escola..."
             value={buscaCodigo}
             onChange={(e) => setBuscaCodigo(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition"
+            className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#09090b] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition"
           />
           {buscaCodigo && (
             <button
@@ -285,149 +251,171 @@ export function TurmasOfertasView({
               onClick={() => {
                 setBuscaCodigo('');
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
               title="Limpar busca"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
+
+        {/* Seletor shadcn UI: Status das Turmas à Direita */}
+        <div className="w-full sm:w-[190px] shrink-0">
+          <Select
+            value={filtroAbertas}
+            onValueChange={(val: 'todas' | 'abertas' | 'fechadas') => setFiltroAbertas(val)}
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Status das Turmas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas" badge={turmasDaEscola.length}>
+                Todas as Turmas
+              </SelectItem>
+              <SelectItem value="abertas" badge={abertasCount}>
+                Matrículas Abertas
+              </SelectItem>
+              {fechadasCount > 0 && (
+                <SelectItem value="fechadas" badge={fechadasCount}>
+                  Período Fechado
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Grid de Turmas por Escola */}
+      {/* Grid de Turmas */}
       {turmasFiltradas.length === 0 ? (
-        <div className="p-12 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0D121F] rounded-2xl border border-slate-200/90 dark:border-slate-800 text-xs">
+        <div className="p-12 text-center text-slate-400 dark:text-zinc-500 bg-white dark:bg-[#121214] rounded-xl border border-slate-200/90 dark:border-[#27272a] text-xs">
           <p className="font-medium">Nenhuma turma encontrada com os filtros selecionados.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {turmasFiltradas.map((t) => {
-            const sigla = getEscolaSigla(t);
-            const theme = ESCOLAS_THEME[sigla] || DEFAULT_THEME;
             const ocupacao = t.vagasTotais > 0 ? ((t.vagasOcupadas ?? 0) / t.vagasTotais) * 100 : 0;
             const vagasRestantes = Math.max(0, t.vagasTotais - (t.vagasOcupadas ?? 0));
+
+            // Cores conforme a lotação: verde até ~60%, âmbar acima de ~80%, vermelho lotado
+            let corBarra = 'bg-emerald-500';
+            let corTextoVagas = 'text-emerald-600 dark:text-emerald-400';
+            if (ocupacao >= 100 || vagasRestantes === 0) {
+              corBarra = 'bg-rose-500';
+              corTextoVagas = 'text-rose-600 dark:text-rose-400';
+            } else if (ocupacao >= 80) {
+              corBarra = 'bg-amber-500';
+              corTextoVagas = 'text-amber-600 dark:text-amber-400';
+            }
 
             return (
               <div
                 key={t.id}
                 id={`turma-card-${t.id}`}
-                className="relative bg-white dark:bg-[#0D121F] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 p-5 sm:p-5.5 flex flex-col justify-between overflow-hidden group hover:-translate-y-0.5"
+                className="group relative bg-white dark:bg-[#121214] rounded-2xl border border-slate-200/90 dark:border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-slate-300 dark:hover:border-zinc-700/80 hover:-translate-y-0.5 transition-all duration-200 p-5 sm:p-5.5 flex flex-col justify-between"
               >
                 <div>
-                  {/* Topo do Card: Sigla da Escola e Status da Inscrição */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 uppercase tracking-wider">
-                      {sigla}
+                  {/* Topo do Card: Código pequeno em Mono (substitui tag redundante) e Status Discreto */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-semibold text-slate-500 dark:text-zinc-400 tracking-wider uppercase">
+                      {t.codigo}
                     </span>
 
                     {t.matriculaAberta ? (
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Inscrições Abertas
+                        Matrículas Abertas
                       </span>
                     ) : (
-                      <span className="inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200/70 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/50">
-                        Período Fechado
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200/60 dark:bg-zinc-900/60 dark:text-zinc-500 dark:border-zinc-800/60">
+                        Encerrada
                       </span>
                     )}
                   </div>
 
-                  {/* Identidade da Turma: Código & Nome do Curso */}
-                  <h3 className="font-mono font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight leading-snug">
-                    {t.codigo}
-                  </h3>
-                  <p
-                    className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 line-clamp-1"
+                  {/* Hierarquia Invertida: Nome Legível do Curso é o Título Principal (Sans-serif) */}
+                  <h3
+                    className="font-sans font-semibold text-[17px] sm:text-lg text-slate-900 dark:text-white tracking-tight leading-snug mt-2 line-clamp-2"
                     title={t.cursoNome}
                   >
                     {t.cursoNome}
-                  </p>
+                  </h3>
 
-                  {/* Resumo Operacional em Bloco Limpo (Educador + Horário) */}
-                  <div className="mt-3.5 space-y-2 text-xs">
-                    {t.educadorResponsavel && (
-                      <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                        <User className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
-                        <span className="font-semibold truncate">{t.educadorResponsavel}</span>
+                  {/* Bloco de Informações Compacto com Ícones (Educador, Horário, Matérias) */}
+                  <div className="mt-4 space-y-2 text-xs text-slate-600 dark:text-zinc-300">
+                    <div className="flex items-center gap-2">
+                      <User className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" aria-hidden="true" />
+                      <span className="font-medium truncate text-slate-800 dark:text-zinc-200">
+                        {t.educadorResponsavel || 'Coordenação da Escola'}
+                      </span>
+                    </div>
+
+                    {t.diasHorariosLocal && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" aria-hidden="true" />
+                        <span className="font-mono text-[11px] text-slate-600 dark:text-zinc-400 truncate">
+                          {t.diasHorariosLocal}
+                        </span>
                       </div>
                     )}
 
-                    {t.diasHorariosLocal && (
-                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-[11px]">
-                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
-                        <span className="line-clamp-1">{t.diasHorariosLocal}</span>
+                    {t.materias && t.materias.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" aria-hidden="true" />
+                        <span className="text-[11px] text-slate-600 dark:text-zinc-400">
+                          {t.materias.length} {t.materias.length === 1 ? 'matéria curricular' : 'matérias curriculares'}
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  {/* Bloco Integrado de Ocupação & Vagas */}
-                  <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/70">
-                    <div className="flex items-center justify-between text-xs mb-1.5 font-medium">
-                      <span className="text-slate-500 dark:text-slate-400">Ocupação da Turma</span>
-                      <span className="font-mono text-xs font-bold text-slate-900 dark:text-white tabular-nums">
-                        {t.vagasOcupadas ?? 0}/{t.vagasTotais}{' '}
-                        <span className="text-slate-400 dark:text-slate-500 font-normal">
-                          ({Math.round(ocupacao)}%)
-                        </span>
+                  {/* Ocupação com Destaque Único nas Vagas Restantes e Barra Dinâmica */}
+                  <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-white/[0.06]">
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <span className="text-slate-500 dark:text-zinc-400 font-medium">Ocupação</span>
+                      <span className={`text-xs font-semibold ${corTextoVagas}`}>
+                        {vagasRestantes > 0
+                          ? `${vagasRestantes} ${vagasRestantes === 1 ? 'vaga restante' : 'vagas restantes'}`
+                          : 'Vagas esgotadas'}
                       </span>
                     </div>
 
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-slate-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          ocupacao >= 100
-                            ? 'bg-rose-500'
-                            : ocupacao >= 80
-                            ? 'bg-amber-500'
-                            : 'bg-emerald-500'
-                        }`}
+                        className={`h-full rounded-full transition-all duration-300 ${corBarra}`}
                         style={{ width: `${Math.min(100, Math.round(ocupacao))}%` }}
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
-                      <span>
-                        {vagasRestantes > 0 ? (
-                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                            {vagasRestantes} {vagasRestantes === 1 ? 'vaga livre' : 'vagas livres'}
-                          </span>
-                        ) : (
-                          <span className="text-rose-600 dark:text-rose-400 font-semibold">Vagas esgotadas</span>
-                        )}
-                      </span>
-
-                      {t.materias && t.materias.length > 0 && (
-                        <span>
-                          {t.materias.length} {t.materias.length === 1 ? 'matéria' : 'matérias'}
-                        </span>
-                      )}
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 dark:text-zinc-500 mt-1.5">
+                      <span>{t.vagasOcupadas ?? 0}/{t.vagasTotais} vagas</span>
+                      <span>{Math.round(ocupacao)}% preenchido</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Rodapé com 2 Ações Claras */}
-                <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 mt-4">
+                {/* Rodapé: Botão Detalhes Ghost com Borda e Matricular Primário Mais Largo */}
+                <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center gap-2.5 mt-5">
                   <button
                     type="button"
                     onClick={() => abrirModalDetalhesTurma(t)}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center gap-1.5 active:scale-98"
-                    title="Ver todas as informações da turma em popup"
+                    className="h-9 px-3.5 rounded-xl border border-slate-200 dark:border-zinc-700/80 bg-transparent hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5 cursor-pointer active:scale-98"
+                    title="Ver informações detalhadas da turma"
                   >
-                    <Info className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-                    <span>Ver Detalhes</span>
+                    <Info className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-400" aria-hidden="true" />
+                    <span>Detalhes</span>
                   </button>
 
                   {t.matriculaAberta ? (
                     <button
                       type="button"
                       onClick={() => onMatricularNaTurma(t.id!)}
-                      className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+                      className="flex-1 h-9 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
                     >
                       <span>Matricular</span>
                       <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                     </button>
                   ) : (
-                    <span className="text-xs font-medium px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-700/50 cursor-not-allowed">
+                    <span className="flex-1 h-9 rounded-xl inline-flex items-center justify-center text-xs font-medium text-slate-400 dark:text-zinc-600 bg-slate-100/60 dark:bg-zinc-900/50 border border-slate-200/50 dark:border-zinc-800/50 cursor-not-allowed">
                       Encerrada
                     </span>
                   )}

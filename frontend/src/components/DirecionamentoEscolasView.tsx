@@ -129,7 +129,7 @@ export function DirecionamentoEscolasView({
   const primeiroNome = usuarioLogado?.nome ? usuarioLogado.nome.trim().split(/\s+/)[0] : 'Coordenação';
 
   return (
-    <div className="min-h-screen bg-[#F6F7F9] dark:bg-[#070A11] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#F6F7F9] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Header Institucional Minimalista */}
       <GraffitiBannerHeader onLogout={onLogout} />
 
@@ -142,7 +142,7 @@ export function DirecionamentoEscolasView({
           <div className="absolute -inset-1.5 bg-gradient-to-r from-violet-600/25 via-sky-500/20 to-amber-500/25 rounded-3xl blur-2xl opacity-50 dark:opacity-30 -z-10 pointer-events-none" />
 
           {/* Container do Banner com Proporção Natural e Cantos Arredondados */}
-          <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] md:aspect-[2.3/1] max-h-[380px] rounded-3xl overflow-hidden border border-slate-200/90 dark:border-slate-800 shadow-2xl">
+          <div className="relative w-full aspect-[16/7] sm:aspect-[16/6] md:aspect-[2.3/1] max-h-[380px] rounded-3xl overflow-hidden border border-slate-200/90 dark:border-[#27272a] shadow-2xl">
             <Image
               src="/grafite_banner.webp"
               alt="Mural Artístico das Escolas Livres de Santo André: Teatro, Dança, Cinema e Iniciação Artística"
@@ -187,7 +187,7 @@ export function DirecionamentoEscolasView({
               tagline: 'Formação Artística e Cultural',
               iconeEstilo: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 ring-4 ring-slate-500/10',
               accentBar: 'bg-slate-500',
-              hoverGlow: 'hover:border-slate-400 dark:hover:border-slate-500',
+              hoverGlow: 'hover:border-slate-400 dark:hover:border-zinc-500',
               btnAtivo: 'bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100',
             };
 
@@ -210,7 +210,7 @@ export function DirecionamentoEscolasView({
             return (
               <div
                 key={escola.id}
-                className={`group relative rounded-3xl p-5 sm:p-5.5 flex flex-col justify-between transition-all duration-300 overflow-hidden border bg-white dark:bg-[#0D121F] border-slate-200/90 dark:border-slate-800 shadow-md ${
+                className={`group relative rounded-3xl p-5 sm:p-5.5 flex flex-col justify-between transition-all duration-300 overflow-hidden border bg-white dark:bg-[#121214] border-slate-200/90 dark:border-[#27272a] shadow-md ${
                   isPermitido
                     ? `hover:-translate-y-1.5 ${config.hoverGlow}`
                     : 'opacity-60 saturate-50'
@@ -244,28 +244,28 @@ export function DirecionamentoEscolasView({
                       <h3 className="text-base font-black text-slate-900 dark:text-white leading-snug group-hover:text-slate-800 dark:group-hover:text-slate-100" title={config.nome}>
                         {config.nome}
                       </h3>
-                      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      <p className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 truncate mt-0.5">
                         {config.subtitulo}
                       </p>
                     </div>
                   </div>
 
                   {/* Tagline / Resumo Conceitual */}
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4 line-clamp-2">
+                  <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed mb-4 line-clamp-2">
                     {config.descricao}
                   </p>
 
                   {/* Mini-Indicadores Operacionais Compactos */}
-                  <div className="grid grid-cols-3 gap-1.5 py-2 px-3 rounded-2xl bg-slate-50 dark:bg-[#070A11] border border-slate-200/80 dark:border-slate-800/80 mb-4 text-center">
+                  <div className="grid grid-cols-3 gap-1.5 py-2 px-3 rounded-2xl bg-slate-50 dark:bg-[#09090b] border border-slate-200/80 dark:border-[#27272a]/80 mb-4 text-center">
                     <div>
                       <span className="block text-xs font-black text-slate-900 dark:text-slate-100 font-mono">
                         {cursosCount || 2}
                       </span>
-                      <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
+                      <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-zinc-400 font-semibold">
                         Cursos
                       </span>
                     </div>
-                    <div className="border-x border-slate-200 dark:border-slate-800">
+                    <div className="border-x border-slate-200 dark:border-[#27272a]">
                       <span className="block text-xs font-black text-slate-900 dark:text-slate-100 font-mono">
                         {turmasCount || 4}
                       </span>

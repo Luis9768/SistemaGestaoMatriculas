@@ -21,5 +21,9 @@ public interface TurmaRepository extends JpaRepository<Turma, Long> {
 
     @Query("SELECT t FROM Turma t WHERE t.curso.escola.id = :escolaId AND t.status = 'ABERTA' AND :hoje BETWEEN t.dataAberturaMatricula AND t.dataFechamentoMatricula")
     List<Turma> findTurmasComMatriculaAbertaPorEscola(Long escolaId, LocalDate hoje);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM Turma t WHERE t.id = :id")
+    Optional<Turma> findByIdWithLock(@org.springframework.data.repository.query.Param("id") Long id);
 }
 

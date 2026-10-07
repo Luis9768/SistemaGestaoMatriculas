@@ -117,8 +117,8 @@ export function SidebarCultural({
     },
     {
       id: 'matriculas',
-      label: 'Matrículas & Fila',
-      description: 'Gestão de inscritos e suplentes',
+      label: 'Matrículas',
+      description: 'Gestão de alunos matriculados',
       icon: Users,
       section: 'gestao',
       protected: true,
@@ -147,20 +147,12 @@ export function SidebarCultural({
       section: 'gestao',
       protected: true,
     },
-    {
-      id: 'inscricao',
-      label: 'Portal do Munícipe',
-      description: 'Inscrição pública para cidadãos',
-      icon: Send,
-      section: 'comunidade',
-      badge: 'Público',
-    },
   ];
 
   return (
-    <aside className="w-72 bg-[#0B0F17] text-slate-200 flex flex-col h-screen sticky top-0 border-r border-slate-800/80 shadow-2xl z-40 select-none">
+    <aside className="w-72 bg-[#09090b] text-zinc-200 flex flex-col h-screen sticky top-0 border-r border-[#27272a] shadow-2xl z-40 select-none">
       {/* Brand Header Institucional */}
-      <div className="p-5 border-b border-slate-800/80 bg-gradient-to-b from-[#111827] to-[#0B0F17]">
+      <div className="p-5 border-b border-[#27272a] bg-[#121214]">
         <div className="flex items-center space-x-3">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-600 via-rose-600 to-violet-700 flex items-center justify-center text-white shadow-lg shadow-violet-900/30">
             <Sparkles className="w-6 h-6 text-amber-200" />
@@ -400,7 +392,7 @@ export function SidebarCultural({
       </div>
 
       {/* Footer com Status LGPD e Usuário */}
-      <div className="p-3 border-t border-slate-800/80 bg-[#0E131F] space-y-2">
+      <div className="p-3 border-t border-[#27272a] bg-[#121214] space-y-2">
         {/* Links Rápidos LGPD */}
         <div className="flex items-center justify-between px-2 text-[10px] text-slate-400">
           <button

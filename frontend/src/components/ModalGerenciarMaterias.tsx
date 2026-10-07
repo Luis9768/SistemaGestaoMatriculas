@@ -177,13 +177,13 @@ export function ModalGerenciarMaterias({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto"
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-white dark:bg-[#0D1220] rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800/90 max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-[#121214] rounded-3xl shadow-2xl border border-slate-200/90 dark:border-[#27272a] max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in duration-150">
         {/* Cabeçalho */}
-        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#090D17] flex items-start justify-between gap-4">
+        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-[#27272a]/80 bg-slate-50/50 dark:bg-[#18181b]/80 flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Layers className="w-5 h-5" />
@@ -248,7 +248,7 @@ export function ModalGerenciarMaterias({
         {/* Formulário de Adicionar Nova Matéria */}
         <form
           onSubmit={handleAdicionarMateria}
-          className="p-5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-[#070A11]/60 space-y-3"
+          className="p-5 border-b border-slate-100 dark:border-[#27272a]/80 bg-slate-50/70 dark:bg-[#09090b]/60 space-y-3"
         >
           <div className="flex items-center justify-between">
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
@@ -355,7 +355,7 @@ export function ModalGerenciarMaterias({
               return (
                 <div
                   key={m.id || idx}
-                  className="p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 bg-white dark:bg-[#0E1424] hover:border-slate-300 dark:hover:border-slate-700 transition space-y-2"
+                  className="p-3.5 rounded-2xl border border-slate-200/90 dark:border-[#27272a] bg-white dark:bg-[#18181b] hover:border-slate-300 dark:hover:border-zinc-700 transition space-y-2"
                 >
                   {isEditando ? (
                     <div className="space-y-2">
@@ -486,7 +486,7 @@ export function ModalGerenciarMaterias({
         </div>
 
         {/* Rodapé */}
-        <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-[#090D17] flex items-center justify-between text-xs">
+        <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-[#27272a] bg-slate-50/70 dark:bg-[#09090b] flex items-center justify-between text-xs">
           <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
             <span>{materias.length} matéria(s) cadastrada(s)</span>
             {totalHorasTurma > 0 && (

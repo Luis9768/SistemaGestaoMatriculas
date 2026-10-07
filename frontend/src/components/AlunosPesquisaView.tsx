@@ -9,7 +9,7 @@ import {
   RefreshCw,
   ArrowUpRight,
 } from 'lucide-react';
-import { Aluno, PageResponse, formatarCpfMascara, formatarTelefone, Escola } from '@/lib/api';
+import { Aluno, PageResponse, aplicarMascaraCpf, formatarTelefone, Escola } from '@/lib/api';
 
 interface AlunosPesquisaViewProps {
   paginaAlunos: PageResponse<Aluno>;
@@ -21,7 +21,7 @@ interface AlunosPesquisaViewProps {
   onMudarPagina: (pagina: number) => void;
   onCadastrarNovoAluno: () => void;
   onOpenPerfilAluno: (alunoId: number) => void;
-  onVerTodasEscolas: () => void;
+  onVerTodasEscolas?: () => void;
 }
 
 /**
@@ -40,46 +40,6 @@ function getIniciaisAluno(nome: string): string {
   return (palavras[0][0] + palavras[1][0]).toUpperCase();
 }
 
-/**
- * Converte data ISO (YYYY-MM-DD) para formato humano (DD/MM/YYYY)
- * e calcula a idade em anos.
- */
-function formatarDataEIdade(dataIso?: string | null): { dataFormatada: string; idadeTexto: string | null } {
-  if (!dataIso) return { dataFormatada: '—', idadeTexto: null };
-
-  const partes = dataIso.split('-');
-  if (partes.length !== 3) return { dataFormatada: dataIso, idadeTexto: null };
-
-  const ano = parseInt(partes[0], 10);
-  const mes = parseInt(partes[1], 10);
-  const dia = parseInt(partes[2], 10);
-
-  if (isNaN(ano) || isNaN(mes) || isNaN(dia)) return { dataFormatada: dataIso, idadeTexto: null };
-
-  const dataFormatada = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
-
-  const hoje = new Date();
-  let idade = hoje.getFullYear() - ano;
-  const mesAtual = hoje.getMonth() + 1;
-  const diaAtual = hoje.getDate();
-
-  if (mesAtual < mes || (mesAtual === mes && diaAtual < dia)) {
-    idade--;
-  }
-
-  const idadeTexto = idade >= 0 ? `${idade} anos` : null;
-  return { dataFormatada, idadeTexto };
-}
-
-/**
- * Remove códigos de turma redundantes do nome do responsável
- * (ex: 'Responsável de Aluno 33 ELT DRAM 2026' -> 'Responsável de Aluno 33')
- */
-function limparNomeResponsavel(nome: string): string {
-  if (!nome) return '';
-  return nome.replace(/\s+(ELT|ELD|ELCV|EMIA|ELIA)\b.*$/i, '').trim();
-}
-
 export function AlunosPesquisaView({
   paginaAlunos,
   paginaAtualAlunos,
@@ -96,21 +56,15 @@ export function AlunosPesquisaView({
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Banner de Contexto da Unidade Escolar */}
       {escolaAtualObj && (
-        <div className="bg-white dark:bg-[#0D1220] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-4 flex items-center justify-between text-xs shadow-xs">
+        <div className="bg-white dark:bg-[#121214] rounded-2xl border border-slate-200/90 dark:border-[#27272a] p-3.5 sm:p-4 flex items-center justify-between text-xs shadow-xs">
           <div className="flex items-center space-x-2.5">
             <span className="px-2 py-0.5 rounded font-black text-[11px] bg-slate-900 dark:bg-white text-white dark:text-slate-900">
               {escolaAtualObj.sigla}
             </span>
-            <span className="text-slate-700 dark:text-slate-300">
-              Filtrando alunos com matrícula na <strong className="text-slate-900 dark:text-white">{escolaAtualObj.nome}</strong>
+            <span className="text-slate-700 dark:text-zinc-300">
+              Listando alunos com matrícula na <strong className="text-slate-900 dark:text-white">{escolaAtualObj.nome}</strong>
             </span>
           </div>
-          <button
-            onClick={onVerTodasEscolas}
-            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold underline cursor-pointer"
-          >
-            Ver Alunos de Todas as Escolas
-          </button>
         </div>
       )}
 
@@ -120,7 +74,7 @@ export function AlunosPesquisaView({
           <h2 className="text-xl font-black text-slate-900 dark:text-white">
             Cadastro Central de Alunos {escolaAtualObj ? `(${escolaAtualObj.sigla})` : '(4 Escolas)'}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
             Pesquisa rápida com paginação no servidor por Nome, E-mail ou CPF com proteção LGPD.
           </p>
         </div>
@@ -134,69 +88,66 @@ export function AlunosPesquisaView({
       </div>
 
       {/* Barra de Busca Rápida */}
-      <div className="bg-white dark:bg-[#0D1220] p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-xs flex flex-col sm:flex-row gap-3">
+      <div className="bg-white dark:bg-[#121214] p-3.5 rounded-2xl border border-slate-200/90 dark:border-[#27272a] shadow-xs flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400 dark:text-zinc-500" />
           <input
             type="text"
             placeholder="Buscar por Nome do aluno, E-mail ou CPF..."
             value={buscaAlunoTermo}
             onChange={(e) => onBuscarAlunos(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 transition"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#09090b] focus:ring-2 focus:ring-indigo-500 transition"
           />
         </div>
       </div>
 
       {/* Tabela de Alunos com Ritmo e Densidade Equilibrados */}
-      <div className="bg-white dark:bg-[#0D1220] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-[#121214] rounded-2xl border border-slate-200/90 dark:border-[#27272a] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/90 dark:bg-slate-900/60 text-slate-400 dark:text-slate-500 font-semibold border-b border-slate-200/80 dark:border-slate-800/80 text-[10px] uppercase tracking-wider">
+            <thead className="bg-slate-50/90 dark:bg-[#09090b]/80 text-slate-400 dark:text-zinc-500 font-semibold border-b border-slate-200/80 dark:border-[#27272a]/80 text-[10px] uppercase tracking-wider">
               <tr>
-                <th className="px-5 py-3.5">Nome do Aluno</th>
-                <th className="px-5 py-3.5">CPF Protegido</th>
-                <th className="px-5 py-3.5">E-mail / Telefone</th>
-                <th className="px-5 py-3.5">Nascimento / Idade</th>
-                <th className="px-5 py-3.5">Responsável Legal</th>
+                <th className="px-5 py-3.5">Nome do Participante</th>
+                <th className="px-5 py-3.5">CPF</th>
+                <th className="px-5 py-3.5">E-mail</th>
+                <th className="px-5 py-3.5">Telefone</th>
                 <th className="px-5 py-3.5 text-right">Prontuário</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100 dark:divide-[#27272a]/60">
               {loadingAlunos ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={5} className="px-5 py-10 text-center text-slate-500 dark:text-zinc-400">
                     <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-indigo-600 dark:text-indigo-400" />
                     Carregando registros...
                   </td>
                 </tr>
               ) : paginaAlunos.content.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                  <td colSpan={5} className="px-5 py-10 text-center text-slate-400 dark:text-zinc-500">
                     Nenhum aluno encontrado com os termos de busca informados.
                   </td>
                 </tr>
               ) : (
                 paginaAlunos.content.map((aluno) => {
                   const iniciais = getIniciaisAluno(aluno.nome);
-                  const infoData = formatarDataEIdade(aluno.dataNascimento);
-                  const nomeRespLimpo = aluno.responsavel ? limparNomeResponsavel(aluno.responsavel.nome) : '';
 
                   return (
                     <tr
                       key={aluno.id}
                       onClick={() => onOpenPerfilAluno(aluno.id!)}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                      className="hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer group"
                     >
-                      {/* 1. Nome do Aluno, Avatar Neutro e Badge Delimitado Menor */}
-                      <td className="px-5 py-3">
+                      {/* 1. Nome do Aluno, Avatar Neutro e Badge Menor */}
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center space-x-3">
-                          <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-[#18181b] border border-slate-200/80 dark:border-[#27272a] text-slate-700 dark:text-zinc-300 font-semibold text-xs flex items-center justify-center shrink-0">
                             {iniciais}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span
-                                className="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate max-w-[190px]"
+                                className="font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate max-w-[220px]"
                                 title={aluno.nome}
                               >
                                 {aluno.nome}
@@ -207,78 +158,36 @@ export function AlunosPesquisaView({
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                            <div className="text-[11px] text-slate-400 dark:text-zinc-500 font-mono mt-0.5">
                               ID #{aluno.id}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* 2. CPF Protegido (Sutil e Neutro em #94a3b8 / text-slate-400) */}
-                      <td className="px-5 py-3 text-xs text-slate-400 dark:text-slate-400 font-mono tracking-tight select-all">
-                        {formatarCpfMascara(aluno.cpf)}
+                      {/* 2. CPF (Formatado e legível) */}
+                      <td className="px-5 py-3.5 text-xs text-slate-700 dark:text-zinc-300 font-mono tracking-tight select-all">
+                        {aluno.cpf ? aplicarMascaraCpf(aluno.cpf) : '—'}
                       </td>
 
-                      {/* 3. E-mail e Telefone Formatado com Espaço pós DDD */}
-                      <td className="px-5 py-3">
+                      {/* 3. E-mail (Coluna Dedicada) */}
+                      <td className="px-5 py-3.5">
                         <div
-                          className="text-slate-900 dark:text-slate-200 font-medium text-xs truncate max-w-[210px]"
+                          className="text-slate-900 dark:text-zinc-200 font-medium text-xs truncate max-w-[240px]"
                           title={aluno.email}
                         >
-                          {aluno.email}
+                          {aluno.email || '—'}
                         </div>
-                        {aluno.telefone ? (
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                            {formatarTelefone(aluno.telefone)}
-                          </div>
-                        ) : (
-                          <div className="text-[11px] text-slate-400 dark:text-slate-600 mt-0.5">—</div>
-                        )}
                       </td>
 
-                      {/* 4. Nascimento / Idade Calculada */}
-                      <td className="px-5 py-3">
-                        <div className="text-slate-900 dark:text-slate-200 font-medium text-xs">
-                          {infoData.dataFormatada}
-                        </div>
-                        {infoData.idadeTexto && (
-                          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                            {infoData.idadeTexto}
-                          </div>
-                        )}
+                      {/* 4. Telefone (Coluna Dedicada) */}
+                      <td className="px-5 py-3.5 text-xs text-slate-700 dark:text-zinc-300 font-mono">
+                        {aluno.telefone ? formatarTelefone(aluno.telefone) : '—'}
                       </td>
 
-                      {/* 5. Responsável Legal: Compactado em Estritamente 2 Linhas */}
-                      <td className="px-5 py-3">
-                        {aluno.responsavel ? (
-                          <div className="space-y-0.5 min-w-0">
-                            <div
-                              className="text-slate-900 dark:text-slate-200 text-xs font-medium truncate max-w-[200px]"
-                              title={`${aluno.responsavel.nome}${aluno.responsavel.grauParentesco ? ` (${aluno.responsavel.grauParentesco})` : ''}`}
-                            >
-                              <span>{nomeRespLimpo}</span>
-                              {aluno.responsavel.grauParentesco && (
-                                <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">
-                                  ({aluno.responsavel.grauParentesco})
-                                </span>
-                              )}
-                            </div>
-                            {aluno.responsavel.telefone ? (
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                                {formatarTelefone(aluno.responsavel.telefone)}
-                              </div>
-                            ) : (
-                              <div className="text-[11px] text-slate-400 dark:text-slate-600">—</div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-600">—</span>
-                        )}
-                      </td>
-
-                      {/* 6. Ação da Linha: Botão Compacto Leve Estilo Ghost */}
-                      <td className="px-5 py-3 text-right whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      {/* 5. Ação da Linha: Botão Prontuário */}
+                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 group-hover:underline transition-colors">
                           <span>Prontuário</span>
                           <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </span>

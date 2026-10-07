@@ -150,6 +150,11 @@ public class DashboardService {
         Escola escola = curso != null ? curso.getEscola() : null;
 
         List<Matricula> matriculas = matriculaRepository.findByTurmaId(turmaId);
+        List<Long> matriculaIds = matriculas.stream().map(Matricula::getId).toList();
+        Map<Long, List<RegistroPresenca>> presencasPorMatricula = matriculaIds.isEmpty()
+                ? Collections.emptyMap()
+                : registroPresencaRepository.findByMatriculaIdInOrderByDataAulaAsc(matriculaIds)
+                        .stream().collect(Collectors.groupingBy(p -> p.getMatricula().getId()));
 
         List<AlunoTurmaFrequenciaDTO> alunosDTO = new ArrayList<>();
         long somaPresencas = 0;
@@ -161,7 +166,7 @@ public class DashboardService {
 
         for (Matricula m : matriculas) {
             Aluno aluno = m.getAluno();
-            List<RegistroPresenca> presencas = registroPresencaRepository.findByMatriculaIdOrderByDataAulaAsc(m.getId());
+            List<RegistroPresenca> presencas = presencasPorMatricula.getOrDefault(m.getId(), Collections.emptyList());
 
             long totalAulas = presencas.size();
             if (totalAulas > maxAulasTurma) maxAulasTurma = totalAulas;

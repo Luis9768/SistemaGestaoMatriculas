@@ -215,10 +215,10 @@ export function NotificacoesPopover({ escolaId, turmaId, turmaNome }: Notificaco
         <div
           role="dialog"
           aria-label="Notificações do Sistema"
-          className="absolute right-0 mt-3 w-[440px] sm:w-[500px] max-w-[calc(100vw-24px)] max-h-[85vh] bg-white dark:bg-[#0B101D] rounded-2xl shadow-xl border border-slate-200/90 dark:border-slate-800 z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 mt-3 w-[440px] sm:w-[500px] max-w-[calc(100vw-24px)] max-h-[85vh] bg-white dark:bg-[#18181b] rounded-2xl shadow-xl border border-slate-200/90 dark:border-[#27272a] z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Topo / Cabeçalho Editorial com Respiro Generoso */}
-          <div className="px-6 py-5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 flex items-start justify-between gap-4">
+          <div className="px-6 py-5 border-b border-slate-200/80 dark:border-[#27272a] bg-slate-50/70 dark:bg-[#121214] flex items-start justify-between gap-4">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
                 {turmaNome
@@ -366,12 +366,12 @@ export function NotificacoesPopover({ escolaId, turmaId, turmaNome }: Notificaco
                     onClick={() => handleAcaoNotificacao(notif)}
                     className={`relative p-4 sm:p-4.5 rounded-2xl border transition-all duration-200 cursor-pointer ${
                       lida
-                        ? 'bg-slate-50/40 dark:bg-slate-900/30 border-slate-200/60 dark:border-slate-800/60 opacity-75 hover:opacity-100 hover:border-slate-300 dark:hover:border-slate-700'
+                        ? 'bg-slate-50/40 dark:bg-[#09090b]/50 border-slate-200/60 dark:border-[#27272a]/60 opacity-75 hover:opacity-100 hover:border-slate-300 dark:hover:border-zinc-700'
                         : isUrgente
-                        ? 'bg-white dark:bg-[#111827] border-rose-200/90 dark:border-rose-900/50 hover:border-rose-400 shadow-2xs hover:shadow-xs'
+                        ? 'bg-white dark:bg-[#121214] border-rose-200/90 dark:border-rose-900/50 hover:border-rose-400 shadow-2xs hover:shadow-xs'
                         : isDeclaracao
-                        ? 'bg-white dark:bg-[#111827] border-emerald-200/90 dark:border-emerald-900/50 hover:border-emerald-400 shadow-2xs hover:shadow-xs'
-                        : 'bg-white dark:bg-[#111827] border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs hover:shadow-xs'
+                        ? 'bg-white dark:bg-[#121214] border-emerald-200/90 dark:border-emerald-900/50 hover:border-emerald-400 shadow-2xs hover:shadow-xs'
+                        : 'bg-white dark:bg-[#121214] border-slate-200/90 dark:border-[#27272a] hover:border-slate-300 dark:hover:border-zinc-700 shadow-2xs hover:shadow-xs'
                     }`}
                   >
                     {/* Linha Superior: Categoria, Escola, Status de Leitura e Botão Fechar */}

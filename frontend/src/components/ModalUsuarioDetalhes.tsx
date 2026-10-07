@@ -77,14 +77,14 @@ export function ModalUsuarioDetalhes({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-usuario-titulo"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-[#0D1322] border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+        className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-[#27272a] rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
       >
         {/* Cabeçalho do Modal */}
-        <div className="relative p-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/40">
+        <div className="relative p-6 border-b border-slate-100 dark:border-[#27272a]/80 bg-slate-50/60 dark:bg-[#18181b]/40">
           <button
             type="button"
             onClick={onClose}

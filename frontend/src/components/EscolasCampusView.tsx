@@ -38,7 +38,7 @@ export function EscolasCampusView({
           subtitulo: 'Teatro Conchita de Moraes • Formação de Atores e Pesquisa da Cena',
           descricao:
             'Polo histórico de experimentação dramatúrgica e processos colaborativos do Grande ABC. Forma profissionais em atuação, iluminação, dramaturgia e encenação.',
-          bgCard: 'from-[#2E1065]/90 via-[#1E1B4B] to-[#0F172A]',
+          bgCard: 'from-[#2E1065]/90 via-[#1E1B4B] to-[#09090b]',
           accentBorder: 'border-violet-500/50 hover:border-violet-400',
           accentBadge: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
           accentButton: 'bg-violet-600 hover:bg-violet-500 text-white',
@@ -51,7 +51,7 @@ export function EscolasCampusView({
           subtitulo: 'Movimento, Corpo e Dança Contemporânea Pública',
           descricao:
             'Espaço público pioneiro dedicado à formação em dança contemporânea, consciência corporal, processos coreográficos e circulação artística municipal.',
-          bgCard: 'from-[#4C0519]/90 via-[#2A0815] to-[#0F172A]',
+          bgCard: 'from-[#4C0519]/90 via-[#2A0815] to-[#09090b]',
           accentBorder: 'border-rose-500/50 hover:border-rose-400',
           accentBadge: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
           accentButton: 'bg-rose-600 hover:bg-rose-500 text-white',
@@ -64,7 +64,7 @@ export function EscolasCampusView({
           subtitulo: 'Audiovisual Público, Direção, Roteiro e Cineclube',
           descricao:
             'A primeira escola pública municipal de cinema do país. Oferece cursos de formação em direção, roteiro, operação de câmera, montagem e exibição crítica.',
-          bgCard: 'from-[#082F49]/90 via-[#0C1B2A] to-[#0F172A]',
+          bgCard: 'from-[#082F49]/90 via-[#0C1B2A] to-[#09090b]',
           accentBorder: 'border-cyan-500/50 hover:border-cyan-400',
           accentBadge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
           accentButton: 'bg-cyan-600 hover:bg-cyan-500 text-white',
@@ -78,7 +78,7 @@ export function EscolasCampusView({
           subtitulo: 'Infância, Juventude, Artes Visuais e Música Integrada',
           descricao:
             'Focada na sensibilização estética desde a infância até a juventude através de ateliês de artes visuais, música, jogos dramáticos e experimentação multidisciplinar.',
-          bgCard: 'from-[#451A03]/90 via-[#261206] to-[#0F172A]',
+          bgCard: 'from-[#451A03]/90 via-[#261206] to-[#09090b]',
           accentBorder: 'border-amber-500/50 hover:border-amber-400',
           accentBadge: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
           accentButton: 'bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold',
@@ -90,12 +90,12 @@ export function EscolasCampusView({
           nomeCompleto: 'Escola Livre de Cultura',
           subtitulo: 'Rede Pública Municipal de Santo André',
           descricao: 'Formação cultural gratuita e de excelência.',
-          bgCard: 'from-slate-900 via-slate-800 to-slate-950',
-          accentBorder: 'border-slate-700',
-          accentBadge: 'bg-slate-700 text-slate-300',
+          bgCard: 'from-zinc-900 via-zinc-800 to-black',
+          accentBorder: 'border-zinc-700',
+          accentBadge: 'bg-zinc-700 text-zinc-300',
           accentButton: 'bg-blue-600 text-white',
           tag: 'Cultura Geral',
-          iconeBg: 'bg-slate-700 text-slate-300',
+          iconeBg: 'bg-zinc-700 text-zinc-300',
         };
     }
   };
@@ -103,7 +103,7 @@ export function EscolasCampusView({
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
       {/* Top Banner Cultural */}
-      <div className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] rounded-3xl p-8 text-white border border-slate-800 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#121214] via-[#18181b] to-[#121214] rounded-3xl p-8 text-white border border-[#27272a] shadow-xl relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider mb-2">

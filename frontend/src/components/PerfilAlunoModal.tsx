@@ -473,10 +473,10 @@ export function PerfilAlunoModal({
       aria-modal="true"
     >
       {/* ─── MODAL CONTAINER (SHADCN CLEAN CARD STYLE) ─── */}
-      <div className="bg-white dark:bg-[#0E1424] text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800/90 max-w-5xl xl:max-w-6xl w-full h-[90vh] max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800/90 max-w-5xl xl:max-w-6xl w-full h-[90vh] max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
         
         {/* ─── 1. TOP HEADER (STUDENT DOSSIER CARD) ─── */}
-        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#0E1424] shrink-0">
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-[#18181b] shrink-0">
           {loading ? (
             <div className="flex items-center gap-3 py-3">
               <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -603,7 +603,7 @@ export function PerfilAlunoModal({
         </div>
 
         {/* ─── 2. TABS BAR (ESTILO SHADCN SEGMENTED LIST) ─── */}
-        <div className="bg-slate-50/80 dark:bg-[#0B101D] px-6 py-2.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-4 shrink-0">
+        <div className="bg-slate-50/80 dark:bg-[#09090b] px-6 py-2.5 border-b border-slate-100 dark:border-[#27272a] flex items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-1 bg-slate-200/60 dark:bg-slate-900/80 p-1 rounded-xl text-xs overflow-x-auto">
             <button
               onClick={() => setAbaAtiva('atuais')}
@@ -676,13 +676,13 @@ export function PerfilAlunoModal({
         </div>
 
         {/* ─── 3. TAB CONTENT (RESPONSIVE SCROLLABLE BODY) ─── */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-[#F8FAFC]/50 dark:bg-[#0B101D]">
+        <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-[#F8FAFC]/50 dark:bg-[#121214]">
           
           {/* ════ ABA 1: CURSOS ATUAIS ════ */}
           {abaAtiva === 'atuais' && (
             <div className="space-y-5">
               {perfil?.cursosAtuais.length === 0 ? (
-                <div className="text-center py-16 text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0E1424] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs flex flex-col items-center gap-2">
+                <div className="text-center py-16 text-slate-400 dark:text-slate-500 bg-white dark:bg-[#18181b] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs flex flex-col items-center gap-2">
                   <BookOpen className="w-8 h-8 opacity-40" />
                   <span>O estudante não possui matrículas ativas no momento.</span>
                 </div>
@@ -696,7 +696,7 @@ export function PerfilAlunoModal({
                   return (
                     <div
                       key={curso.matriculaId}
-                      className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-5"
+                      className="bg-white dark:bg-[#18181b] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-5"
                     >
                       {/* Topo do Card de Matrícula */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60 pb-4">
@@ -979,7 +979,7 @@ export function PerfilAlunoModal({
           {abaAtiva === 'frequencia' && (
             <div className="space-y-5">
               {/* Seletor de Curso */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-[#0E1424] p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-xs">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-[#18181b] p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 shadow-xs">
                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
                   <Calendar className="w-4 h-4 text-indigo-500" />
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
@@ -1014,7 +1014,7 @@ export function PerfilAlunoModal({
                 <>
                   {/* 4 Cards de Métricas da Frequência */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#18181b] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
                         Assiduidade
                       </span>
@@ -1030,7 +1030,7 @@ export function PerfilAlunoModal({
                       <span className="text-[10px] text-slate-400 block mt-0.5">Meta: ≥ 75%</span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#18181b] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
                         Aulas Registradas
                       </span>
@@ -1040,7 +1040,7 @@ export function PerfilAlunoModal({
                       <span className="text-[10px] text-slate-400 block mt-0.5">Aulas no diário</span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#18181b] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
                         Presenças
                       </span>
@@ -1052,7 +1052,7 @@ export function PerfilAlunoModal({
                       </span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-[#18181b] border border-slate-200/90 dark:border-slate-800/90 text-center shadow-xs">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block">
                         Faltas
                       </span>
@@ -1066,7 +1066,7 @@ export function PerfilAlunoModal({
                   </div>
 
                   {/* Tabela do Diário de Chamadas */}
-                  <div className="border border-slate-200/90 dark:border-slate-800/90 rounded-2xl overflow-hidden bg-white dark:bg-[#0E1424] shadow-xs">
+                  <div className="border border-slate-200/90 dark:border-slate-800/90 rounded-2xl overflow-hidden bg-white dark:bg-[#18181b] shadow-xs">
                     <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
                       <span className="font-extrabold text-slate-900 dark:text-white">
                         Registros de Chamadas ({cursoSelecionado.presencas?.length || 0} aulas lançadas)
@@ -1140,7 +1140,7 @@ export function PerfilAlunoModal({
           {abaAtiva === 'historico' && (
             <div className="space-y-4">
               {perfil?.historicoCursos.length === 0 ? (
-                <div className="text-center py-16 text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0E1424] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs flex flex-col items-center gap-2">
+                <div className="text-center py-16 text-slate-400 dark:text-slate-500 bg-white dark:bg-[#18181b] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs flex flex-col items-center gap-2">
                   <GraduationCap className="w-8 h-8 opacity-40" />
                   <span>Nenhum curso anterior no histórico deste estudante.</span>
                 </div>
@@ -1148,7 +1148,7 @@ export function PerfilAlunoModal({
                 perfil?.historicoCursos.map((curso) => (
                   <div
                     key={curso.matriculaId}
-                    className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-4"
+                    className="bg-white dark:bg-[#18181b] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-4"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5 flex-wrap">
@@ -1252,7 +1252,7 @@ export function PerfilAlunoModal({
               {modoEdicao ? (
                 <form
                   onSubmit={handleSalvarEdicao}
-                  className="bg-white dark:bg-[#0E1424] border border-slate-200/90 dark:border-slate-800/90 p-6 rounded-2xl space-y-5 shadow-xs"
+                  className="bg-white dark:bg-[#18181b] border border-slate-200/90 dark:border-slate-800/90 p-6 rounded-2xl space-y-5 shadow-xs"
                 >
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 pb-3">
                     <div>
@@ -1400,7 +1400,7 @@ export function PerfilAlunoModal({
                 /* Visualização do Dossiê Cadastral em 3 Cards Bento */
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Card 1: Identificação */}
-                  <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
+                  <div className="bg-white dark:bg-[#18181b] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
                     <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
                       <UserCheck className="w-4 h-4 text-indigo-500" />
                       <h4 className="font-extrabold text-xs uppercase tracking-wider font-mono text-slate-800 dark:text-slate-200">
@@ -1433,7 +1433,7 @@ export function PerfilAlunoModal({
                   </div>
 
                   {/* Card 2: Endereço & Residência */}
-                  <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
+                  <div className="bg-white dark:bg-[#18181b] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
                     <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
                       <MapPin className="w-4 h-4 text-indigo-500" />
                       <h4 className="font-extrabold text-xs uppercase tracking-wider font-mono text-slate-800 dark:text-slate-200">
@@ -1476,7 +1476,7 @@ export function PerfilAlunoModal({
                   </div>
 
                   {/* Card 3: Inclusão & Responsável */}
-                  <div className="bg-white dark:bg-[#0E1424] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
+                  <div className="bg-white dark:bg-[#18181b] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 shadow-xs space-y-3">
                     <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
                       <ShieldCheck className="w-4 h-4 text-indigo-500" />
                       <h4 className="font-extrabold text-xs uppercase tracking-wider font-mono text-slate-800 dark:text-slate-200">
@@ -1523,7 +1523,7 @@ export function PerfilAlunoModal({
         </div>
 
         {/* ─── 4. MODAL FOOTER ─── */}
-        <div className="bg-white dark:bg-[#0E1424] border-t border-slate-100 dark:border-slate-800/80 px-6 py-4 flex justify-between items-center shrink-0">
+        <div className="bg-white dark:bg-[#18181b] border-t border-slate-100 dark:border-slate-800/80 px-6 py-4 flex justify-between items-center shrink-0">
           <div className="text-xs text-slate-400 font-mono hidden sm:block">
             Prefeitura de Santo André • Prontuário Escolar #{aluno?.id || ''}
           </div>

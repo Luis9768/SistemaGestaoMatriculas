@@ -47,7 +47,24 @@ public class AlunoService {
         Page<Aluno> pagina;
 
         if (busca != null && !busca.trim().isEmpty()) {
-            pagina = alunoRepository.buscarAlunosPaginado(escolaId, busca.trim(), pageable);
+            String termo = busca.trim();
+            String digitos = termo.replaceAll("\\D", "");
+            String cpfBusca = digitos.isEmpty() ? null : digitos;
+            String cpfPattern = null;
+
+            if (termo.contains("*")) {
+                // Suporta padrão mascarado (ex: "100.***.***-00" -> "100%00")
+                String[] parts = termo.split("\\*+");
+                if (parts.length > 0) {
+                    String prefix = parts[0].replaceAll("\\D", "");
+                    String suffix = parts.length > 1 ? parts[parts.length - 1].replaceAll("\\D", "") : "";
+                    if (!prefix.isEmpty() || !suffix.isEmpty()) {
+                        cpfPattern = (prefix.isEmpty() ? "%" : prefix + "%") + (suffix.isEmpty() ? "" : suffix);
+                    }
+                }
+            }
+
+            pagina = alunoRepository.buscarAlunosPaginado(escolaId, termo, cpfBusca, cpfPattern, pageable);
         } else if ((nome != null && !nome.trim().isEmpty()) ||
                    (email != null && !email.trim().isEmpty()) ||
                    (cpf != null && !cpf.trim().isEmpty())) {
@@ -59,7 +76,7 @@ public class AlunoService {
                     pageable
             );
         } else {
-            pagina = alunoRepository.buscarAlunosPaginado(escolaId, null, pageable);
+            pagina = alunoRepository.buscarAlunosPaginado(escolaId, null, null, null, pageable);
         }
 
         return pagina.map(this::toDTO);
@@ -82,6 +99,15 @@ public class AlunoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado com id: " + alunoId));
 
         List<Matricula> matriculas = matriculaRepository.findByAlunoId(alunoId);
+
+        if (securityService.isEncarregada()) {
+            boolean temAcesso = matriculas.isEmpty() || matriculas.stream().anyMatch(m ->
+                    m.getTurma() != null && m.getTurma().getCurso() != null && m.getTurma().getCurso().getEscola() != null
+                            && securityService.temAcessoAEscola(m.getTurma().getCurso().getEscola().getId()));
+            if (!temAcesso) {
+                throw new BusinessException("Acesso negado: este aluno não possui vínculo com nenhuma escola sob sua gestão.");
+            }
+        }
 
         List<MatriculaItemPerfilDTO> cursosAtuais = new ArrayList<>();
         List<MatriculaItemPerfilDTO> historicoCursos = new ArrayList<>();
@@ -359,6 +385,16 @@ public class AlunoService {
     public AlunoDTO atualizarContato(Long id, AtualizarContatoDTO dto) {
         Aluno aluno = alunoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado com id: " + id));
+
+        if (securityService.isEncarregada()) {
+            List<Matricula> matriculas = matriculaRepository.findByAlunoId(id);
+            boolean temAcesso = matriculas.isEmpty() || matriculas.stream().anyMatch(m ->
+                    m.getTurma() != null && m.getTurma().getCurso() != null && m.getTurma().getCurso().getEscola() != null
+                            && securityService.temAcessoAEscola(m.getTurma().getCurso().getEscola().getId()));
+            if (!temAcesso) {
+                throw new BusinessException("Acesso negado: você não possui permissão para atualizar dados de alunos de outra unidade escolar.");
+            }
+        }
 
         if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
             aluno.setEmail(dto.getEmail().trim());

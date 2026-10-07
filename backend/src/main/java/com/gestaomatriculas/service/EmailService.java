@@ -69,7 +69,7 @@ public class EmailService {
             CreateEmailOptions params = CreateEmailOptions.builder()
                     .from(remetente)
                     .to(paraEmail.trim().toLowerCase())
-                    .subject("Código de Recuperação: " + codigo + " - Escolas Livres de Santo André")
+                    .subject("Código de Recuperação de Acesso - Escolas Livres de Santo André")
                     .html(htmlTemplate)
                     .build();
 

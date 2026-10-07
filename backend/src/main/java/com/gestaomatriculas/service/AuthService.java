@@ -128,8 +128,8 @@ public class AuthService {
 
         String mascarado = mascararEmail(emailNorm);
 
-        // Registro seguro de auditoria do envio de e-mail institucional (com exibição no console local)
-        log.info("[RECUPERAÇÃO DE SENHA] Código institucional de 7 dígitos gerado para o e-mail: {} [CÓDIGO: {}]", mascarado, codigo);
+        // Registro seguro de auditoria do envio de e-mail institucional
+        log.info("[RECUPERAÇÃO DE SENHA] Código de verificação institucional gerado para o e-mail: {}", mascarado);
         log.info("[RECUPERAÇÃO DE SENHA] Expiração em 10 minutos (até {}). Armazenamento exclusivamente em memória.", expiracao.toLocalTime());
 
         // Disparo real via Resend
@@ -210,6 +210,10 @@ public class AuthService {
         int removidos = antes - codigosAtivos.size();
         if (removidos > 0) {
             log.info("[SEGURANÇA] Expurgo automático: {} código(s) de recuperação expirado(s) removido(s) da memória.", removidos);
+        }
+        if (codigosHistoricos.size() > 50000) {
+            codigosHistoricos.clear();
+            log.info("[SEGURANÇA] Reciclagem periódica do cache de histórico de códigos para controle de memória JVM.");
         }
     }
 

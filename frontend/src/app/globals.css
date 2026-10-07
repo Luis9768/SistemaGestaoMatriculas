@@ -9,9 +9,22 @@
 }
 
 .dark {
-  --background: #090d16;
-  --foreground: #f8fafc;
+  --background: #000000;
+  --foreground: #ededed;
   color-scheme: dark;
+
+  /* Neutral Dark remap for slate classes (anti-blue aesthetic) */
+  --color-slate-950: #050505;
+  --color-slate-900: #09090b;
+  --color-slate-800: #18181b;
+  --color-slate-700: #27272a;
+  --color-slate-600: #3f3f46;
+  --color-slate-500: #71717a;
+  --color-slate-400: #a1a1aa;
+  --color-slate-300: #d4d4d8;
+  --color-slate-200: #e4e4e7;
+  --color-slate-100: #f4f4f5;
+  --color-slate-50: #fafafa;
 }
 
 @font-face {
@@ -52,20 +65,20 @@ body {
   background: #f1f5f9;
 }
 .dark ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #09090b;
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #27272a;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #3f3f46;
 }
 
 /* Explicit Card & Banner Shadows with Strong Light Mode Visibility */

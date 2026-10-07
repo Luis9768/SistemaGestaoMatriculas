@@ -12,7 +12,6 @@ export default function MatriculasPage() {
     matriculas,
     escolaSelecionada,
     carregarMatriculas,
-    handlePromoverSuplente,
     handleCancelarMatricula,
     abrirModalPerfil,
   } = useApp();
@@ -27,7 +26,6 @@ export default function MatriculasPage() {
         matriculas={matriculas}
         escolaSelecionada={escolaSelecionada}
         onNovaMatricula={() => router.push('/inscricao')}
-        onPromoverSuplente={handlePromoverSuplente}
         onCancelarMatricula={handleCancelarMatricula}
         onOpenPerfilAluno={(id) => abrirModalPerfil(id)}
       />

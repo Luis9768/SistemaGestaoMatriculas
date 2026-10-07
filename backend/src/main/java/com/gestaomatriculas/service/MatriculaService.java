@@ -83,7 +83,7 @@ public class MatriculaService {
         Aluno aluno = alunoRepository.findById(dto.getAlunoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado com id: " + dto.getAlunoId()));
 
-        Turma turma = turmaRepository.findById(dto.getTurmaId())
+        Turma turma = turmaRepository.findByIdWithLock(dto.getTurmaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + dto.getTurmaId()));
 
         if (securityService.isEncarregada() && turma.getCurso() != null && turma.getCurso().getEscola() != null
@@ -96,7 +96,7 @@ public class MatriculaService {
 
     @Transactional
     public MatriculaDTO inscrever(InscricaoExternaDTO dto) {
-        Turma turma = turmaRepository.findById(dto.getTurmaId())
+        Turma turma = turmaRepository.findByIdWithLock(dto.getTurmaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada com id: " + dto.getTurmaId()));
 
         Aluno aluno = alunoService.obterOuCriar(
@@ -143,11 +143,12 @@ public class MatriculaService {
             throw new BusinessException("Esta matrícula já está cancelada.");
         }
 
+        StatusMatricula statusAnterior = matricula.getStatus();
         matricula.setStatus(StatusMatricula.CANCELADA);
         Matricula atualizada = matriculaRepository.save(matricula);
 
         Turma turma = matricula.getTurma();
-        if (turma.getVagasOcupadas() > 0) {
+        if (statusAnterior == StatusMatricula.CONFIRMADA && turma != null && turma.getVagasOcupadas() > 0) {
             turma.setVagasOcupadas(turma.getVagasOcupadas() - 1);
             turmaRepository.save(turma);
         }
@@ -164,13 +165,14 @@ public class MatriculaService {
             throw new BusinessException("Esta matrícula já se encontra inativa ou desligada.");
         }
 
+        StatusMatricula statusAnteriorDesligamento = matricula.getStatus();
         matricula.setStatus(StatusMatricula.DESISTENTE_FALTAS);
         String obsAtual = matricula.getObservacoes() != null ? matricula.getObservacoes() + " | " : "";
         matricula.setObservacoes(obsAtual + (motivo != null ? motivo : "Desligamento por faltas consecutivas confirmado pela secretaria após tentativa de contato prévio via WhatsApp/E-mail."));
         Matricula atualizada = matriculaRepository.save(matricula);
 
         Turma turma = matricula.getTurma();
-        if (turma.getVagasOcupadas() > 0) {
+        if (statusAnteriorDesligamento == StatusMatricula.CONFIRMADA && turma != null && turma.getVagasOcupadas() > 0) {
             turma.setVagasOcupadas(turma.getVagasOcupadas() - 1);
             turmaRepository.save(turma);
         }
@@ -275,6 +277,8 @@ public class MatriculaService {
                 .alunoNome(m.getAluno().getNome())
                 .alunoCpf(m.getAluno().getCpf())
                 .alunoEmail(m.getAluno().getEmail())
+                .alunoTelefone(m.getAluno().getTelefone())
+                .alunoMenorDeIdade(m.getAluno().isMenorDeIdade())
                 .turmaId(m.getTurma().getId())
                 .turmaCodigo(m.getTurma().getCodigo())
                 .cursoNome(m.getTurma().getCurso().getNome())

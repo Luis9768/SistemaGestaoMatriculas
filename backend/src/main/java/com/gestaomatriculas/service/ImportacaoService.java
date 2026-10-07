@@ -24,6 +24,7 @@ public class ImportacaoService {
 
     private final MatriculaService matriculaService;
     private final TurmaRepository turmaRepository;
+    private final com.gestaomatriculas.security.SecurityService securityService;
 
     public ImportacaoResultadoDTO importarArquivo(MultipartFile file) {
         String filename = file.getOriginalFilename();
@@ -134,6 +135,13 @@ public class ImportacaoService {
         }
 
         Turma turma = optTurma.get();
+        if (securityService.isEncarregada() && turma.getCurso() != null && turma.getCurso().getEscola() != null
+                && !securityService.temAcessoAEscola(turma.getCurso().getEscola().getId())) {
+            resultado.setFalhas(resultado.getFalhas() + 1);
+            resultado.getLogs().add("Linha " + linha + ": Acesso negado: você não possui permissão para matricular alunos na escola vinculada à turma '" + codigoTurma + "'.");
+            return;
+        }
+
         CanalOrigem canal = CanalOrigem.PLANILHA;
         if (canalStr != null && !canalStr.isBlank()) {
             try {
