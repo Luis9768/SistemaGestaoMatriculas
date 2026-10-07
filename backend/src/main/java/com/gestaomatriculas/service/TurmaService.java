@@ -14,6 +14,8 @@ import com.gestaomatriculas.repository.TurmaMateriaRepository;
 import com.gestaomatriculas.repository.TurmaRepository;
 import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,7 @@ public class TurmaService {
     private final RegistroPresencaRepository registroPresencaRepository;
     private final SecurityService securityService;
 
+    @Cacheable(value = "turmas", key = "'curso_' + (#cursoId != null ? #cursoId : 'todos') + '_escola_' + (#escolaId != null ? #escolaId : 'todas') + '_abertas_' + (#apenasAbertas != null ? #apenasAbertas : 'false')")
     @Transactional(readOnly = true)
     public List<TurmaDTO> listarTodas(Long cursoId, Long escolaId, Boolean apenasAbertas) {
         escolaId = securityService.resolverEscolaId(escolaId);
@@ -54,6 +57,7 @@ public class TurmaService {
         return turmas.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Cacheable(value = "turmas", key = "#id")
     @Transactional(readOnly = true)
     public TurmaDTO buscarPorId(Long id) {
         Turma turma = turmaRepository.findById(id)
@@ -61,6 +65,7 @@ public class TurmaService {
         return toDTO(turma);
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public TurmaDTO criar(TurmaDTO dto) {
         validarDatas(dto);
@@ -98,6 +103,7 @@ public class TurmaService {
         return toDTO(salva);
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public TurmaDTO atualizar(Long id, TurmaDTO dto) {
         validarDatas(dto);
@@ -237,6 +243,7 @@ public class TurmaService {
                 .toList();
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public TurmaMateriaDTO adicionarMateria(Long turmaId, TurmaMateriaDTO dto) {
         Turma turma = turmaRepository.findById(turmaId)
@@ -278,6 +285,7 @@ public class TurmaService {
                 .build();
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public TurmaMateriaDTO atualizarMateria(Long turmaId, Long materiaId, TurmaMateriaDTO dto) {
         TurmaMateria materia = turmaMateriaRepository.findByIdAndTurmaId(materiaId, turmaId)
@@ -317,6 +325,7 @@ public class TurmaService {
                 .build();
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public void removerMateria(Long turmaId, Long materiaId) {
         TurmaMateria materia = turmaMateriaRepository.findByIdAndTurmaId(materiaId, turmaId)

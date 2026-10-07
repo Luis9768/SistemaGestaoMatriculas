@@ -20,7 +20,25 @@ services:
     networks:
       - sigma_network
 
-  # 2. Backend REST API (Java 21 / Spring Boot 3)
+  # 2. Cache Distribuído em Memória Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: sigma_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sigma_network
+
+  # 3. Backend REST API (Java 21 / Spring Boot 3)
   backend:
     build:
       context: ./backend
@@ -30,11 +48,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gestao_matriculas
       SPRING_DATASOURCE_USERNAME: matriculas_user
       SPRING_DATASOURCE_PASSWORD: matriculas_pass
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_CACHE_TYPE: redis
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-onboarding@resend.dev}
     ports:
@@ -42,7 +65,7 @@ services:
     networks:
       - sigma_network
 
-  # 3. Frontend Web UI (Next.js 16)
+  # 4. Frontend Web UI (Next.js 16)
   frontend:
     build:
       context: ./frontend
@@ -63,6 +86,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:

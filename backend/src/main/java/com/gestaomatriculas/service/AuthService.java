@@ -16,9 +16,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
+
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +35,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
+    private final Optional<StringRedisTemplate> redisTemplate;
 
     // Estrutura em memória para códigos de recuperação (NÃO é salvo no banco de dados)
     private record CodigoRecuperacaoInfo(String codigo, LocalDateTime expiracao) {}
@@ -126,6 +131,15 @@ public class AuthService {
         LocalDateTime expiracao = LocalDateTime.now().plusMinutes(10);
         codigosAtivos.put(emailNorm, new CodigoRecuperacaoInfo(codigo, expiracao));
 
+        if (redisTemplate.isPresent()) {
+            try {
+                redisTemplate.get().opsForValue().set("sigma:recuperacao:" + emailNorm, codigo, Duration.ofMinutes(10));
+                log.info("[RECUPERAÇÃO DE SENHA] Código armazenado no Redis com TTL de 10 minutos.");
+            } catch (Exception e) {
+                log.warn("[RECUPERAÇÃO DE SENHA] Falha ao comunicar com Redis ({}), mantendo em memória RAM.", e.getMessage());
+            }
+        }
+
         String mascarado = mascararEmail(emailNorm);
 
         // Registro seguro de auditoria do envio de e-mail institucional
@@ -151,6 +165,25 @@ public class AuthService {
         }
 
         String emailNorm = email.trim().toLowerCase();
+
+        // 1. Tenta validar via Redis se disponível
+        if (redisTemplate.isPresent()) {
+            try {
+                String codigoSalvo = redisTemplate.get().opsForValue().get("sigma:recuperacao:" + emailNorm);
+                if (codigoSalvo != null) {
+                    if (!codigoSalvo.equals(codigo.trim())) {
+                        throw new BusinessException("Código de verificação incorreto. Verifique os 7 dígitos recebidos.");
+                    }
+                    return true;
+                }
+            } catch (BusinessException be) {
+                throw be;
+            } catch (Exception e) {
+                log.warn("[RECUPERAÇÃO DE SENHA] Erro ao consultar Redis ({}), verificando cache em memória RAM.", e.getMessage());
+            }
+        }
+
+        // 2. Fallback via memória RAM
         CodigoRecuperacaoInfo info = codigosAtivos.get(emailNorm);
 
         if (info == null) {
@@ -194,8 +227,15 @@ public class AuthService {
         usuario.setSenha(passwordEncoder.encode(dto.getNovaSenha().trim()));
         usuarioRepository.save(usuario);
 
-        // Remove o código da memória após o uso
+        // Remove o código da memória e do Redis após o uso
         codigosAtivos.remove(emailNorm);
+        if (redisTemplate.isPresent()) {
+            try {
+                redisTemplate.get().delete("sigma:recuperacao:" + emailNorm);
+            } catch (Exception e) {
+                log.warn("[RECUPERAÇÃO DE SENHA] Falha ao remover código do Redis: {}", e.getMessage());
+            }
+        }
     }
 
     /**

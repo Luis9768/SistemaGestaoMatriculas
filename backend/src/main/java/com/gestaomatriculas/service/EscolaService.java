@@ -5,6 +5,7 @@ import com.gestaomatriculas.exception.ResourceNotFoundException;
 import com.gestaomatriculas.model.Escola;
 import com.gestaomatriculas.repository.EscolaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ public class EscolaService {
 
     private final EscolaRepository escolaRepository;
 
+    @Cacheable(value = "escolas", key = "'todas'")
     @Transactional(readOnly = true)
     public List<EscolaDTO> listarTodas() {
         return escolaRepository.findAll().stream()
@@ -24,6 +26,7 @@ public class EscolaService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "escolas", key = "#id")
     @Transactional(readOnly = true)
     public EscolaDTO buscarPorId(Long id) {
         Escola e = escolaRepository.findById(id)
@@ -31,6 +34,7 @@ public class EscolaService {
         return toDTO(e);
     }
 
+    @Cacheable(value = "escolas", key = "'sigla_' + #sigla.toUpperCase()")
     @Transactional(readOnly = true)
     public EscolaDTO buscarPorSigla(String sigla) {
         Escola e = escolaRepository.findBySiglaIgnoreCase(sigla)

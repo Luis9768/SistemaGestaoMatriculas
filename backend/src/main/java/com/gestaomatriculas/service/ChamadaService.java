@@ -18,6 +18,7 @@ import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.TurmaMateriaRepository;
 import com.gestaomatriculas.repository.TurmaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -213,6 +214,7 @@ public class ChamadaService {
                 .build();
     }
 
+    @CacheEvict(value = "dashboard_stats", allEntries = true)
     @Transactional
     public ChamadaDetalheDTO salvarChamada(SalvarChamadaDTO dto) {
         Turma turma = turmaRepository.findById(dto.getTurmaId())

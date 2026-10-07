@@ -7,6 +7,7 @@ import com.gestaomatriculas.model.enums.StatusMatricula;
 import com.gestaomatriculas.model.enums.StatusPresenca;
 import com.gestaomatriculas.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ public class DashboardService {
     private final CursoRepository cursoRepository;
     private final RegistroPresencaRepository registroPresencaRepository;
 
+    @Cacheable(value = "dashboard_stats", key = "'stats_' + (#escolaId != null ? #escolaId : 'todas')")
     @Transactional(readOnly = true)
     public DashboardStatsDTO obterStatsGerais(Long escolaId) {
         List<Matricula> matriculas = escolaId != null
@@ -141,6 +143,7 @@ public class DashboardService {
                 .build();
     }
 
+    @Cacheable(value = "dashboard_stats", key = "'turma_' + #turmaId")
     @Transactional(readOnly = true)
     public TurmaDashboardDTO obterDashboardTurma(Long turmaId) {
         Turma turma = turmaRepository.findById(turmaId)

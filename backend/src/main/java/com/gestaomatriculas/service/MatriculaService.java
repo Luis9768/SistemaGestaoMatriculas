@@ -14,6 +14,7 @@ import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.TurmaRepository;
 import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,6 +79,7 @@ public class MatriculaService {
         return toDTO(m);
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public MatriculaDTO matricular(MatriculaDTO dto) {
         Aluno aluno = alunoRepository.findById(dto.getAlunoId())
@@ -94,6 +96,7 @@ public class MatriculaService {
         return realizarMatricula(aluno, turma, dto.getCanalOrigem(), dto.getObservacoes());
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public MatriculaDTO inscrever(InscricaoExternaDTO dto) {
         Turma turma = turmaRepository.findByIdWithLock(dto.getTurmaId())
@@ -128,6 +131,7 @@ public class MatriculaService {
         return realizarMatricula(aluno, turma, dto.getCanalOrigem(), dto.getObservacoes());
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public MatriculaDTO cancelarMatricula(Long id) {
         Matricula matricula = matriculaRepository.findById(id)
@@ -156,6 +160,7 @@ public class MatriculaService {
         return toDTO(atualizada);
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public MatriculaDTO desligarPorFaltas(Long id, String motivo) {
         Matricula matricula = matriculaRepository.findById(id)
@@ -180,6 +185,7 @@ public class MatriculaService {
         return toDTO(atualizada);
     }
 
+    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public MatriculaDTO promoverSuplente(Long id) {
         Matricula matricula = matriculaRepository.findById(id)

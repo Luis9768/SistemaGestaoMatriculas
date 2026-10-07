@@ -14,6 +14,8 @@ import com.gestaomatriculas.repository.DisciplinaRepository;
 import com.gestaomatriculas.repository.EscolaRepository;
 import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class CursoService {
     private final DisciplinaRepository disciplinaRepository;
     private final SecurityService securityService;
 
+    @Cacheable(value = "cursos", key = "'escola_' + (#escolaId != null ? #escolaId : 'todas') + '_tipo_' + (#tipo != null ? #tipo : 'todos')")
     @Transactional(readOnly = true)
     public List<CursoDTO> listarTodos(Long escolaId, TipoCurso tipo) {
         escolaId = securityService.resolverEscolaId(escolaId);
@@ -46,6 +49,7 @@ public class CursoService {
         return cursos.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Cacheable(value = "cursos", key = "#id")
     @Transactional(readOnly = true)
     public CursoDTO buscarPorId(Long id) {
         Curso curso = cursoRepository.findById(id)
@@ -53,6 +57,7 @@ public class CursoService {
         return toDTO(curso);
     }
 
+    @CacheEvict(value = {"cursos", "escolas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public CursoDTO criar(CursoDTO dto) {
         Escola escola = null;
@@ -121,6 +126,7 @@ public class CursoService {
         return toDTO(salvo);
     }
 
+    @CacheEvict(value = {"cursos", "escolas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public CursoDTO atualizar(Long id, CursoDTO dto) {
         Curso curso = cursoRepository.findById(id)
@@ -181,6 +187,7 @@ public class CursoService {
         return toDTO(atualizado);
     }
 
+    @CacheEvict(value = {"cursos", "escolas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public DisciplinaDTO adicionarDisciplina(Long cursoId, DisciplinaDTO discDto) {
         Curso curso = cursoRepository.findById(cursoId)
@@ -209,6 +216,7 @@ public class CursoService {
         return toDisciplinaDTO(salva);
     }
 
+    @CacheEvict(value = {"cursos", "escolas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public void removerDisciplina(Long cursoId, Long disciplinaId) {
         Curso curso = cursoRepository.findById(cursoId)
@@ -236,6 +244,7 @@ public class CursoService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = {"cursos", "escolas", "dashboard_stats"}, allEntries = true)
     @Transactional
     public void deletar(Long id) {
         Curso curso = cursoRepository.findById(id)
