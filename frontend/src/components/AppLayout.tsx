@@ -79,39 +79,39 @@ function getSchoolColorClasses(sigla?: string) {
   switch (sigla) {
     case 'ELT':
       return {
-        bg: 'bg-violet-500/10 dark:bg-violet-950/40',
-        text: 'text-violet-700 dark:text-violet-300',
-        border: 'border-violet-300 dark:border-violet-700/60',
-        dot: 'bg-violet-600',
+        bg: 'bg-violet-950/60',
+        text: 'text-violet-300',
+        border: 'border-violet-700/60',
+        dot: 'bg-violet-400',
       };
     case 'ELD':
       return {
-        bg: 'bg-rose-500/10 dark:bg-rose-950/40',
-        text: 'text-rose-700 dark:text-rose-300',
-        border: 'border-rose-300 dark:border-rose-700/60',
-        dot: 'bg-rose-600',
+        bg: 'bg-rose-950/60',
+        text: 'text-rose-300',
+        border: 'border-rose-700/60',
+        dot: 'bg-rose-400',
       };
     case 'ELCV':
       return {
-        bg: 'bg-sky-500/10 dark:bg-sky-950/40',
-        text: 'text-sky-700 dark:text-sky-300',
-        border: 'border-sky-300 dark:border-sky-700/60',
-        dot: 'bg-sky-600',
+        bg: 'bg-sky-950/60',
+        text: 'text-sky-300',
+        border: 'border-sky-700/60',
+        dot: 'bg-sky-400',
       };
     case 'EMIA':
     case 'ELIA':
       return {
-        bg: 'bg-amber-500/10 dark:bg-amber-950/40',
-        text: 'text-amber-700 dark:text-amber-300',
-        border: 'border-amber-300 dark:border-amber-700/60',
-        dot: 'bg-amber-600',
+        bg: 'bg-amber-950/60',
+        text: 'text-amber-300',
+        border: 'border-amber-700/60',
+        dot: 'bg-amber-400',
       };
     default:
       return {
-        bg: 'bg-slate-500/10 dark:bg-slate-800/40',
-        text: 'text-slate-700 dark:text-slate-300',
-        border: 'border-slate-300 dark:border-slate-700',
-        dot: 'bg-slate-600',
+        bg: 'bg-slate-800/60',
+        text: 'text-slate-300',
+        border: 'border-slate-700/80',
+        dot: 'bg-slate-400',
       };
   }
 }
@@ -313,7 +313,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#F1F5F9] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200">
       {/* ─── DESKTOP & MOBILE SIDEBAR ─── */}
       {/* Backdrop Mobile */}
       {mobileMenuOpen && (
@@ -324,9 +324,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Sidebar Principal (Estilo Shadcn Dashboard) */}
+      {/* Sidebar Principal (Estilo Console Executivo Escuro) */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 bg-white dark:bg-[#09090b] border-r border-slate-200/90 dark:border-[#27272a] flex flex-col transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 bottom-0 left-0 z-40 bg-[#0C1017] dark:bg-[#09090b] border-r border-slate-800/80 dark:border-[#27272a] shadow-[4px_0_24px_-4px_rgba(15,23,42,0.12)] flex flex-col transition-all duration-300 ease-in-out ${
           isCollapsed ? 'lg:w-[72px]' : 'lg:w-64'
         } ${
           mobileMenuOpen ? 'w-72 translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -334,7 +334,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         aria-label="Navegação da Escola"
       >
         {/* Topo da Sidebar: Identidade Institucional Santo André */}
-        <div className="h-16 px-4 border-b border-slate-200/80 dark:border-[#27272a] flex items-center justify-between">
+        <div className="h-16 px-4 border-b border-slate-800/80 dark:border-[#27272a] flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <Image
               src="/logo_santo_andre.png"
@@ -346,10 +346,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             />
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-black tracking-tight text-slate-900 dark:text-white uppercase truncate">
+                <span className="text-xs font-black tracking-tight text-white uppercase truncate">
                   Santo André
                 </span>
-                <span className="text-[10px] font-semibold text-slate-500 dark:text-zinc-400 font-mono tracking-wider truncate">
+                <span className="text-[10px] font-semibold text-slate-400 font-mono tracking-wider truncate">
                   Escolas Livres
                 </span>
               </div>
@@ -360,14 +360,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center">
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition lg:hidden"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition lg:hidden"
               title="Fechar menu"
             >
               <X className="w-5 h-5" />
             </button>
             <button
               onClick={toggleSidebarCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition cursor-pointer"
               title={isCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
             >
               {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -376,7 +376,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Card Seletor da Escola Ativa (Dropdown Integrado) */}
-        <div className="p-3 border-b border-slate-100 dark:border-[#27272a]/60">
+        <div className="p-3 border-b border-slate-800/60 dark:border-[#27272a]/60">
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
@@ -396,7 +396,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <p className={`text-xs font-extrabold truncate ${schoolColor.text}`}>
                       {escolaAtualObj ? escolaAtualObj.sigla : 'REDE'}
                     </p>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 truncate">
+                    <p className="text-[10px] text-slate-400 truncate">
                       {escolaAtualObj ? escolaAtualObj.nome : 'Todas as Escolas'}
                     </p>
                   </div>
@@ -409,8 +409,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Menu Popover para alternar entre as Escolas Permitidas */}
             {escolaDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-60 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-[#27272a] rounded-xl shadow-xl z-50 p-1 text-xs">
-                <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 border-b border-slate-100 dark:border-[#27272a]">
+              <div className="absolute top-full left-0 mt-1.5 w-60 bg-[#12161f] dark:bg-[#18181b] border border-slate-800 dark:border-[#27272a] rounded-xl shadow-2xl z-50 p-1 text-xs text-white">
+                <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 border-b border-slate-800/80 dark:border-[#27272a]">
                   Alternar Unidade
                 </div>
                 {escolasDisponiveis.map((esc) => {
@@ -423,8 +423,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       onClick={() => handleTrocarEscola(esc.id)}
                       className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
                         isCurrent
-                          ? 'bg-slate-100 dark:bg-[#27272a] text-slate-900 dark:text-white font-bold'
-                          : 'text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800/60'
+                          ? 'bg-slate-800 dark:bg-[#27272a] text-white font-bold'
+                          : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -439,14 +439,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 })}
                 {usuarioLogado?.role === 'ROLE_ADMIN' && (
                   <>
-                    <div className="border-t border-slate-100 dark:border-[#27272a] my-1" />
+                    <div className="border-t border-slate-800/80 dark:border-[#27272a] my-1" />
                     <button
                       type="button"
                       onClick={() => handleTrocarEscola(null)}
                       className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
                         escolaSelecionada === null
-                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold'
-                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                          ? 'bg-slate-800 dark:bg-[#27272a] text-white font-bold'
+                          : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -456,7 +456,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     </button>
                   </>
                 )}
-                <div className="border-t border-slate-100 dark:border-[#27272a] my-1" />
+                <div className="border-t border-slate-800/80 dark:border-[#27272a] my-1" />
                 <Link
                   href="/direcionamento"
                   onClick={() => setEscolaDropdownOpen(false)}
@@ -497,24 +497,30 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       key={item.href}
                       href={item.href}
                       title={isCollapsed ? item.label : undefined}
-                      className={`flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                      className={`group flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
                         isCollapsed ? 'justify-center px-0' : ''
                       } ${
                         isActive
-                          ? 'bg-slate-900 text-white dark:bg-[#18181b] dark:text-white dark:border dark:border-[#27272a] shadow-xs'
-                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-zinc-900/60'
+                          ? 'bg-indigo-600 text-white font-bold shadow-sm shadow-indigo-950/40'
+                          : 'text-slate-300 hover:text-white hover:bg-white/[0.08]'
                       }`}
                     >
                       <ItemIcon
-                        className={`w-4 h-4 shrink-0 ${
+                        className={`w-4 h-4 shrink-0 transition-colors ${
                           isActive
-                            ? 'text-indigo-400 dark:text-indigo-400'
-                            : 'text-slate-400 dark:text-zinc-500'
+                            ? 'text-white'
+                            : 'text-slate-400 group-hover:text-white'
                         }`}
                       />
                       {!isCollapsed && <span className="truncate">{item.label}</span>}
                       {!isCollapsed && item.badge && (
-                        <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-mono bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        <span
+                          className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                            isActive
+                              ? 'bg-white/20 text-white'
+                              : 'bg-white/10 text-slate-300'
+                          }`}
+                        >
                           {item.badge}
                         </span>
                       )}
@@ -527,7 +533,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Rodapé da Sidebar: Perfil do Usuário */}
-        <div className="p-3 border-t border-slate-200/80 dark:border-[#27272a] bg-slate-50/50 dark:bg-black/40">
+        <div className="p-3 border-t border-slate-800/80 dark:border-[#27272a] bg-[#090d14]/70 dark:bg-black/40">
           <div
             className={`flex items-center gap-2.5 ${
               isCollapsed ? 'justify-center' : 'justify-between'
@@ -539,10 +545,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               {!isCollapsed && (
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate">
+                  <p className="text-xs font-bold text-slate-100 dark:text-zinc-200 truncate">
                     {usuarioLogado?.email?.split('@')[0]}
                   </p>
-                  <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono truncate">
+                  <p className="text-[10px] text-slate-400 dark:text-zinc-400 font-mono truncate">
                     {usuarioLogado?.role === 'ROLE_ADMIN' ? 'Administrador' : 'Encarregada'}
                   </p>
                 </div>
@@ -553,7 +559,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <button
                 onClick={handleLogout}
                 type="button"
-                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition cursor-pointer"
                 title="Encerrar sessão"
               >
                 <LogOut className="w-4 h-4" />
@@ -570,7 +576,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         }`}
       >
         {/* Topbar Superior Integrada (Shadcn School Style) */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-slate-200/80 dark:border-[#27272a] flex items-center justify-between px-4 sm:px-6">
+        <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-black/80 backdrop-blur-md border-b border-slate-200/90 dark:border-[#27272a] shadow-xs flex items-center justify-between px-4 sm:px-6">
           {/* Lado Esquerdo: Toggle Mobile + Breadcrumbs */}
           <div className="flex items-center gap-3 min-w-0">
             {/* Botão Hamburger (Mobile) */}
