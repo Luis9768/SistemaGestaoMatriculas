@@ -197,7 +197,7 @@ export function DirecionamentoEscolasView({
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
-                className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-none text-[#1C1917] dark:text-[#EDE8E0]"
+                className="font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-none text-[#1C1917] dark:text-[#EDE8E0]"
               >
                 Rede de Escolas Livres
               </motion.h1>
@@ -285,7 +285,7 @@ export function DirecionamentoEscolasView({
                 {/* ─── SIGLA GIGANTE EM OUTLINE RECORTE EDITORIAL ─── */}
                 <span
                   aria-hidden="true"
-                  className={`absolute -right-3 sm:-right-4 -bottom-6 sm:-bottom-8 font-serif text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter leading-none pointer-events-none select-none transition-transform duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+                  className={`absolute -right-3 sm:-right-4 -bottom-6 sm:-bottom-8 font-sans text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter leading-none pointer-events-none select-none transition-transform duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
                     config.monogramColor
                   } ${isExpanded ? 'translate-x-0 scale-105' : 'translate-x-3 scale-95'}`}
                 >
@@ -295,7 +295,7 @@ export function DirecionamentoEscolasView({
                 {/* ─── TOPO DO PAINEL: SIGLA, STATUS E TÍTULO ─── */}
                 <div className="relative z-10">
                   <div className="flex items-center justify-between gap-3 mb-4">
-                    <span className="font-serif text-2xl sm:text-3xl font-black tracking-tight">
+                    <span className="font-sans text-2xl sm:text-3xl font-black tracking-tight">
                       {config.sigla}
                     </span>
 
@@ -316,7 +316,7 @@ export function DirecionamentoEscolasView({
                     )}
                   </div>
 
-                  <h2 className="font-serif text-xl sm:text-2xl font-black tracking-tight leading-snug">
+                  <h2 className="font-sans text-xl sm:text-2xl font-black tracking-tight leading-snug">
                     {config.nome}
                   </h2>
                   <p className="text-xs font-semibold tracking-wide opacity-75 mt-0.5">

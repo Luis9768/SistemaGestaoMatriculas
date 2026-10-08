@@ -40,12 +40,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-serif), 'Fraunces', Georgia, serif;
+  --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
   --font-fighter: var(--font-fighter-attack), 'FighterAttack', cursive;
 }
 
 .font-serif {
-  font-family: var(--font-serif), 'Fraunces', Georgia, serif;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
 .font-fighter {
