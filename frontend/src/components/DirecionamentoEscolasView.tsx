@@ -51,15 +51,15 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Referência nacional na formação pública continuada de atores, encenadores e dramaturgos. Prática de palco colaborativa, pesquisa autoral e investigação cênica contemporânea.',
     sede: 'Teatro Conchita de Moraes • Santa Teresinha',
     panelClass:
-      'bg-[#F5EBF0] dark:bg-[#240A18] text-[#421226] dark:text-[#F3E5EC]',
+      'bg-[#240A18] text-[#F3E5EC]',
     borderClass:
-      'border-[#DFC7D2] dark:border-[#3D132A] hover:border-[#6F2148] dark:hover:border-[#7D2453]',
+      'border-[#3D132A] hover:border-[#7D2453]',
     monogramColor:
-      'text-[#6F2148]/12 dark:text-[#E7B8D1]/10',
+      'text-[#E7B8D1]/10',
     vagasColor:
-      'text-[#6F2148] dark:text-[#EBB5D0]',
+      'text-[#EBB5D0]',
     btnClass:
-      'bg-[#4B152F] hover:bg-[#681C41] text-[#FAF7F5] dark:bg-[#6F2148] dark:hover:bg-[#8A2859] dark:text-white',
+      'bg-[#6F2148] hover:bg-[#8A2859] text-white',
     accentBar: 'bg-[#6F2148]',
   },
   ELD: {
@@ -70,15 +70,15 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Polo de pesquisa continuada em dança contemporânea e consciência do movimento. Investigação de poéticas corporais, preparação física e criação coreográfica colaborativa.',
     sede: 'Espaço da Dança • Jardim Bela Vista',
     panelClass:
-      'bg-[#F7EBEB] dark:bg-[#250F13] text-[#481620] dark:text-[#F7E7E9]',
+      'bg-[#250F13] text-[#F7E7E9]',
     borderClass:
-      'border-[#E4C5CA] dark:border-[#3F1920] hover:border-[#732734] dark:hover:border-[#822B3B]',
+      'border-[#3F1920] hover:border-[#822B3B]',
     monogramColor:
-      'text-[#732734]/12 dark:text-[#EEB9C2]/10',
+      'text-[#EEB9C2]/10',
     vagasColor:
-      'text-[#732734] dark:text-[#EFB9C2]',
+      'text-[#EFB9C2]',
     btnClass:
-      'bg-[#4C1721] hover:bg-[#691F2E] text-[#FAF7F5] dark:bg-[#732734] dark:hover:bg-[#8E2F3E] dark:text-white',
+      'bg-[#732734] hover:bg-[#8E2F3E] text-white',
     accentBar: 'bg-[#732734]',
   },
   ELCV: {
@@ -89,15 +89,15 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Formação técnica e estética completa nas etapas da produção cinematográfica: direção, roteiro, fotografia de cena, captação de som direto, montagem e realização de curtas autorais.',
     sede: 'Polo Audiovisual • Vila Gilda',
     panelClass:
-      'bg-[#E9F1F5] dark:bg-[#0B1A24] text-[#133244] dark:text-[#E5F1F7]',
+      'bg-[#0B1A24] text-[#E5F1F7]',
     borderClass:
-      'border-[#C1D6E2] dark:border-[#153245] hover:border-[#1E5777] dark:hover:border-[#286D94]',
+      'border-[#153245] hover:border-[#286D94]',
     monogramColor:
-      'text-[#1E5777]/12 dark:text-[#A7D1E7]/10',
+      'text-[#A7D1E7]/10',
     vagasColor:
-      'text-[#1E5777] dark:text-[#A7D1E7]',
+      'text-[#A7D1E7]',
     btnClass:
-      'bg-[#14374A] hover:bg-[#1C4B64] text-[#FAF7F5] dark:bg-[#1E5777] dark:hover:bg-[#277099] dark:text-white',
+      'bg-[#1E5777] hover:bg-[#277099] text-white',
     accentBar: 'bg-[#1E5777]',
   },
   EMIA: {
@@ -108,15 +108,15 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Sensibilização poética e vivências artísticas integradas por faixa etária. Conexão viva e lúdica entre artes visuais, teatro, música e dança para a infância e juventude.',
     sede: 'Pq. Regional da Criança • Jaçatuba',
     panelClass:
-      'bg-[#F7EFE2] dark:bg-[#221A0C] text-[#473312] dark:text-[#F7EFE1]',
+      'bg-[#221A0C] text-[#F7EFE1]',
     borderClass:
-      'border-[#DED0B6] dark:border-[#3A2C14] hover:border-[#73551E] dark:hover:border-[#876423]',
+      'border-[#3A2C14] hover:border-[#876423]',
     monogramColor:
-      'text-[#73551E]/12 dark:text-[#E2C799]/10',
+      'text-[#E2C799]/10',
     vagasColor:
-      'text-[#73551E] dark:text-[#E2C799]',
+      'text-[#E2C799]',
     btnClass:
-      'bg-[#4B3613] hover:bg-[#664919] text-[#FAF7F5] dark:bg-[#73551E] dark:hover:bg-[#8F6A26] dark:text-white',
+      'bg-[#73551E] hover:bg-[#8F6A26] text-white',
     accentBar: 'bg-[#73551E]',
   },
   ELIA: {
@@ -127,15 +127,15 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Sensibilização poética e vivências artísticas integradas por faixa etária. Conexão viva e lúdica entre artes visuais, teatro, música e dança para a infância e juventude.',
     sede: 'Pq. Regional da Criança • Jaçatuba',
     panelClass:
-      'bg-[#F7EFE2] dark:bg-[#221A0C] text-[#473312] dark:text-[#F7EFE1]',
+      'bg-[#221A0C] text-[#F7EFE1]',
     borderClass:
-      'border-[#DED0B6] dark:border-[#3A2C14] hover:border-[#73551E] dark:hover:border-[#876423]',
+      'border-[#3A2C14] hover:border-[#876423]',
     monogramColor:
-      'text-[#73551E]/12 dark:text-[#E2C799]/10',
+      'text-[#E2C799]/10',
     vagasColor:
-      'text-[#73551E] dark:text-[#E2C799]',
+      'text-[#E2C799]',
     btnClass:
-      'bg-[#4B3613] hover:bg-[#664919] text-[#FAF7F5] dark:bg-[#73551E] dark:hover:bg-[#8F6A26] dark:text-white',
+      'bg-[#73551E] hover:bg-[#8F6A26] text-white',
     accentBar: 'bg-[#73551E]',
   },
 };
@@ -272,12 +272,12 @@ export function DirecionamentoEscolasView({
                     {isEncarregada && (
                       <div>
                         {isPermitido ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             <CheckCircle2 className="w-2.5 h-2.5" />
                             Autorizada
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-black/10 dark:bg-white/10 text-current opacity-70">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-white/70 border border-white/15">
                             <Lock className="w-2.5 h-2.5" />
                             Restrito
                           </span>
