@@ -263,7 +263,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       case '/turmas':
         return 'Turmas & Vagas';
       case '/matriculas':
-        return 'Matrículas & Fila';
+        return 'Matrículas';
       case '/frequencia':
         return 'Diário de Chamadas';
       case '/cursos':
@@ -843,10 +843,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              {/* Período de Inscrição */}
+              {/* Período de Matrícula */}
               <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl space-y-2 border border-blue-100 dark:border-blue-900/60">
                 <span className="font-bold text-blue-900 dark:text-blue-300 block text-[10px] uppercase tracking-wider">
-                  Período de Inscrição
+                  Período de Matrícula
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div>

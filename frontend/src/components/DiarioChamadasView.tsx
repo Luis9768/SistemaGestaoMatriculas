@@ -1007,7 +1007,7 @@ export function DiarioChamadasView({
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs shadow-sm transition"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span>Ir para Matrículas & Fila</span>
+                  <span>Ir para Matrículas</span>
                 </Link>
                 <button
                   type="button"

@@ -38,17 +38,8 @@ public class DashboardService {
                 ? cursoRepository.findByEscolaId(escolaId)
                 : cursoRepository.findAll();
 
-        long totalGeral = matriculas.size();
-
         long totalMatriculados = matriculas.stream()
                 .filter(m -> m.getStatus() == StatusMatricula.CONFIRMADA)
-                .count();
-
-        long totalInscricoes = matriculas.stream()
-                .filter(m -> m.getStatus() == StatusMatricula.INSCRITO ||
-                             m.getStatus() == StatusMatricula.EM_SELECAO ||
-                             m.getStatus() == StatusMatricula.APROVADO ||
-                             m.getStatus() == StatusMatricula.PENDENTE)
                 .count();
 
         long totalEvasoes = matriculas.stream()
@@ -63,9 +54,8 @@ public class DashboardService {
                 .filter(m -> m.getStatus() == StatusMatricula.CONCLUIDA)
                 .count();
 
-        long totalFilaEspera = matriculas.stream()
-                .filter(m -> m.getStatus() == StatusMatricula.FILA_ESPERA)
-                .count();
+        // O total geral considera apenas os estados reais de matrículas ativas, evasões, conclusões e cancelamentos
+        long totalGeral = totalMatriculados + totalEvasoes + totalCancelados + totalFormados;
 
         double taxaEvasao = totalGeral > 0
                 ? Math.round((totalEvasoes * 100.0 / totalGeral) * 10.0) / 10.0
@@ -81,15 +71,13 @@ public class DashboardService {
                 ? Math.round((vagasOcupadas * 100.0 / totalVagas) * 10.0) / 10.0
                 : 0.0;
 
-        // Distribuição para o Gráfico de Pizza / Rosca
+        // Distribuição para o Gráfico de Pizza / Rosca (apenas situações reais de matrícula)
         List<StatusDistribuicaoDTO> distribuicao = new ArrayList<>();
         if (totalGeral > 0) {
             adicionarFatia(distribuicao, "CONFIRMADA", "Matriculados (Ativos)", totalMatriculados, totalGeral, "#10b981");
-            adicionarFatia(distribuicao, "INSCRITO", "Inscrições / Seleção", totalInscricoes, totalGeral, "#3b82f6");
             adicionarFatia(distribuicao, "DESISTENTE_FALTAS", "Evasões (3 Faltas)", totalEvasoes, totalGeral, "#ef4444");
-            adicionarFatia(distribuicao, "CANCELADA", "Cancelamentos Voluntários", totalCancelados, totalGeral, "#64748b");
             adicionarFatia(distribuicao, "CONCLUIDA", "Formados / Concluídos", totalFormados, totalGeral, "#f59e0b");
-            adicionarFatia(distribuicao, "FILA_ESPERA", "Fila de Espera", totalFilaEspera, totalGeral, "#8b5cf6");
+            adicionarFatia(distribuicao, "CANCELADA", "Cancelamentos Voluntários", totalCancelados, totalGeral, "#64748b");
         }
 
         // Estatísticas por Curso para o Gráfico de Barras / Torres
@@ -99,11 +87,10 @@ public class DashboardService {
                     .filter(m -> m.getTurma() != null && m.getTurma().getCurso() != null && m.getTurma().getCurso().getId().equals(curso.getId()))
                     .collect(Collectors.toList());
 
-            long inscricoesCurso = matsDoCurso.stream().filter(m -> m.getStatus() == StatusMatricula.INSCRITO || m.getStatus() == StatusMatricula.EM_SELECAO || m.getStatus() == StatusMatricula.APROVADO).count();
             long matriculasCurso = matsDoCurso.stream().filter(m -> m.getStatus() == StatusMatricula.CONFIRMADA).count();
             long evasoesCurso = matsDoCurso.stream().filter(m -> m.getStatus() == StatusMatricula.DESISTENTE_FALTAS).count();
             long concluidosCurso = matsDoCurso.stream().filter(m -> m.getStatus() == StatusMatricula.CONCLUIDA).count();
-            long totalCurso = matsDoCurso.size();
+            long totalCurso = matriculasCurso + evasoesCurso + concluidosCurso;
 
             double taxaEvasaoCurso = totalCurso > 0
                     ? Math.round((evasoesCurso * 100.0 / totalCurso) * 10.0) / 10.0
@@ -115,7 +102,7 @@ public class DashboardService {
                     .escolaSigla(curso.getEscola() != null ? curso.getEscola().getSigla() : "")
                     .escolaCorTema(curso.getEscola() != null ? curso.getEscola().getCorTema() : "blue")
                     .modalidade(curso.getModalidade() != null ? curso.getModalidade().name() : "LIVRE")
-                    .totalInscricoes(inscricoesCurso)
+                    .totalInscricoes(0L)
                     .totalMatriculas(matriculasCurso)
                     .totalEvasoes(evasoesCurso)
                     .totalConcluidos(concluidosCurso)
@@ -125,12 +112,12 @@ public class DashboardService {
 
         return DashboardStatsDTO.builder()
                 .totalGeral(totalGeral)
-                .totalInscricoes(totalInscricoes)
+                .totalInscricoes(0L)
                 .totalMatriculados(totalMatriculados)
                 .totalEvasoes(totalEvasoes)
                 .totalCancelados(totalCancelados)
                 .totalFormados(totalFormados)
-                .totalFilaEspera(totalFilaEspera)
+                .totalFilaEspera(0L)
                 .taxaEvasao(taxaEvasao)
                 .taxaConclusao(taxaConclusao)
                 .taxaOcupacaoVagas(taxaOcupacao)

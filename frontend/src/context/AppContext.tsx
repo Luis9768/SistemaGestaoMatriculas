@@ -387,13 +387,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleCancelarMatricula = async (matriculaId: number) => {
-    if (!confirm('Deseja realmente cancelar esta matrícula? A vaga será liberada imediatamente para o próximo da fila de espera.')) return;
+    if (!confirm('Deseja realmente cancelar esta matrícula? A vaga na turma será liberada imediatamente.')) return;
     try {
       await api.cancelarMatricula(matriculaId);
       setMatriculas((prev) =>
         prev.map((m) => (m.id === matriculaId ? { ...m, status: 'CANCELADA' } : m))
       );
-      mostrarFeedback('sucesso', 'Matrícula cancelada e vaga disponibilizada para a fila de espera.');
+      mostrarFeedback('sucesso', 'Matrícula cancelada com sucesso. A vaga foi liberada na turma.');
       await Promise.all([carregarMatriculas(), carregarDadosEscola()]);
     } catch (e: any) {
       mostrarFeedback('erro', e.message || 'Erro ao cancelar matrícula.');

@@ -190,7 +190,6 @@ public class NotificacaoService {
 
         for (Turma t : turmas) {
             long matriculados = matriculaRepository.countByTurmaIdAndStatus(t.getId(), StatusMatricula.CONFIRMADA);
-            long emEspera = matriculaRepository.countByTurmaIdAndStatus(t.getId(), StatusMatricula.FILA_ESPERA);
             int vagasTotais = t.getVagasTotais() != null ? t.getVagasTotais() : 0;
             long vagasAbertas = Math.max(0, vagasTotais - matriculados);
 

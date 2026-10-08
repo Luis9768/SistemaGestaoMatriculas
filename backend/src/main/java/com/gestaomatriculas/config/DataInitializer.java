@@ -27,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
     private final MatriculaRepository matriculaRepository;
     private final RegistroPresencaRepository registroPresencaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.cache.CacheManager cacheManager;
 
     @org.springframework.beans.factory.annotation.Value("${app.initial.password:${INITIAL_USER_PASSWORD:}}")
     private String initialConfiguredPassword;
@@ -502,6 +503,19 @@ public class DataInitializer implements CommandLineRunner {
 
         // Garante a grade curricular oficial das 4 Escolas Livres e preenchimento com alunos reais
         atualizarCatalogoOficial();
+
+        // Limpa todos os caches para garantir visualização imediata de dados atualizados
+        try {
+            if (cacheManager != null) {
+                cacheManager.getCacheNames().forEach(name -> {
+                    org.springframework.cache.Cache c = cacheManager.getCache(name);
+                    if (c != null) c.clear();
+                });
+                log.info("[DATA INITIALIZER] Caches sincronizados e limpos com sucesso.");
+            }
+        } catch (Exception e) {
+            log.warn("[DATA INITIALIZER] Aviso ao limpar caches: {}", e.getMessage());
+        }
     }
 
     private void atualizarCatalogoOficial() {
@@ -718,6 +732,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // Preenche com alunos matriculados para garantir turmas ativas e prontas para uso
         preencherTurmasComAlunos();
+        semearCenariosRealistasDiversificados();
         log.info("Catálogo oficial sincronizado com sucesso!");
     }
 
@@ -844,4 +859,417 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
     }
+
+    private void semearCenariosRealistasDiversificados() {
+        // Garante que nenhuma matrícula com fila de espera ou inscrição permaneça no sistema
+        List<Matricula> paraRemoverOuAjustar = matriculaRepository.findAll().stream()
+                .filter(m -> m.getStatus() == StatusMatricula.FILA_ESPERA ||
+                             m.getStatus() == StatusMatricula.INSCRITO ||
+                             m.getStatus() == StatusMatricula.EM_SELECAO ||
+                             m.getStatus() == StatusMatricula.PENDENTE)
+                .toList();
+
+        for (Matricula m : paraRemoverOuAjustar) {
+            registroPresencaRepository.findByMatriculaIdOrderByDataAulaAsc(m.getId())
+                    .forEach(registroPresencaRepository::delete);
+            matriculaRepository.delete(m);
+            if (m.getAluno() != null && m.getAluno().getCpf() != null && m.getAluno().getCpf().startsWith("701000000")) {
+                alunoRepository.delete(m.getAluno());
+            }
+        }
+
+        if (alunoRepository.existsByCpf("70100000001")) {
+            log.info("Cenários diversificados de estudantes já semeados anteriormente.");
+            return;
+        }
+
+        log.info("Semeando estudantes em cenários diversificados (muita falta, evasão, cancelamentos, menores)...");
+        LocalDate hoje = LocalDate.now();
+
+        // 1. Aluno com 2 Faltas Consecutivas (Alerta Amarelo / Risco Crítico / Busca Ativa)
+        // Thiago Rocha Albuquerque na turma ELT-NUC-INIC
+        turmaRepository.findByCodigo("ELT-NUC-INIC").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Thiago Rocha Albuquerque")
+                    .cpf("70100000001")
+                    .email("thiago.rocha@email.com")
+                    .telefone("(11) 98111-2233")
+                    .dataNascimento(LocalDate.of(1998, 4, 15))
+                    .endereco("Rua das Figueiras, 450")
+                    .bairro("Jardim")
+                    .cidade("Santo André")
+                    .cep("09080-300")
+                    .genero("Masculino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            Matricula m = matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.PRESENCIAL)
+                    .status(StatusMatricula.CONFIRMADA)
+                    .observacoes("Aluno com alerta de 2 faltas consecutivas - Busca ativa acionada.")
+                    .build());
+
+            salvarPresenca(m, hoje.minusDays(12), StatusPresenca.PRESENTE, "Jogos de Improvisação e Aquecimento Vocal");
+            salvarPresenca(m, hoje.minusDays(9), StatusPresenca.PRESENTE, "Construção de Máscaras e Personagens");
+            salvarPresenca(m, hoje.minusDays(6), StatusPresenca.FALTA, "Jogo Cênico em Espaço Aberto");
+            salvarPresenca(m, hoje.minusDays(2), StatusPresenca.FALTA, "Leitura e Ensaio de Cenas Curtas");
+        });
+
+        // 2. Aluna com 2 Faltas Consecutivas na ELD (Dança Contemporânea)
+        // Beatriz Lima Silveira na turma ELD-POET-CONTEMP
+        turmaRepository.findByCodigo("ELD-POET-CONTEMP").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Beatriz Lima Silveira")
+                    .cpf("70100000002")
+                    .email("beatriz.silveira@email.com")
+                    .telefone("(11) 97222-3344")
+                    .dataNascimento(LocalDate.of(2002, 9, 20))
+                    .endereco("Av. Portugal, 890")
+                    .bairro("Centro")
+                    .cidade("Santo André")
+                    .cep("09040-000")
+                    .genero("Feminino")
+                    .neurodiverso(true)
+                    .neurodiversoDetalhe("TDAH")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            Matricula m = matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.CULTURA_AZ)
+                    .status(StatusMatricula.CONFIRMADA)
+                    .observacoes("Aluna notificada por e-mail sobre risco de perda da vaga.")
+                    .build());
+
+            salvarPresenca(m, hoje.minusDays(14), StatusPresenca.PRESENTE, "Aquecimento Corporal e Alongamento");
+            salvarPresenca(m, hoje.minusDays(10), StatusPresenca.JUSTIFICADA, "Atestado médico de fisioterapia", "Alinhamento e Postura");
+            salvarPresenca(m, hoje.minusDays(6), StatusPresenca.FALTA, "Pesquisa de Movimento no Chão");
+            salvarPresenca(m, hoje.minusDays(2), StatusPresenca.FALTA, "Laboratório Coreográfico Coletivo");
+        });
+
+        // 3. Aluno com 3 Faltas Consecutivas (Alerta Vermelho / Limite Excedido)
+        // Rodrigo Antunes de Souza na turma ELCV-AUDIO-INIC
+        turmaRepository.findByCodigo("ELCV-AUDIO-INIC").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Rodrigo Antunes de Souza")
+                    .cpf("70100000003")
+                    .email("rodrigo.antunes@email.com")
+                    .telefone("(11) 99333-4455")
+                    .dataNascimento(LocalDate.of(1995, 12, 5))
+                    .endereco("Rua Coronel Fernando Prestes, 320")
+                    .bairro("Vila Assunção")
+                    .cidade("Santo André")
+                    .cep("09020-110")
+                    .genero("Masculino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            Matricula m = matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.PRESENCIAL)
+                    .status(StatusMatricula.CONFIRMADA)
+                    .observacoes("Limite de 3 faltas atingido. Processo de desligamento regimental aguardando deliberação.")
+                    .build());
+
+            salvarPresenca(m, hoje.minusDays(16), StatusPresenca.PRESENTE, "Introdução à Câmera Blackmagic");
+            salvarPresenca(m, hoje.minusDays(12), StatusPresenca.FALTA, "Configuração de ISO, Shutter e Diafragma");
+            salvarPresenca(m, hoje.minusDays(8), StatusPresenca.FALTA, "Captação de Áudio com Microfone Direcional Boom");
+            salvarPresenca(m, hoje.minusDays(4), StatusPresenca.FALTA, "Gravação Prática de Cena Externa");
+        });
+
+        // 4. Aluna com 3 Faltas Consecutivas na Formação Teatral da ELT
+        // Isabela Camargo Fontana na turma ELT-FORM-2026
+        turmaRepository.findByCodigo("ELT-FORM-2026").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Isabela Camargo Fontana")
+                    .cpf("70100000004")
+                    .email("isabela.fontana@email.com")
+                    .telefone("(11) 98444-5566")
+                    .dataNascimento(LocalDate.of(2000, 3, 28))
+                    .endereco("Rua Senador Flaquer, 180")
+                    .bairro("Vila Bastos")
+                    .cidade("Santo André")
+                    .cep("09041-000")
+                    .genero("Feminino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            Matricula m = matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.CULTURA_AZ)
+                    .status(StatusMatricula.CONFIRMADA)
+                    .observacoes("Acumulou 3 faltas consecutivas recentes. Vaga sob risco iminente de repasse para suplente.")
+                    .build());
+
+            salvarPresenca(m, hoje.minusDays(18), StatusPresenca.PRESENTE, "O Ator sobre Si Mesmo - Memória Sensorial");
+            salvarPresenca(m, hoje.minusDays(15), StatusPresenca.PRESENTE, "Respiração Diafragmática e Ressonadores");
+            salvarPresenca(m, hoje.minusDays(12), StatusPresenca.PRESENTE, "Partitura de Ações Físicas");
+            salvarPresenca(m, hoje.minusDays(9), StatusPresenca.FALTA, "Trabalho de Coro e Contato");
+            salvarPresenca(m, hoje.minusDays(6), StatusPresenca.FALTA, "Criação Coletiva de Cenas");
+            salvarPresenca(m, hoje.minusDays(3), StatusPresenca.FALTA, "Laboratório de Iluminação e Espaço Cênico");
+        });
+
+        // 5. Aluno Efetivamente Desligado por Evasão / Infrequência (DESISTENTE_FALTAS)
+        // Cauã Moreira Rezende na turma ELT-NUC-RUA
+        turmaRepository.findByCodigo("ELT-NUC-RUA").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Cauã Moreira Rezende")
+                    .cpf("70100000005")
+                    .email("caua.rezende@email.com")
+                    .telefone("(11) 97555-6677")
+                    .dataNascimento(LocalDate.of(1997, 8, 14))
+                    .endereco("Rua Catequese, 510")
+                    .bairro("Bairro Jardim")
+                    .cidade("Santo André")
+                    .cep("09090-400")
+                    .genero("Masculino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            Matricula m = matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.PRESENCIAL)
+                    .status(StatusMatricula.DESISTENTE_FALTAS)
+                    .observacoes("Desligamento administrativo confirmado pela Secretaria por evasão (Portaria Regimental nº 04/2026).")
+                    .build());
+
+            salvarPresenca(m, hoje.minusDays(25), StatusPresenca.PRESENTE, "Mapeamento Urbano e Territorial");
+            salvarPresenca(m, hoje.minusDays(21), StatusPresenca.FALTA, "Intervenção Cênica na Praça do Carmo");
+            salvarPresenca(m, hoje.minusDays(18), StatusPresenca.FALTA, "Corpo Político e Performance Pública");
+            salvarPresenca(m, hoje.minusDays(14), StatusPresenca.FALTA, "Debate com a Comunidade Local");
+        });
+
+        // 6. Aluna Desligada por Evasão na Dança (DESISTENTE_FALTAS)
+        // Yasmin Ribeiro Fagundes na turma ELD-NUC1-BRASILEIRO
+        turmaRepository.findByCodigo("ELD-NUC1-BRASILEIRO").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Yasmin Ribeiro Fagundes")
+                    .cpf("70100000006")
+                    .email("yasmin.fagundes@email.com")
+                    .telefone("(11) 98666-7788")
+                    .dataNascimento(LocalDate.of(2003, 11, 2))
+                    .endereco("Rua Oratório, 1200")
+                    .bairro("Parque das Nações")
+                    .cidade("Santo André")
+                    .cep("09210-000")
+                    .genero("Feminino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            Matricula m = matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.CULTURA_AZ)
+                    .status(StatusMatricula.DESISTENTE_FALTAS)
+                    .observacoes("Evasão escolar homologada após contato telefônico sem retorno.")
+                    .build());
+
+            salvarPresenca(m, hoje.minusDays(22), StatusPresenca.FALTA, "Dança Urbana - Hip Hop Freestyle");
+            salvarPresenca(m, hoje.minusDays(18), StatusPresenca.FALTA, "House Dance e Footwork");
+            salvarPresenca(m, hoje.minusDays(14), StatusPresenca.FALTA, "Composição Coreográfica em Grupo");
+        });
+
+        // 7. Cancelamento Voluntário no Cinema (CANCELADA)
+        // Felipe Vasconcelos Prado na turma ELCV-CINEMA-BR
+        turmaRepository.findByCodigo("ELCV-CINEMA-BR").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Felipe Vasconcelos Prado")
+                    .cpf("70100000007")
+                    .email("felipe.prado@email.com")
+                    .telefone("(11) 99777-8899")
+                    .dataNascimento(LocalDate.of(1993, 1, 19))
+                    .endereco("Rua Marina, 640")
+                    .bairro("Campestre")
+                    .cidade("Santo André")
+                    .cep("09070-510")
+                    .genero("Masculino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.PRESENCIAL)
+                    .status(StatusMatricula.CANCELADA)
+                    .observacoes("Cancelamento formal solicitado pelo próprio estudante devido a incompatibilidade com novo emprego.")
+                    .build());
+        });
+
+        // 8. Cancelamento Voluntário na EMIA (CANCELADA)
+        // Larissa Prado Nogueira na turma EMIA-AQUARELA-2026
+        turmaRepository.findByCodigo("EMIA-AQUARELA-2026").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Larissa Prado Nogueira")
+                    .cpf("70100000008")
+                    .email("larissa.nogueira@email.com")
+                    .telefone("(11) 98888-9900")
+                    .dataNascimento(LocalDate.of(1989, 7, 7))
+                    .endereco("Av. Dom Pedro II, 1420")
+                    .bairro("Jardim")
+                    .cidade("Santo André")
+                    .cep("09080-001")
+                    .genero("Feminino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.CULTURA_AZ)
+                    .status(StatusMatricula.CANCELADA)
+                    .observacoes("Trancamento voluntário comunicado por escrito.")
+                    .build());
+        });
+
+
+
+        // 13. Menor de Idade com Mãe Responsável e 100% Presença (Declaração Pronta!)
+        // Manuela Duarte Ferraz na turma EMIA-MIA1-2026
+        turmaRepository.findByCodigo("EMIA-MIA1-2026").ifPresent(turma -> {
+            Responsavel mae = responsavelRepository.save(Responsavel.builder()
+                    .nome("Renata Duarte Ferraz")
+                    .cpf("90100000013")
+                    .telefone("(11) 98334-5566")
+                    .email("renata.mae@email.com")
+                    .grauParentesco("Mãe")
+                    .build());
+
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Manuela Duarte Ferraz")
+                    .cpf("70100000013")
+                    .email("manuela.ferraz@email.com")
+                    .telefone("(11) 98334-5566")
+                    .dataNascimento(LocalDate.of(2017, 5, 20))
+                    .endereco("Rua Vitória Régia, 340")
+                    .bairro("Campestre")
+                    .cidade("Santo André")
+                    .cep("09070-120")
+                    .genero("Feminino")
+                    .responsavel(mae)
+                    .contatoEmergencia("Mãe: Renata - (11) 98334-5566")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            Matricula m = matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.PRESENCIAL)
+                    .status(StatusMatricula.CONFIRMADA)
+                    .observacoes("Estudante assídua, frequência exemplar de 100%.")
+                    .build());
+
+            salvarPresenca(m, hoje.minusDays(15), StatusPresenca.PRESENTE, "Percepção Sonora e Cantigas Tradicionais");
+            salvarPresenca(m, hoje.minusDays(11), StatusPresenca.PRESENTE, "Modelagem com Argila e Texturas");
+            salvarPresenca(m, hoje.minusDays(8), StatusPresenca.PRESENTE, "Jogos Dramáticos e Expressão Cênica");
+            salvarPresenca(m, hoje.minusDays(4), StatusPresenca.PRESENTE, "Dança Lúdica e Ritmos Brasileiros");
+        });
+
+        // 14. Aluno Concluinte / Formado com Êxito (CONCLUIDA)
+        // Vinicius de Oliveira Moura na turma ELT-NUC-DRAM
+        turmaRepository.findByCodigo("ELT-NUC-DRAM").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Vinicius de Oliveira Moura")
+                    .cpf("70100000014")
+                    .email("vinicius.moura@email.com")
+                    .telefone("(11) 98445-6677")
+                    .dataNascimento(LocalDate.of(1996, 10, 18))
+                    .endereco("Rua Gertrudes de Lima, 310")
+                    .bairro("Centro")
+                    .cidade("Santo André")
+                    .cep("09020-000")
+                    .genero("Masculino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.PRESENCIAL)
+                    .status(StatusMatricula.CONCLUIDA)
+                    .observacoes("Concluinte do ciclo 2025/2026 com aprovação e leitura dramática pública.")
+                    .build());
+        });
+
+        // 15. Aluna Concluinte no Cinema (CONCLUIDA)
+        // Camila Duarte Peixoto na turma ELCV-ROTEIRO
+        turmaRepository.findByCodigo("ELCV-ROTEIRO").ifPresent(turma -> {
+            Aluno a = alunoRepository.save(Aluno.builder()
+                    .nome("Camila Duarte Peixoto")
+                    .cpf("70100000015")
+                    .email("camila.peixoto@email.com")
+                    .telefone("(11) 98556-7788")
+                    .dataNascimento(LocalDate.of(1994, 12, 30))
+                    .endereco("Rua Santo André, 450")
+                    .bairro("Vila Assunção")
+                    .cidade("Santo André")
+                    .cep("09020-230")
+                    .genero("Feminino")
+                    .consentimentoLgpd(true)
+                    .consentimentoLgpdDadosSensiveis(true)
+                    .termoPapelEntregue(true)
+                    .build());
+
+            matriculaRepository.save(Matricula.builder()
+                    .aluno(a)
+                    .turma(turma)
+                    .canalOrigem(CanalOrigem.CULTURA_AZ)
+                    .status(StatusMatricula.CONCLUIDA)
+                    .observacoes("Formada com apresentação de curta-metragem autoral.")
+                    .build());
+        });
+
+        // Recalcular vagas ocupadas das turmas com matrículas confirmadas
+        List<Turma> todasTurmas = turmaRepository.findAll();
+        for (Turma t : todasTurmas) {
+            long confirmadas = matriculaRepository.findByTurmaId(t.getId()).stream()
+                    .filter(m -> m.getStatus() == StatusMatricula.CONFIRMADA)
+                    .count();
+            t.setVagasOcupadas((int) confirmadas);
+            turmaRepository.save(t);
+        }
+
+        log.info("Cenários de estudantes diversificados semeados com absoluto sucesso!");
+    }
+
+    private void salvarPresenca(Matricula m, LocalDate data, StatusPresenca status, String justificativa, String conteudo) {
+        registroPresencaRepository.save(RegistroPresenca.builder()
+                .matricula(m)
+                .dataAula(data)
+                .status(status)
+                .justificativa(justificativa)
+                .conteudoMinistrado(conteudo)
+                .responsavelRegistro("Secretaria Escolar")
+                .build());
+    }
+
+    private void salvarPresenca(Matricula m, LocalDate data, StatusPresenca status, String conteudo) {
+        salvarPresenca(m, data, status, null, conteudo);
+    }
 }
+

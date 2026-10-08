@@ -110,8 +110,6 @@ export function MatriculasView({
     return {
       total: matriculas.length,
       confirmada: matriculas.filter((m) => m.status === 'CONFIRMADA').length,
-      inscrito: matriculas.filter((m) => m.status === 'INSCRITO').length,
-      fila: matriculas.filter((m) => m.status === 'FILA_ESPERA').length,
       cancelada: matriculas.filter((m) => m.status === 'CANCELADA').length,
       desistente: matriculas.filter((m) => m.status === 'DESISTENTE_FALTAS').length,
       concluida: matriculas.filter((m) => m.status === 'CONCLUIDA').length,
@@ -177,20 +175,6 @@ export function MatriculasView({
             <span>Concluída</span>
           </div>
         );
-      case 'INSCRITO':
-        return (
-          <div className="flex items-center gap-1.5 text-xs text-sky-600 dark:text-sky-400 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
-            <span>Inscrito</span>
-          </div>
-        );
-      case 'FILA_ESPERA':
-        return (
-          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-            <span>Fila de Espera</span>
-          </div>
-        );
       case 'CANCELADA':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
@@ -201,13 +185,6 @@ export function MatriculasView({
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
             Desistente
-          </span>
-        );
-      case 'PENDENTE':
-      case 'EM_SELECAO':
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-            {status === 'EM_SELECAO' ? 'Em Seleção' : 'Pendente'}
           </span>
         );
       default:
@@ -322,12 +299,6 @@ export function MatriculasView({
                 </SelectItem>
                 <SelectItem value="CONFIRMADA" badge={contagens.confirmada}>
                   Confirmadas
-                </SelectItem>
-                <SelectItem value="INSCRITO" badge={contagens.inscrito}>
-                  Inscritos
-                </SelectItem>
-                <SelectItem value="FILA_ESPERA" badge={contagens.fila}>
-                  Fila de Espera
                 </SelectItem>
                 <SelectItem value="CANCELADA" badge={contagens.cancelada}>
                   Canceladas

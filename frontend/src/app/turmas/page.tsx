@@ -31,7 +31,7 @@ function TurmasContent() {
       destacarTurmaId={turmaIdParam}
       onAbrirModalTurma={() => abrirModalNovaTurma()}
       onMatricularNaTurma={(turmaId) => {
-        router.push(`/inscricao?turma=${turmaId}`);
+        router.push(`/matriculas?turmaId=${turmaId}&nova=true`);
       }}
       onTurmasAtualizadas={carregarDadosEscola}
     />

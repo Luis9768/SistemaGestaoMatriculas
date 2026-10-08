@@ -97,7 +97,7 @@ export function ModalDetalhesTurma({
               {turma.matriculaAberta ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Inscrições Abertas
+                  Matrículas Abertas
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200/80 dark:bg-slate-800/80 dark:text-slate-400 dark:border-slate-700/60">
@@ -178,7 +178,7 @@ export function ModalDetalhesTurma({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="space-y-1">
                 <span className="text-slate-400 dark:text-slate-500 block">
-                  Período de Inscrição:
+                  Período de Matrículas:
                 </span>
                 <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
                   {formatarDataBr(turma.dataAberturaMatricula)} até{' '}
@@ -196,17 +196,6 @@ export function ModalDetalhesTurma({
                 </span>
               </div>
             </div>
-
-            {turma.diasToleranciaSuplencia && (
-              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-slate-400">
-                  Prazo de Convocação de Suplentes:
-                </span>
-                <span className="font-semibold text-slate-700 dark:text-slate-300">
-                  Até {turma.diasToleranciaSuplencia} dias após início das aulas
-                </span>
-              </div>
-            )}
           </div>
 
           {/* BLOCO 4: CAPACIDADE E OCUPAÇÃO DE VAGAS */}
@@ -345,7 +334,7 @@ export function ModalDetalhesTurma({
             </button>
           ) : (
             <span className="text-xs font-medium px-4 py-2.5 rounded-xl bg-slate-200/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border border-slate-300/80 dark:border-slate-700/60 cursor-not-allowed">
-              Inscrições Encerradas
+              Matrículas Encerradas
             </span>
           )}
         </div>
