@@ -51,16 +51,16 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Referência nacional na formação pública continuada de atores, encenadores e dramaturgos. Prática de palco colaborativa, pesquisa autoral e investigação cênica contemporânea.',
     sede: 'Teatro Conchita de Moraes • Santa Teresinha',
     panelClass:
-      'bg-[#240A18] text-[#F3E5EC]',
+      'bg-[#160a26] text-[#f5f3ff]',
     borderClass:
-      'border-[#3D132A] hover:border-[#7D2453]',
+      'border-[#33175c] hover:border-[#8b5cf6]',
     monogramColor:
-      'text-[#E7B8D1]/10',
+      'text-[#a78bfa]/15',
     vagasColor:
-      'text-[#EBB5D0]',
+      'text-[#c084fc]',
     btnClass:
-      'bg-[#6F2148] hover:bg-[#8A2859] text-white',
-    accentBar: 'bg-[#6F2148]',
+      'bg-[#6d28d9] hover:bg-[#7c3aed] text-white shadow-xs',
+    accentBar: 'bg-[#8b5cf6]',
   },
   ELD: {
     sigla: 'ELD',
@@ -70,16 +70,16 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Polo de pesquisa continuada em dança contemporânea e consciência do movimento. Investigação de poéticas corporais, preparação física e criação coreográfica colaborativa.',
     sede: 'Espaço da Dança • Jardim Bela Vista',
     panelClass:
-      'bg-[#250F13] text-[#F7E7E9]',
+      'bg-[#240615] text-[#fdf2f8]',
     borderClass:
-      'border-[#3F1920] hover:border-[#822B3B]',
+      'border-[#531132] hover:border-[#ec4899]',
     monogramColor:
-      'text-[#EEB9C2]/10',
+      'text-[#f472b6]/15',
     vagasColor:
-      'text-[#EFB9C2]',
+      'text-[#fb7185]',
     btnClass:
-      'bg-[#732734] hover:bg-[#8E2F3E] text-white',
-    accentBar: 'bg-[#732734]',
+      'bg-[#be185d] hover:bg-[#db2777] text-white shadow-xs',
+    accentBar: 'bg-[#ec4899]',
   },
   ELCV: {
     sigla: 'ELCV',
@@ -89,16 +89,16 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Formação técnica e estética completa nas etapas da produção cinematográfica: direção, roteiro, fotografia de cena, captação de som direto, montagem e realização de curtas autorais.',
     sede: 'Polo Audiovisual • Vila Gilda',
     panelClass:
-      'bg-[#0B1A24] text-[#E5F1F7]',
+      'bg-[#061426] text-[#f0f9ff]',
     borderClass:
-      'border-[#153245] hover:border-[#286D94]',
+      'border-[#132f57] hover:border-[#38bdf8]',
     monogramColor:
-      'text-[#A7D1E7]/10',
+      'text-[#38bdf8]/15',
     vagasColor:
-      'text-[#A7D1E7]',
+      'text-[#38bdf8]',
     btnClass:
-      'bg-[#1E5777] hover:bg-[#277099] text-white',
-    accentBar: 'bg-[#1E5777]',
+      'bg-[#0284c7] hover:bg-[#0ea5e9] text-white shadow-xs',
+    accentBar: 'bg-[#38bdf8]',
   },
   EMIA: {
     sigla: 'EMIA',
@@ -108,16 +108,16 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Sensibilização poética e vivências artísticas integradas por faixa etária. Conexão viva e lúdica entre artes visuais, teatro, música e dança para a infância e juventude.',
     sede: 'Pq. Regional da Criança • Jaçatuba',
     panelClass:
-      'bg-[#221A0C] text-[#F7EFE1]',
+      'bg-[#1f1503] text-[#fefce8]',
     borderClass:
-      'border-[#3A2C14] hover:border-[#876423]',
+      'border-[#573906] hover:border-[#f59e0b]',
     monogramColor:
-      'text-[#E2C799]/10',
+      'text-[#fbbf24]/15',
     vagasColor:
-      'text-[#E2C799]',
+      'text-[#fbbf24]',
     btnClass:
-      'bg-[#73551E] hover:bg-[#8F6A26] text-white',
-    accentBar: 'bg-[#73551E]',
+      'bg-[#d97706] hover:bg-[#f59e0b] text-slate-950 font-black shadow-xs',
+    accentBar: 'bg-[#f59e0b]',
   },
   ELIA: {
     sigla: 'EMIA',
@@ -127,16 +127,16 @@ const THEATRICAL_CONFIG: Record<string, SchoolTheatricalConfig> = {
       'Sensibilização poética e vivências artísticas integradas por faixa etária. Conexão viva e lúdica entre artes visuais, teatro, música e dança para a infância e juventude.',
     sede: 'Pq. Regional da Criança • Jaçatuba',
     panelClass:
-      'bg-[#221A0C] text-[#F7EFE1]',
+      'bg-[#1f1503] text-[#fefce8]',
     borderClass:
-      'border-[#3A2C14] hover:border-[#876423]',
+      'border-[#573906] hover:border-[#f59e0b]',
     monogramColor:
-      'text-[#E2C799]/10',
+      'text-[#fbbf24]/15',
     vagasColor:
-      'text-[#E2C799]',
+      'text-[#fbbf24]',
     btnClass:
-      'bg-[#73551E] hover:bg-[#8F6A26] text-white',
-    accentBar: 'bg-[#73551E]',
+      'bg-[#d97706] hover:bg-[#f59e0b] text-slate-950 font-black shadow-xs',
+    accentBar: 'bg-[#f59e0b]',
   },
 };
 
