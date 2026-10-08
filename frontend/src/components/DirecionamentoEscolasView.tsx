@@ -12,15 +12,12 @@ import {
   Lock,
   Building2,
   CheckCircle2,
-  BookOpen,
-  Users,
-  GraduationCap,
 } from 'lucide-react';
 import { Escola, Curso, Turma, Matricula, LoginResponse } from '@/lib/api';
 import { GraffitiBannerHeader } from '@/components/GraffitiBannerHeader';
 import { LgpdModal } from '@/components/LgpdModal';
 
-/* ─── TYPES ─── */
+/* ─── PROPS ─── */
 export interface DirecionamentoEscolasViewProps {
   usuarioLogado: LoginResponse;
   escolas: Escola[];
@@ -32,125 +29,74 @@ export interface DirecionamentoEscolasViewProps {
   onLogout: () => void;
 }
 
-interface SchoolDefinition {
+interface SchoolConfig {
   sigla: string;
-  numero: string;
   nome: string;
-  especialidade: string;
-  missao: string;
+  subtitulo: string;
+  descricao: string;
   icone: React.ComponentType<{ className?: string }>;
-  tagEstilo: string;
-  iconeEstilo: string;
-  accentBar: string;
-  watermark: string;
-  hoverBorder: string;
-  hoverGlow: string;
-  btnHover: string;
+  iconColor: string;
+  cardHoverBorder: string;
+  buttonClass: string;
 }
 
-/* ─── DEFINIÇÕES DAS 4 ESCOLAS HISTÓRICAS DE SANTO ANDRÉ ─── */
-const ESCOLAS_DEFINICOES: Record<string, SchoolDefinition> = {
+const ESCOLAS_CONFIG: Record<string, SchoolConfig> = {
   ELT: {
     sigla: 'ELT',
-    numero: '01',
     nome: 'Escola Livre de Teatro',
-    especialidade: 'Artes Cênicas & Dramaturgia',
-    missao:
-      'Referência nacional na formação teatral pública. Foco em pedagogia colaborativa, criação coletiva, dramaturgia autoral e pesquisa de linguagens cênicas contemporâneas.',
+    subtitulo: 'Artes Cênicas & Dramaturgia',
+    descricao: 'Formação teatral pública continuada, criação colaborativa e pesquisa de linguagens cênicas.',
     icone: Theater,
-    tagEstilo:
-      'bg-purple-50 text-purple-700 border-purple-200/90 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80',
-    iconeEstilo:
-      'bg-purple-600 text-white shadow-sm shadow-purple-600/30',
-    accentBar: 'from-purple-600 to-indigo-600',
-    watermark: 'text-purple-900/[0.03] dark:text-purple-400/[0.04]',
-    hoverBorder: 'hover:border-purple-300 dark:hover:border-purple-600/60',
-    hoverGlow: 'hover:shadow-[0_16px_36px_-8px_rgba(147,51,234,0.14)]',
-    btnHover:
-      'hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 dark:hover:text-white',
+    iconColor: 'bg-violet-50 text-violet-600 border-violet-200/80 dark:bg-violet-950/60 dark:text-violet-400 dark:border-violet-800/60',
+    cardHoverBorder: 'hover:border-violet-300 dark:hover:border-violet-700/60',
+    buttonClass: 'group-hover:bg-violet-600 group-hover:text-white group-hover:border-violet-600',
   },
   ELD: {
     sigla: 'ELD',
-    numero: '02',
     nome: 'Escola Livre de Dança',
-    especialidade: 'Corpo, Movimento & Coreografia',
-    missao:
-      'Polo de formação e reflexão continuada sobre a dança contemporânea. Investigação de consciência corporal, composição coreográfica e poéticas do corpo em cena.',
+    subtitulo: 'Corpo, Movimento & Coreografia',
+    descricao: 'Pesquisa em dança contemporânea, consciência corporal e investigação do movimento.',
     icone: Music,
-    tagEstilo:
-      'bg-rose-50 text-rose-700 border-rose-200/90 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/80',
-    iconeEstilo:
-      'bg-rose-600 text-white shadow-sm shadow-rose-600/30',
-    accentBar: 'from-rose-600 to-pink-600',
-    watermark: 'text-rose-900/[0.03] dark:text-rose-400/[0.04]',
-    hoverBorder: 'hover:border-rose-300 dark:hover:border-rose-600/60',
-    hoverGlow: 'hover:shadow-[0_16px_36px_-8px_rgba(244,63,94,0.14)]',
-    btnHover:
-      'hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:text-white',
+    iconColor: 'bg-rose-50 text-rose-600 border-rose-200/80 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800/60',
+    cardHoverBorder: 'hover:border-rose-300 dark:hover:border-rose-700/60',
+    buttonClass: 'group-hover:bg-rose-600 group-hover:text-white group-hover:border-rose-600',
   },
   ELCV: {
     sigla: 'ELCV',
-    numero: '03',
     nome: 'Escola Livre de Cinema e Vídeo',
-    especialidade: 'Audiovisual, Roteiro & Fotografia',
-    missao:
-      'Capacitação técnica e estética nas etapas da produção cinematográfica: direção, roteiro, fotografia de cena, captação sonora, montagem e realização de curtas autorais.',
+    subtitulo: 'Audiovisual, Roteiro & Fotografia',
+    descricao: 'Capacitação em produção cinematográfica: direção, roteiro, fotografia, som e montagem.',
     icone: Film,
-    tagEstilo:
-      'bg-sky-50 text-sky-700 border-sky-200/90 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/80',
-    iconeEstilo:
-      'bg-sky-600 text-white shadow-sm shadow-sky-600/30',
-    accentBar: 'from-sky-600 to-cyan-600',
-    watermark: 'text-sky-900/[0.03] dark:text-sky-400/[0.04]',
-    hoverBorder: 'hover:border-sky-300 dark:hover:border-sky-600/60',
-    hoverGlow: 'hover:shadow-[0_16px_36px_-8px_rgba(14,165,233,0.14)]',
-    btnHover:
-      'hover:bg-sky-600 hover:text-white dark:hover:bg-sky-600 dark:hover:text-white',
+    iconColor: 'bg-sky-50 text-sky-600 border-sky-200/80 dark:bg-sky-950/60 dark:text-sky-400 dark:border-sky-800/60',
+    cardHoverBorder: 'hover:border-sky-300 dark:hover:border-sky-700/60',
+    buttonClass: 'group-hover:bg-sky-600 group-hover:text-white group-hover:border-sky-600',
   },
   EMIA: {
     sigla: 'EMIA',
-    numero: '04',
     nome: 'Escola Municipal de Iniciação Artística',
-    especialidade: 'Multidisciplinaridade • Crianças & Jovens',
-    missao:
-      'Espaço de sensibilização poética e vivências artísticas integradas por faixa etária, conectando artes visuais, teatro, música e dança de maneira colaborativa e lúdica.',
+    subtitulo: 'Multidisciplinaridade • Crianças & Jovens',
+    descricao: 'Sensibilização poética e integração expressiva em artes visuais, música, teatro e dança.',
     icone: Palette,
-    tagEstilo:
-      'bg-amber-50 text-amber-800 border-amber-200/90 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/80',
-    iconeEstilo:
-      'bg-amber-600 text-white shadow-sm shadow-amber-600/30',
-    accentBar: 'from-amber-600 to-orange-600',
-    watermark: 'text-amber-900/[0.03] dark:text-amber-400/[0.04]',
-    hoverBorder: 'hover:border-amber-300 dark:hover:border-amber-600/60',
-    hoverGlow: 'hover:shadow-[0_16px_36px_-8px_rgba(245,158,11,0.14)]',
-    btnHover:
-      'hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white',
+    iconColor: 'bg-amber-50 text-amber-600 border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800/60',
+    cardHoverBorder: 'hover:border-amber-300 dark:hover:border-amber-700/60',
+    buttonClass: 'group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600',
   },
   ELIA: {
     sigla: 'EMIA',
-    numero: '04',
     nome: 'Escola Municipal de Iniciação Artística',
-    especialidade: 'Multidisciplinaridade • Crianças & Jovens',
-    missao:
-      'Espaço de sensibilização poética e vivências artísticas integradas por faixa etária, conectando artes visuais, teatro, música e dança de maneira colaborativa e lúdica.',
+    subtitulo: 'Multidisciplinaridade • Crianças & Jovens',
+    descricao: 'Sensibilização poética e integração expressiva em artes visuais, música, teatro e dança.',
     icone: Palette,
-    tagEstilo:
-      'bg-amber-50 text-amber-800 border-amber-200/90 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/80',
-    iconeEstilo:
-      'bg-amber-600 text-white shadow-sm shadow-amber-600/30',
-    accentBar: 'from-amber-600 to-orange-600',
-    watermark: 'text-amber-900/[0.03] dark:text-amber-400/[0.04]',
-    hoverBorder: 'hover:border-amber-300 dark:hover:border-amber-600/60',
-    hoverGlow: 'hover:shadow-[0_16px_36px_-8px_rgba(245,158,11,0.14)]',
-    btnHover:
-      'hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white',
+    iconColor: 'bg-amber-50 text-amber-600 border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800/60',
+    cardHoverBorder: 'hover:border-amber-300 dark:hover:border-amber-700/60',
+    buttonClass: 'group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600',
   },
 };
 
-/* ─── CARD INDIVIDUAL COM COMPOSIÇÃO EDITORIAL ─── */
-interface SchoolCardItemProps {
+/* ─── CARD COMPONENT ─── */
+interface SchoolCardProps {
   escola: Escola;
-  def: SchoolDefinition;
+  config: SchoolConfig;
   cursosCount: number;
   turmasCount: number;
   vagasCount: number;
@@ -159,146 +105,123 @@ interface SchoolCardItemProps {
   onSelect: () => void;
 }
 
-function SchoolCardItem({
+function SchoolCard({
   escola,
-  def,
+  config,
   cursosCount,
   turmasCount,
   vagasCount,
   isPermitido,
   isEncarregada,
   onSelect,
-}: SchoolCardItemProps) {
-  const IconeComp = def.icone;
+}: SchoolCardProps) {
+  const Icone = config.icone;
 
   return (
     <article
-      className={`group relative rounded-3xl p-6 sm:p-7 md:p-8 flex flex-col justify-between transition-all duration-300 overflow-hidden border bg-white dark:bg-[#0c1017] border-slate-200/90 dark:border-slate-800/90 shadow-[0_2px_8px_rgba(15,23,42,0.04),0_12px_24px_-4px_rgba(15,23,42,0.05)] ${
+      onClick={() => isPermitido && onSelect()}
+      className={`group relative rounded-2xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-200 border bg-white dark:bg-[#0c1017] border-slate-200/90 dark:border-slate-800/80 shadow-2xs ${
         isPermitido
-          ? `hover:-translate-y-1 ${def.hoverBorder} ${def.hoverGlow}`
+          ? `hover:-translate-y-1 hover:shadow-md cursor-pointer ${config.cardHoverBorder}`
           : 'opacity-60 saturate-50 border-dashed cursor-not-allowed'
       }`}
     >
-      {/* Monograma D'água Tipográfico em Marcação Arquitetural */}
-      <span
-        aria-hidden="true"
-        className={`absolute -right-4 -bottom-6 font-mono text-8xl sm:text-9xl font-black select-none pointer-events-none tracking-tighter ${def.watermark} transition-transform duration-500 group-hover:scale-105`}
-      >
-        {def.sigla}
-      </span>
-
-      {/* Topo do Card: Número da Escola, Badge de Categoria e Ícone */}
       <div>
-        <div className="flex items-center justify-between gap-3 mb-5">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold tracking-widest text-slate-400 dark:text-slate-500">
-              #{def.numero}
-            </span>
-            <span className="text-slate-300 dark:text-slate-700">•</span>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border tracking-wide ${def.tagEstilo}`}
-            >
-              {def.especialidade}
-            </span>
-          </div>
-
-          {/* Badge de Acesso Restrito para Encarregadas */}
-          {isEncarregada && (
-            <div>
-              {isPermitido ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Autorizada
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                  <Lock className="w-2.5 h-2.5" />
-                  Restrito
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Título e Ícone */}
-        <div className="flex items-start gap-4 mb-3.5">
+        {/* Topo do Card: Ícone + Sigla + Status */}
+        <div className="flex items-center justify-between mb-4">
           <div
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-300 ${
-              isPermitido ? 'group-hover:scale-105 group-hover:-rotate-2' : ''
-            } ${def.iconeEstilo}`}
+            className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-2xs transition-transform duration-200 ${
+              isPermitido ? 'group-hover:scale-105' : ''
+            } ${config.iconColor}`}
           >
-            <IconeComp className="w-6 h-6" />
+            <Icone className="w-5 h-5" />
           </div>
 
-          <div className="min-w-0 flex-1">
-            <h3
-              className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-snug group-hover:text-slate-800 dark:group-hover:text-slate-100"
-              title={def.nome}
-            >
-              {def.nome}
-            </h3>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono tracking-wider uppercase mt-0.5">
-              {def.sigla} • Santo André
-            </p>
+          <div className="flex items-center gap-2">
+            {isEncarregada && (
+              <span>
+                {isPermitido ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                    <CheckCircle2 className="w-2.5 h-2.5" />
+                    Autorizada
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                    <Lock className="w-2.5 h-2.5" />
+                    Restrito
+                  </span>
+                )}
+              </span>
+            )}
+            <span className="font-mono text-xs font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {config.sigla}
+            </span>
           </div>
         </div>
 
-        {/* Manifesto / Descrição da Escola */}
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6 line-clamp-3">
-          {def.missao}
+        {/* Título & Subtítulo */}
+        <h3
+          className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight leading-snug group-hover:text-slate-800 dark:group-hover:text-slate-100"
+          title={config.nome}
+        >
+          {config.nome}
+        </h3>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+          {config.subtitulo}
+        </p>
+
+        {/* Descrição Compacta */}
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mt-2.5 line-clamp-2">
+          {config.descricao}
         </p>
       </div>
 
-      {/* Rodapé do Card: Indicadores + Botão de Ação */}
-      <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-        {/* Indicadores Operacionais */}
-        <div className="flex items-center gap-4 text-xs">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-mono text-base font-black text-slate-900 dark:text-white">
+      <div className="pt-4">
+        {/* Bloco de Métricas Reais */}
+        <div className="grid grid-cols-3 gap-1 py-2 px-2.5 rounded-xl bg-slate-50 dark:bg-[#12161f] border border-slate-200/70 dark:border-slate-800/70 mb-3 text-center">
+          <div>
+            <span className="block text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono leading-none mb-1">
               {cursosCount || 2}
             </span>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold font-mono">
               Cursos
             </span>
           </div>
-
-          <span className="text-slate-200 dark:text-slate-700">|</span>
-
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-mono text-base font-black text-slate-900 dark:text-white">
+          <div className="border-x border-slate-200 dark:border-slate-800">
+            <span className="block text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono leading-none mb-1">
               {turmasCount || 4}
             </span>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold font-mono">
               Turmas
             </span>
           </div>
-
-          <span className="text-slate-200 dark:text-slate-700">|</span>
-
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-mono text-base font-black text-slate-900 dark:text-white">
+          <div>
+            <span className="block text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono leading-none mb-1">
               {vagasCount}
             </span>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <span className="block text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold font-mono">
               Vagas
             </span>
           </div>
         </div>
 
-        {/* Botão de Entrada */}
+        {/* Botão de Ação */}
         <button
           type="button"
           disabled={!isPermitido}
-          onClick={onSelect}
-          className={`py-2.5 px-5 rounded-xl text-xs font-bold transition-all duration-200 inline-flex items-center justify-center gap-2 border cursor-pointer active:scale-98 ${
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isPermitido) onSelect();
+          }}
+          className={`w-full py-2 px-3 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 ${
             isPermitido
-              ? `bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs ${def.btnHover}`
-              : 'bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700 cursor-not-allowed'
+              ? `cursor-pointer ${config.buttonClass}`
+              : 'opacity-60 cursor-not-allowed'
           }`}
         >
           {isPermitido ? (
             <>
-              <span>Acessar {def.sigla}</span>
+              <span>Acessar {config.sigla}</span>
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
             </>
           ) : (
@@ -313,7 +236,7 @@ function SchoolCardItem({
   );
 }
 
-/* ─── COMPONENTE PRINCIPAL ─── */
+/* ─── MAIN VIEW COMPONENT ─── */
 export function DirecionamentoEscolasView({
   usuarioLogado,
   escolas,
@@ -348,7 +271,7 @@ export function DirecionamentoEscolasView({
 
       {/* Conteúdo Principal */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col">
-        {/* ─── CABEÇALHO EDITORIAL DE IDENTIDADE ─── */}
+        {/* ─── CABEÇALHO EDITORIAL DE IDENTIDADE (APROVADO) ─── */}
         <section className="mb-8 sm:mb-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200/90 dark:border-slate-800/90">
             <div>
@@ -358,12 +281,12 @@ export function DirecionamentoEscolasView({
                 <span>Secretaria de Cultura • Santo André</span>
               </div>
 
-              {/* Título Principal Editorial */}
+              {/* Título Principal */}
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
                 Rede de Escolas Livres
               </h1>
 
-              {/* Saudação ao Usuário e Propósito */}
+              {/* Saudação e Propósito */}
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 mt-2.5 max-w-2xl leading-relaxed">
                 Bem-vindo(a), <span className="font-bold text-slate-900 dark:text-white">{primeiroNome}</span>. Selecione a unidade pedagógica para gerenciar turmas, frequências e registros de matrícula.
               </p>
@@ -382,27 +305,22 @@ export function DirecionamentoEscolasView({
           </div>
         </section>
 
-        {/* ─── GRID EDITORIAL DAS 4 ESCOLAS (2x2) ─── */}
+        {/* ─── GRID DAS 4 ESCOLAS (4 COLUNAS COMPACTAS E MODERNAS) ─── */}
         <section
           aria-label="Seleção de Unidades Escolares"
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-7"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
         >
           {escolasRender.map((escola) => {
             const siglaUpper = escola.sigla.toUpperCase();
-            const def = ESCOLAS_DEFINICOES[siglaUpper] || {
+            const config = ESCOLAS_CONFIG[siglaUpper] || {
               sigla: escola.sigla,
-              numero: '00',
               nome: escola.nome,
-              especialidade: 'Unidade Cultural',
-              missao: escola.descricao || 'Formação artística pública de Santo André.',
+              subtitulo: 'Unidade Cultural',
+              descricao: escola.descricao || 'Formação artística pública de Santo André.',
               icone: Building2,
-              tagEstilo: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300',
-              iconeEstilo: 'bg-slate-800 text-white',
-              accentBar: 'from-slate-600 to-slate-800',
-              watermark: 'text-slate-900/[0.03]',
-              hoverBorder: 'hover:border-slate-400',
-              hoverGlow: 'hover:shadow-md',
-              btnHover: 'hover:bg-slate-800',
+              iconColor: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+              cardHoverBorder: 'hover:border-slate-400 dark:hover:border-slate-600',
+              buttonClass: 'group-hover:bg-slate-900 group-hover:text-white',
             };
 
             const cursosCount = cursos.filter(
@@ -419,10 +337,10 @@ export function DirecionamentoEscolasView({
             const isPermitido = !isEncarregada || permittedIds.includes(escola.id);
 
             return (
-              <SchoolCardItem
+              <SchoolCard
                 key={escola.id}
                 escola={escola}
-                def={def}
+                config={config}
                 cursosCount={cursosCount}
                 turmasCount={turmasCount}
                 vagasCount={vagasCount}
