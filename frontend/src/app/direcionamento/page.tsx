@@ -40,9 +40,9 @@ export default function DirecionamentoPage() {
 
   if (loading || !userEfetivo) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] dark:bg-[#000000] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F1F5F9] dark:bg-[#000000] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             Carregando Hub de Escolas...
           </span>
@@ -51,7 +51,7 @@ export default function DirecionamentoPage() {
     );
   }
 
-  const handleSelecionarEscola = (escolaId: number) => {
+  const handleSelecionarEscola = (escolaId: number | null) => {
     setEscolaSelecionada(escolaId);
     router.push('/panorama');
   };

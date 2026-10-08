@@ -11,8 +11,8 @@ interface GraffitiBannerHeaderProps {
 
 export function GraffitiBannerHeader({ onLogout }: GraffitiBannerHeaderProps) {
   return (
-    <header className="w-full bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-slate-200/90 dark:border-[#27272a] shadow-xs sticky top-0 z-30 transition-colors duration-200">
-      <div className="max-w-6xl w-full mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
+    <header className="w-full bg-white/95 dark:bg-black/90 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/90 shadow-2xs sticky top-0 z-30 transition-colors duration-200">
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Identidade Institucional: Brasão de Santo André + A CASA */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
           <Image
