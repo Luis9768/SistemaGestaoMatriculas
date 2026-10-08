@@ -271,38 +271,14 @@ export function DirecionamentoEscolasView({
 
       {/* Conteúdo Principal */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex flex-col">
-        {/* ─── CABEÇALHO EDITORIAL DE IDENTIDADE (APROVADO) ─── */}
-        <section className="mb-8 sm:mb-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200/90 dark:border-slate-800/90">
-            <div>
-              {/* Etiqueta Institucional */}
-              <div className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Secretaria de Cultura • Santo André</span>
-              </div>
-
-              {/* Título Principal */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
-                Rede de Escolas Livres
-              </h1>
-
-              {/* Saudação e Propósito */}
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 mt-2.5 max-w-2xl leading-relaxed">
-                Bem-vindo(a), <span className="font-bold text-slate-900 dark:text-white">{primeiroNome}</span>. Selecione a unidade pedagógica para gerenciar turmas, frequências e registros de matrícula.
-              </p>
-            </div>
-
-            {/* Badges de Contexto Operacional */}
-            <div className="flex items-center gap-2 self-start md:self-end">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[#0c1017] border border-slate-200/90 dark:border-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-300 shadow-2xs">
-                <Building2 className="w-3.5 h-3.5 text-indigo-500" />
-                4 Escolas Livres
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[#0c1017] border border-slate-200/90 dark:border-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-300 shadow-2xs">
-                Ano Letivo 2026
-              </span>
-            </div>
-          </div>
+        {/* ─── CABEÇALHO DIRETO E LIMPO ─── */}
+        <section className="mb-8 sm:mb-10 pb-6 border-b border-slate-200/90 dark:border-slate-800/90">
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
+            Rede de Escolas Livres
+          </h1>
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2.5 max-w-2xl leading-relaxed">
+            Bem-vindo(a), <span className="font-bold text-slate-900 dark:text-white">{primeiroNome}</span>. Selecione a unidade para gerenciar turmas, frequências e matrículas.
+          </p>
         </section>
 
         {/* ─── GRID DAS 4 ESCOLAS (4 COLUNAS COMPACTAS E MODERNAS) ─── */}
