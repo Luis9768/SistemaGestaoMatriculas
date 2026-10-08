@@ -60,9 +60,7 @@ public class ChamadaService {
         }
 
         List<Matricula> matriculas = matriculaRepository.findByTurmaId(turmaId).stream()
-                .filter(m -> m.getStatus() != StatusMatricula.CANCELADA
-                        && m.getStatus() != StatusMatricula.FILA_ESPERA
-                        && m.getStatus() != StatusMatricula.DESISTENTE_FALTAS)
+                .filter(m -> m.getStatus() == StatusMatricula.CONFIRMADA)
                 .sorted(Comparator.comparing(m -> m.getAluno().getNome(), String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
 

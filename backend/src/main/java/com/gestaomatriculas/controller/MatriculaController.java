@@ -58,10 +58,6 @@ public class MatriculaController {
         return ResponseEntity.ok(matriculaService.desligarPorFaltas(id, motivo));
     }
 
-    @PatchMapping("/{id}/promover-suplente")
-    public ResponseEntity<MatriculaDTO> promoverSuplente(@PathVariable Long id) {
-        return ResponseEntity.ok(matriculaService.promoverSuplente(id));
-    }
 
     @PatchMapping("/{id}/concluir")
     public ResponseEntity<MatriculaDTO> concluir(@PathVariable Long id) {

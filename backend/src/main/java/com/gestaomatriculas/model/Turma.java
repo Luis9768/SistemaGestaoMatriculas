@@ -76,10 +76,6 @@ public class Turma {
     private String diasHorariosLocal;
 
     @Builder.Default
-    @Column(name = "dias_tolerancia_suplencia")
-    private Integer diasToleranciaSuplencia = 60; // Conforme acordado: prazo padrão de até 2 meses (60 dias) para chamar suplentes
-
-    @Builder.Default
     @OneToMany(mappedBy = "turma", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordem ASC, id ASC")
     private java.util.List<TurmaMateria> materias = new java.util.ArrayList<>();
@@ -108,15 +104,6 @@ public class Turma {
         if (idadeMinima != null && idade < idadeMinima) return false;
         if (idadeMaxima != null && idade > idadeMaxima) return false;
         return true;
-    }
-
-    public boolean isChamadaSuplenciaPermitida(LocalDate data) {
-        if (diasToleranciaSuplencia == null || dataInicioAulas == null) return true;
-        return !data.isAfter(dataInicioAulas.plusDays(diasToleranciaSuplencia));
-    }
-
-    public boolean isChamadaSuplenciaPermitida() {
-        return isChamadaSuplenciaPermitida(LocalDate.now());
     }
 }
 

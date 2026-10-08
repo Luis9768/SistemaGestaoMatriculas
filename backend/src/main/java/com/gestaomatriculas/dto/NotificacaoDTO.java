@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class NotificacaoDTO {
     private String id;
-    private String tipo;        // RISCO_FALTAS, LIMITE_FALTAS, DECLARACAO_PRONTA, VAGA_SUPLENCIA, AVISO_SISTEMA
+    private String tipo;        // RISCO_FALTAS, LIMITE_FALTAS, DECLARACAO_PRONTA, VAGA_DISPONIVEL, AVISO_SISTEMA
     private String nivel;       // URGENTE, ALERTA, INFO
     private String titulo;
     private String mensagem;

@@ -154,8 +154,8 @@ export function NotificacoesPopover({ escolaId, turmaId, turmaNome }: Notificaco
       return;
     }
 
-    // 3. Ações de Turma / Vagas / Suplência: abre modal imediatamente e navega
-    if (notif.turmaId || notif.acaoTipo === 'ABRIR_TURMA' || notif.tipo === 'VAGA_SUPLENCIA') {
+    // 3. Ações de Turma / Vagas: abre modal imediatamente e navega
+    if (notif.turmaId || notif.acaoTipo === 'ABRIR_TURMA' || notif.tipo === 'VAGA_DISPONIVEL') {
       if (notif.turmaId) {
         await abrirModalDetalhesTurma(notif.turmaId);
       }
@@ -177,7 +177,7 @@ export function NotificacoesPopover({ escolaId, turmaId, turmaNome }: Notificaco
   const notificacoesFiltradas = notificacoes.filter((n) => {
     if (filtroAba === 'RISCO') return n.tipo === 'RISCO_FALTAS' || n.tipo === 'LIMITE_FALTAS';
     if (filtroAba === 'DECLARACAO') return n.tipo === 'DECLARACAO_PRONTA';
-    if (filtroAba === 'VAGAS') return n.tipo === 'VAGA_SUPLENCIA';
+    if (filtroAba === 'VAGAS') return n.tipo === 'VAGA_DISPONIVEL';
     return true;
   });
 

@@ -94,7 +94,6 @@ public class TurmaService {
                 .idadeMaxima(dto.getIdadeMaxima())
                 .educadorResponsavel(dto.getEducadorResponsavel())
                 .diasHorariosLocal(dto.getDiasHorariosLocal())
-                .diasToleranciaSuplencia(dto.getDiasToleranciaSuplencia() != null ? dto.getDiasToleranciaSuplencia() : 60)
                 .status(dto.getStatus() == null ? StatusTurma.ABERTA : dto.getStatus())
                 .build();
 
@@ -140,9 +139,6 @@ public class TurmaService {
         turma.setIdadeMaxima(dto.getIdadeMaxima());
         turma.setEducadorResponsavel(dto.getEducadorResponsavel());
         turma.setDiasHorariosLocal(dto.getDiasHorariosLocal());
-        if (dto.getDiasToleranciaSuplencia() != null) {
-            turma.setDiasToleranciaSuplencia(dto.getDiasToleranciaSuplencia());
-        }
         if (dto.getStatus() != null) {
             turma.setStatus(dto.getStatus());
         }
@@ -392,8 +388,6 @@ public class TurmaService {
                 .vagasOcupadas(turma.getVagasOcupadas())
                 .idadeMinima(turma.getIdadeMinima())
                 .idadeMaxima(turma.getIdadeMaxima())
-                .diasToleranciaSuplencia(turma.getDiasToleranciaSuplencia())
-                .suplenciaAberta(turma.isChamadaSuplenciaPermitida(LocalDate.now()))
                 .status(turma.getStatus())
                 .matriculaAberta(turma.isPeriodoMatriculaAberto())
                 .educadorResponsavel(turma.getEducadorResponsavel())

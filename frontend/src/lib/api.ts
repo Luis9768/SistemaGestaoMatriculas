@@ -135,8 +135,6 @@ export interface Turma {
   vagasOcupadas?: number;
   idadeMinima?: number;
   idadeMaxima?: number;
-  diasToleranciaSuplencia?: number;
-  suplenciaAberta?: boolean;
   status?: 'ABERTA' | 'FECHADA' | 'EM_ANDAMENTO' | 'CONCLUIDA';
   matriculaAberta?: boolean;
   educadorResponsavel?: string;
@@ -200,7 +198,7 @@ export interface Matricula {
   responsavelTelefone?: string;
   dataMatricula: string;
   canalOrigem: 'PRESENCIAL' | 'FORMS' | 'SITE' | 'PLANILHA' | 'CULTURA_AZ';
-  status: 'PENDENTE' | 'INSCRITO' | 'EM_SELECAO' | 'APROVADO' | 'CONFIRMADA' | 'CANCELADA' | 'DESISTENTE_FALTAS' | 'FILA_ESPERA' | 'CONCLUIDA';
+  status: 'CONFIRMADA' | 'CANCELADA' | 'DESISTENTE_FALTAS' | 'CONCLUIDA' | string;
   observacoes?: string;
 }
 
@@ -1019,18 +1017,6 @@ export const api = {
     return res.json();
   },
 
-  async promoverSuplente(id: number): Promise<Matricula> {
-    const res = await fetch(`${API_BASE}/matriculas/${id}/promover-suplente`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Erro ao promover suplente para matrícula ativa' }));
-      throw new Error(err.message || 'Erro ao promover suplente para matrícula ativa');
-    }
-    return res.json();
-  },
-
   // Importação
   async importarPlanilha(file: File): Promise<ImportacaoResultado> {
     const formData = new FormData();
@@ -1297,7 +1283,7 @@ export const api = {
 
 export interface Notificacao {
   id: string;
-  tipo: 'RISCO_FALTAS' | 'LIMITE_FALTAS' | 'DECLARACAO_PRONTA' | 'VAGA_SUPLENCIA' | 'AVISO_SISTEMA';
+  tipo: 'RISCO_FALTAS' | 'LIMITE_FALTAS' | 'DECLARACAO_PRONTA' | 'VAGA_DISPONIVEL' | 'AVISO_SISTEMA';
   nivel: 'URGENTE' | 'ALERTA' | 'INFO';
   titulo: string;
   mensagem: string;

@@ -185,35 +185,6 @@ public class MatriculaService {
         return toDTO(atualizada);
     }
 
-    @CacheEvict(value = {"turmas", "dashboard_stats"}, allEntries = true)
-    @Transactional
-    public MatriculaDTO promoverSuplente(Long id) {
-        Matricula matricula = matriculaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Matrícula não encontrada com id: " + id));
-
-        Turma turma = matricula.getTurma();
-        if (securityService.isEncarregada() && turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null
-                && !securityService.temAcessoAEscola(turma.getCurso().getEscola().getId())) {
-            throw new BusinessException("Acesso negado: você não possui permissão para gerenciar suplentes desta escola.");
-        }
-        if (!turma.isChamadaSuplenciaPermitida()) {
-            throw new BusinessException("O prazo limite para convocação de suplentes desta turma foi encerrado ("
-                    + turma.getDiasToleranciaSuplencia() + " dias após o início das aulas).");
-        }
-        if (!turma.temVagasDisponiveis()) {
-            throw new BusinessException("Não há vagas disponíveis na turma para promover o suplente.");
-        }
-
-        matricula.setStatus(StatusMatricula.CONFIRMADA);
-        String obsAtual = matricula.getObservacoes() != null ? matricula.getObservacoes() + " | " : "";
-        matricula.setObservacoes(obsAtual + "Promovido da Fila de Espera para Matrícula Confirmada após convocação (WhatsApp/E-mail).");
-        Matricula atualizada = matriculaRepository.save(matricula);
-
-        turma.setVagasOcupadas(turma.getVagasOcupadas() + 1);
-        turmaRepository.save(turma);
-
-        return toDTO(atualizada);
-    }
 
     private MatriculaDTO realizarMatricula(Aluno aluno, Turma turma, CanalOrigem canal, String observacoes) {
         // Validação de re-matrícula: impede duplicata se houver matrícula ativa

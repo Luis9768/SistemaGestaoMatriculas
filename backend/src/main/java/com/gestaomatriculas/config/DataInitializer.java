@@ -259,7 +259,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vagasOcupadas(1)
                     .idadeMinima(17)
                     .idadeMaxima(99)
-                    .diasToleranciaSuplencia(15)
                     .status(StatusTurma.ABERTA)
                     .build());
 
@@ -274,7 +273,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vagasOcupadas(1)
                     .idadeMinima(5)
                     .idadeMaxima(6)
-                    .diasToleranciaSuplencia(7)
                     .status(StatusTurma.ABERTA)
                     .build());
 
@@ -289,7 +287,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vagasOcupadas(1)
                     .idadeMinima(16)
                     .idadeMaxima(99)
-                    .diasToleranciaSuplencia(10)
                     .status(StatusTurma.ABERTA)
                     .build());
 
@@ -304,7 +301,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vagasOcupadas(28)
                     .idadeMinima(17)
                     .idadeMaxima(99)
-                    .diasToleranciaSuplencia(15)
                     .status(StatusTurma.CONCLUIDA)
                     .build());
 
@@ -1011,7 +1007,7 @@ public class DataInitializer implements CommandLineRunner {
                     .turma(turma)
                     .canalOrigem(CanalOrigem.CULTURA_AZ)
                     .status(StatusMatricula.CONFIRMADA)
-                    .observacoes("Acumulou 3 faltas consecutivas recentes. Vaga sob risco iminente de repasse para suplente.")
+                    .observacoes("Acumulou 3 faltas consecutivas recentes. Aluno em processo de notificação e desligamento por evasão escolar.")
                     .build());
 
             salvarPresenca(m, hoje.minusDays(18), StatusPresenca.PRESENTE, "O Ator sobre Si Mesmo - Memória Sensorial");

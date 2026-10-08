@@ -45,8 +45,6 @@ public class TurmaDTO {
 
     private Integer idadeMinima;
     private Integer idadeMaxima;
-    private Integer diasToleranciaSuplencia;
-    private Boolean suplenciaAberta;
 
     private Integer vagasOcupadas;
     private StatusTurma status;

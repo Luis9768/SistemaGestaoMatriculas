@@ -34,7 +34,6 @@ interface AppContextType {
   carregarMatriculas: () => Promise<void>;
   carregarDadosIniciais: (userAtivo?: LoginResponse | null) => Promise<void>;
   handleLogout: () => void;
-  handlePromoverSuplente: (matriculaId: number, alunoNome: string) => Promise<void>;
   handleCancelarMatricula: (matriculaId: number) => Promise<void>;
   handleSalvarCursoComDisciplinas: (cursoData: Curso) => Promise<void>;
   handleCriarTurma: (e: React.FormEvent) => Promise<void>;
@@ -114,7 +113,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     vagasTotais: 30,
     idadeMinima: undefined,
     idadeMaxima: undefined,
-    diasToleranciaSuplencia: 60,
     materiasNomes: [],
   });
 
@@ -372,20 +370,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handlePromoverSuplente = async (matriculaId: number, alunoNome: string) => {
-    if (!confirm(`Deseja promover o suplente ${alunoNome} para vaga efetiva nesta turma?`)) return;
-    try {
-      await api.promoverSuplente(matriculaId);
-      setMatriculas((prev) =>
-        prev.map((m) => (m.id === matriculaId ? { ...m, status: 'CONFIRMADA' } : m))
-      );
-      mostrarFeedback('sucesso', `Suplente ${alunoNome} promovido com sucesso para vaga efetiva!`);
-      await Promise.all([carregarMatriculas(), carregarDadosEscola()]);
-    } catch (e: any) {
-      mostrarFeedback('erro', e.message || 'Erro ao promover suplente.');
-    }
-  };
-
   const handleCancelarMatricula = async (matriculaId: number) => {
     if (!confirm('Deseja realmente cancelar esta matrícula? A vaga na turma será liberada imediatamente.')) return;
     try {
@@ -443,7 +427,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         vagasTotais: 30,
         idadeMinima: undefined,
         idadeMaxima: undefined,
-        diasToleranciaSuplencia: 60,
         materiasNomes: [],
       });
       mostrarFeedback('sucesso', `Turma ${novaTurma.codigo} aberta com sucesso!`);
@@ -455,7 +438,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const handleSubmeterInscricao = async (payload: InscricaoExternaPayload) => {
     await api.inscreverExterno(payload);
-    mostrarFeedback('sucesso', 'Inscrição confirmada com sucesso!');
+    mostrarFeedback('sucesso', 'Matrícula realizada com sucesso!');
     await carregarDadosEscola();
   };
 
@@ -555,7 +538,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         carregarMatriculas,
         carregarDadosIniciais,
         handleLogout,
-        handlePromoverSuplente,
         handleCancelarMatricula,
         handleSalvarCursoComDisciplinas,
         handleCriarTurma,
