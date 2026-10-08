@@ -168,36 +168,22 @@ export function DirecionamentoEscolasView({
 
   const primeiroNome = usuarioLogado?.nome ? usuarioLogado.nome.trim().split(/\s+/)[0] : 'Coordenação';
 
-  // Métricas Consolidadas da Rede
-  const totalCursos = cursos.length || 19;
-  const totalTurmas = turmas.length || 36;
-  const totalVagas = turmas.reduce((acc, t) => acc + (t.vagasTotais || 0), 0) || 865;
-
   return (
-    <div className="min-h-screen bg-[#F3EEE6] dark:bg-[#0F0E0D] text-[#1C1917] dark:text-[#EDE8E0] flex flex-col font-sans transition-colors duration-200 relative overflow-hidden">
-      {/* ─── TEXTURA ANALÓGICA DE GRÃO (SVG NOISE DISCRETO) ─── */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-[0.035] dark:opacity-[0.045] mix-blend-overlay z-0"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        }}
-        aria-hidden="true"
-      />
-
+    <div className="min-h-screen bg-[#F1F5F9] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200 relative overflow-hidden">
       {/* Top Header Institucional Integrado */}
       <GraffitiBannerHeader onLogout={onLogout} />
 
       {/* Conteúdo Principal (Ocupa a Altura Útil) */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col justify-between relative z-10">
-        {/* ─── CABEÇALHO EDITORIAL & RESUMO DA REDE ─── */}
+        {/* ─── CABEÇALHO EDITORIAL ─── */}
         <section className="mb-8 sm:mb-12">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 border-b border-[#E3DBD0] dark:border-[#211E1B]">
+          <div className="pb-6 border-b border-slate-200/90 dark:border-slate-800/90">
             <div>
               <motion.h1
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
-                className="font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-none text-[#1C1917] dark:text-[#EDE8E0]"
+                className="font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-none text-slate-900 dark:text-white"
               >
                 Rede de Escolas Livres
               </motion.h1>
@@ -205,27 +191,11 @@ export function DirecionamentoEscolasView({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] }}
-                className="text-base sm:text-lg text-[#6E675F] dark:text-[#A39B91] mt-3 font-medium"
+                className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mt-3 font-medium"
               >
-                Olá, <span className="text-[#1C1917] dark:text-[#EDE8E0] font-semibold">{primeiroNome}</span>. Por onde começamos?
+                Olá, <span className="text-slate-900 dark:text-white font-semibold">{primeiroNome}</span>. Por onde começamos?
               </motion.p>
             </div>
-
-            {/* Resumo Consolidado da Rede (Tipografia Clara e Cadenciada) */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15, ease: [0.2, 0.8, 0.2, 1] }}
-              className="flex items-center gap-2 text-xs sm:text-sm font-mono text-[#7D746A] dark:text-[#91887D] self-start lg:self-end bg-[#EAE2D5]/70 dark:bg-[#1A1714]/80 px-4 py-2 rounded-xl border border-[#DFD5C5] dark:border-[#2B2621]"
-            >
-              <span>4 escolas</span>
-              <span className="opacity-40">·</span>
-              <span>{totalCursos} cursos</span>
-              <span className="opacity-40">·</span>
-              <span>{totalTurmas} turmas</span>
-              <span className="opacity-40">·</span>
-              <span className="font-bold text-[#1C1917] dark:text-[#EDE8E0]">{totalVagas} vagas</span>
-            </motion.div>
           </div>
         </section>
 
@@ -388,7 +358,7 @@ export function DirecionamentoEscolasView({
         </section>
 
         {/* ─── RODAPÉ INSTITUCIONAL DISCRETO ─── */}
-        <footer className="mt-8 pt-6 border-t border-[#E3DBD0] dark:border-[#211E1B] flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[#736B63] dark:text-[#9C948A]">
+        <footer className="mt-8 pt-6 border-t border-slate-200/90 dark:border-slate-800/90 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-3">
             <Image
               src="/logo_santo_andre.png"
