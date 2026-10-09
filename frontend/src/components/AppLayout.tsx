@@ -79,39 +79,54 @@ function getSchoolColorClasses(sigla?: string) {
   switch (sigla) {
     case 'ELT':
       return {
-        bg: 'bg-violet-950/60',
-        text: 'text-violet-300',
-        border: 'border-violet-700/60',
-        dot: 'bg-violet-400',
+        bg: 'bg-stone-900/60 dark:bg-[#141416]/60',
+        text: 'text-stone-200 dark:text-zinc-200',
+        border: 'border-stone-800/80 dark:border-[#27272a]',
+        dot: 'bg-violet-500',
+        activeBorder: 'border-violet-500',
+        activeTint: 'bg-violet-500/10 dark:bg-violet-500/15',
+        activeText: 'text-violet-300',
       };
     case 'ELD':
       return {
-        bg: 'bg-rose-950/60',
-        text: 'text-rose-300',
-        border: 'border-rose-700/60',
-        dot: 'bg-rose-400',
+        bg: 'bg-stone-900/60 dark:bg-[#141416]/60',
+        text: 'text-stone-200 dark:text-zinc-200',
+        border: 'border-stone-800/80 dark:border-[#27272a]',
+        dot: 'bg-rose-500',
+        activeBorder: 'border-rose-500',
+        activeTint: 'bg-rose-500/10 dark:bg-rose-500/15',
+        activeText: 'text-rose-300',
       };
     case 'ELCV':
       return {
-        bg: 'bg-sky-950/60',
-        text: 'text-sky-300',
-        border: 'border-sky-700/60',
-        dot: 'bg-sky-400',
+        bg: 'bg-stone-900/60 dark:bg-[#141416]/60',
+        text: 'text-stone-200 dark:text-zinc-200',
+        border: 'border-stone-800/80 dark:border-[#27272a]',
+        dot: 'bg-sky-500',
+        activeBorder: 'border-sky-500',
+        activeTint: 'bg-sky-500/10 dark:bg-sky-500/15',
+        activeText: 'text-sky-300',
       };
     case 'EMIA':
     case 'ELIA':
       return {
-        bg: 'bg-amber-950/60',
-        text: 'text-amber-300',
-        border: 'border-amber-700/60',
-        dot: 'bg-amber-400',
+        bg: 'bg-stone-900/60 dark:bg-[#141416]/60',
+        text: 'text-stone-200 dark:text-zinc-200',
+        border: 'border-stone-800/80 dark:border-[#27272a]',
+        dot: 'bg-amber-500',
+        activeBorder: 'border-amber-500',
+        activeTint: 'bg-amber-500/10 dark:bg-amber-500/15',
+        activeText: 'text-amber-300',
       };
     default:
       return {
-        bg: 'bg-slate-800/60',
-        text: 'text-slate-300',
-        border: 'border-slate-700/80',
-        dot: 'bg-slate-400',
+        bg: 'bg-stone-900/60 dark:bg-[#141416]/60',
+        text: 'text-stone-200 dark:text-zinc-200',
+        border: 'border-stone-800/80 dark:border-[#27272a]',
+        dot: 'bg-stone-400',
+        activeBorder: 'border-stone-400',
+        activeTint: 'bg-stone-500/10 dark:bg-stone-500/15',
+        activeText: 'text-stone-200',
       };
   }
 }
@@ -382,21 +397,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => podeTrocarEscola && setEscolaDropdownOpen((prev) => !prev)}
               disabled={!podeTrocarEscola}
-              className={`w-full flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all ${
-                schoolColor.bg
-              } ${schoolColor.border} hover:opacity-90 ${
+              className={`w-full flex items-center gap-2.5 p-2 rounded-xl border border-slate-800/80 dark:border-[#27272a] bg-slate-900/40 dark:bg-[#141416]/60 text-left transition-all hover:border-slate-700/80 ${
                 isCollapsed ? 'justify-center p-2' : 'justify-between'
               } ${!podeTrocarEscola ? 'cursor-default' : 'cursor-pointer'}`}
               title={escolaAtualObj ? escolaAtualObj.nome : 'Rede Municipal'}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${schoolColor.dot}`} />
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${schoolColor.dot}`} />
                 {!isCollapsed && (
                   <div className="min-w-0">
-                    <p className={`text-xs font-extrabold truncate ${schoolColor.text}`}>
+                    <p className="text-xs font-semibold text-slate-200 dark:text-zinc-200 truncate">
                       {escolaAtualObj ? escolaAtualObj.sigla : 'REDE'}
                     </p>
-                    <p className="text-[10px] text-slate-400 truncate">
+                    <p className="text-[11px] text-slate-400 dark:text-zinc-400 truncate">
                       {escolaAtualObj ? escolaAtualObj.nome : 'Todas as Escolas'}
                     </p>
                   </div>
@@ -484,7 +497,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             return (
               <div key={section.title} className="space-y-1">
                 {!isCollapsed && (
-                  <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-mono">
+                  <p className="px-2.5 text-xs font-medium text-slate-400 dark:text-zinc-500">
                     {section.title}
                   </p>
                 )}
@@ -497,18 +510,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       key={item.href}
                       href={item.href}
                       title={isCollapsed ? item.label : undefined}
-                      className={`group flex items-center gap-3 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
-                        isCollapsed ? 'justify-center px-0' : ''
+                      className={`group flex items-center gap-3 px-2.5 py-2 text-xs transition-all duration-150 cursor-pointer ${
+                        isCollapsed ? 'justify-center px-0 rounded-xl' : ''
                       } ${
                         isActive
-                          ? 'bg-indigo-600 text-white font-bold shadow-sm shadow-indigo-950/40'
-                          : 'text-slate-300 hover:text-white hover:bg-white/[0.08]'
+                          ? `border-l-2 ${schoolColor.activeBorder} ${schoolColor.activeTint} ${schoolColor.activeText} rounded-r-xl rounded-l-none font-semibold`
+                          : 'text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-xl'
                       }`}
                     >
                       <ItemIcon
                         className={`w-4 h-4 shrink-0 transition-colors ${
                           isActive
-                            ? 'text-white'
+                            ? schoolColor.activeText
                             : 'text-slate-400 group-hover:text-white'
                         }`}
                       />
@@ -517,7 +530,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         <span
                           className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
                             isActive
-                              ? 'bg-white/20 text-white'
+                              ? `${schoolColor.activeTint} ${schoolColor.activeText}`
                               : 'bg-white/10 text-slate-300'
                           }`}
                         >

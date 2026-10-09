@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Turma,
   TurmaMateria,
@@ -12,49 +13,1014 @@ import {
   formatarCpfMascara,
 } from '@/lib/api';
 import Link from 'next/link';
-import { NotificacoesPopover } from '@/components/NotificacoesPopover';
 import { ModalGerenciarMaterias } from '@/components/ModalGerenciarMaterias';
 import { useApp } from '@/context/AppContext';
 import {
-  Calendar,
   BookOpen,
-  UserCheck,
-  UserX,
-  Clock,
   CheckCircle2,
   XCircle,
-  AlertCircle,
   AlertTriangle,
   Plus,
-  ArrowLeft,
   Search,
   Save,
   CheckCheck,
   Shield,
-  Layers,
-  ChevronRight,
+  ChevronDown,
   Edit3,
   Users,
   UserPlus,
-  Eye,
-  Info,
-  CalendarDays,
+  ArrowRight,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  X,
+  Check,
+  Calendar,
 } from 'lucide-react';
 
+/* ─── School Accent Palette Helper ─── */
+interface SchoolTheme {
+  name: string;
+  sigla: string;
+  primaryBg: string;
+  primaryText: string;
+  accentText: string;
+  accentBorder: string;
+  tabActiveBg: string;
+  tabActiveText: string;
+  badgeBg: string;
+  dotBg: string;
+  ringColor: string;
+  wipeHover: string;
+}
+
+function getSchoolTheme(sigla?: string): SchoolTheme {
+  switch (sigla) {
+    case 'ELT':
+      return {
+        name: 'Escola Livre de Teatro',
+        sigla: 'ELT',
+        primaryBg: 'bg-violet-700 hover:bg-violet-800 text-white',
+        primaryText: 'text-violet-100',
+        accentText: 'text-violet-600 dark:text-violet-400',
+        accentBorder: 'border-violet-600 dark:border-violet-500',
+        tabActiveBg: 'bg-violet-950/15 dark:bg-violet-500/20',
+        tabActiveText: 'text-violet-900 dark:text-violet-300',
+        badgeBg: 'bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/20',
+        dotBg: 'bg-violet-500',
+        ringColor: 'focus:ring-violet-500',
+        wipeHover: 'hover:bg-violet-750',
+      };
+    case 'ELD':
+      return {
+        name: 'Escola Livre de Dança',
+        sigla: 'ELD',
+        primaryBg: 'bg-rose-600 hover:bg-rose-700 text-white',
+        primaryText: 'text-rose-100',
+        accentText: 'text-rose-600 dark:text-rose-400',
+        accentBorder: 'border-rose-600 dark:border-rose-500',
+        tabActiveBg: 'bg-rose-950/15 dark:bg-rose-500/20',
+        tabActiveText: 'text-rose-900 dark:text-rose-300',
+        badgeBg: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20',
+        dotBg: 'bg-rose-500',
+        ringColor: 'focus:ring-rose-500',
+        wipeHover: 'hover:bg-rose-650',
+      };
+    case 'ELCV':
+      return {
+        name: 'Escola Livre de Cinema e Vídeo',
+        sigla: 'ELCV',
+        primaryBg: 'bg-sky-600 hover:bg-sky-700 text-white',
+        primaryText: 'text-sky-100',
+        accentText: 'text-sky-600 dark:text-sky-400',
+        accentBorder: 'border-sky-600 dark:border-sky-500',
+        tabActiveBg: 'bg-sky-950/15 dark:bg-sky-500/20',
+        tabActiveText: 'text-sky-900 dark:text-sky-300',
+        badgeBg: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20',
+        dotBg: 'bg-sky-500',
+        ringColor: 'focus:ring-sky-500',
+        wipeHover: 'hover:bg-sky-650',
+      };
+    case 'EMIA':
+    case 'ELIA':
+      return {
+        name: 'Escola Municipal de Iniciação Artística',
+        sigla: 'EMIA',
+        primaryBg: 'bg-amber-600 hover:bg-amber-700 text-white',
+        primaryText: 'text-amber-100',
+        accentText: 'text-amber-600 dark:text-amber-400',
+        accentBorder: 'border-amber-600 dark:border-amber-500',
+        tabActiveBg: 'bg-amber-950/15 dark:bg-amber-500/20',
+        tabActiveText: 'text-amber-900 dark:text-amber-300',
+        badgeBg: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
+        dotBg: 'bg-amber-500',
+        ringColor: 'focus:ring-amber-500',
+        wipeHover: 'hover:bg-amber-650',
+      };
+    default:
+      return {
+        name: 'Rede de Escolas Livres',
+        sigla: 'REDE',
+        primaryBg: 'bg-stone-900 hover:bg-stone-800 text-white dark:bg-stone-100 dark:hover:bg-white dark:text-stone-900',
+        primaryText: 'text-stone-100',
+        accentText: 'text-stone-900 dark:text-stone-100',
+        accentBorder: 'border-stone-600',
+        tabActiveBg: 'bg-stone-500/15 dark:bg-stone-500/25',
+        tabActiveText: 'text-stone-900 dark:text-stone-100',
+        badgeBg: 'bg-stone-500/10 text-stone-700 dark:text-stone-300 border-stone-500/20',
+        dotBg: 'bg-stone-400',
+        ringColor: 'focus:ring-stone-500',
+        wipeHover: 'hover:bg-stone-800',
+      };
+  }
+}
+
+/* ─── Tear-off Calendar Helper (Folhinha) ─── */
+function parseDataFolhinha(isoDate: string) {
+  if (!isoDate) {
+    return { diaSemana: '', diaNumero: '', mesAbreviado: '', mesAnoGrupo: '' };
+  }
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const dateObj = new Date(year, (month || 1) - 1, day || 1);
+
+  const diasSemana = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const meses = [
+    'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+    'jul', 'ago', 'set', 'out', 'nov', 'dez'
+  ];
+  const mesesCompletos = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  return {
+    diaSemana: diasSemana[dateObj.getDay()] || '',
+    diaNumero: String(day).padStart(2, '0'),
+    mesAbreviado: meses[(month || 1) - 1] || '',
+    mesAnoGrupo: `${mesesCompletos[(month || 1) - 1] || ''} ${year}`,
+  };
+}
+
+/* ─── Sparkline Component ─── */
+function SparklineFrequencia({ historico }: { historico: ChamadaResumo[] }) {
+  // Ordenar cronologicamente para a curva de evolução
+  const dados = useMemo(() => {
+    return [...historico]
+      .reverse()
+      .map((c) => c.percentualPresenca);
+  }, [historico]);
+
+  if (dados.length < 2) return null;
+
+  const min = Math.min(...dados, 50);
+  const max = Math.max(...dados, 100);
+  const range = max - min || 1;
+
+  const width = 110;
+  const height = 30;
+  const padding = 4;
+
+  const points = dados.map((val, idx) => {
+    const x = padding + (idx / (dados.length - 1)) * (width - padding * 2);
+    const y = height - padding - ((val - min) / range) * (height - padding * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  const pathD = `M ${points.join(' L ')}`;
+  const primeiro = dados[0];
+  const ultimo = dados[dados.length - 1];
+  const diff = ultimo - primeiro;
+
+  return (
+    <div className="flex items-center gap-2.5">
+      <svg width={width} height={height} className="overflow-visible">
+        <path
+          d={pathD}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-stone-500 dark:text-stone-400"
+        />
+        {/* Ponto final */}
+        {points.length > 0 && (
+          <circle
+            cx={points[points.length - 1].split(',')[0]}
+            cy={points[points.length - 1].split(',')[1]}
+            r="3"
+            className="fill-stone-900 dark:fill-stone-100"
+          />
+        )}
+      </svg>
+
+      <div className="text-[11px] font-mono flex items-center gap-1 font-medium">
+        {diff > 1 ? (
+          <span className="text-emerald-700 dark:text-emerald-400 flex items-center gap-0.5">
+            <TrendingUp className="w-3.5 h-3.5" />
+            +{diff}%
+          </span>
+        ) : diff < -1 ? (
+          <span className="text-rose-700 dark:text-rose-400 flex items-center gap-0.5">
+            <TrendingDown className="w-3.5 h-3.5" />
+            {diff}%
+          </span>
+        ) : (
+          <span className="text-stone-600 dark:text-stone-400 flex items-center gap-0.5">
+            <Minus className="w-3.5 h-3.5" />
+            estável
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Custom Combobox for Turmas ─── */
+interface ComboboxTurmaProps {
+  turmas: Turma[];
+  turmaSelecionadaId: number | null;
+  onSelect: (id: number) => void;
+  schoolTheme: SchoolTheme;
+}
+
+function ComboboxTurma({
+  turmas,
+  turmaSelecionadaId,
+  onSelect,
+  schoolTheme,
+}: ComboboxTurmaProps) {
+  const [aberto, setAberto] = useState(false);
+  const [busca, setBusca] = useState('');
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const turmaAtual = useMemo(() => {
+    return turmas.find((t) => t.id === turmaSelecionadaId) || null;
+  }, [turmas, turmaSelecionadaId]);
+
+  const filtradas = useMemo(() => {
+    if (!busca.trim()) return turmas;
+    const q = busca.toLowerCase();
+    return turmas.filter(
+      (t) =>
+        (t.cursoNome && t.cursoNome.toLowerCase().includes(q)) ||
+        (t.codigo && t.codigo.toLowerCase().includes(q))
+    );
+  }, [turmas, busca]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setAberto(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <button
+        type="button"
+        onClick={() => setAberto((prev) => !prev)}
+        className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-stone-200 dark:border-[#262422] bg-white dark:bg-[#141210] hover:border-stone-400 dark:hover:border-stone-700 transition cursor-pointer text-left min-w-[240px] max-w-sm"
+      >
+        <span className={`w-2 h-2 rounded-full shrink-0 ${schoolTheme.dotBg}`} />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold text-stone-900 dark:text-stone-100 truncate">
+            {turmaAtual?.cursoNome || turmaAtual?.codigo || 'Selecione uma turma'}
+          </p>
+          {turmaAtual && (
+            <p className="text-[10px] text-stone-600 dark:text-stone-400 font-mono truncate">
+              {turmaAtual.codigo}
+            </p>
+          )}
+        </div>
+        <ChevronDown className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+      </button>
+
+      {aberto && (
+        <div className="absolute top-full left-0 mt-1.5 w-72 bg-white dark:bg-[#141210] border border-stone-200 dark:border-[#262422] rounded-xl shadow-xl z-50 p-2 text-xs">
+          <div className="relative mb-2">
+            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              autoFocus
+              placeholder="Buscar turma..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-stone-50 dark:bg-[#1c1a18] border border-stone-200 dark:border-[#2e2a27] text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-stone-400 text-xs"
+            />
+          </div>
+
+          <div className="max-h-56 overflow-y-auto space-y-1">
+            {filtradas.length === 0 ? (
+              <div className="p-3 text-center text-[11px] text-stone-400">
+                Nenhuma turma encontrada.
+              </div>
+            ) : (
+              filtradas.map((t) => {
+                const isSelected = t.id === turmaSelecionadaId;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      if (t.id) {
+                        onSelect(t.id);
+                        setAberto(false);
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition cursor-pointer ${
+                      isSelected
+                        ? `${schoolTheme.tabActiveBg} ${schoolTheme.tabActiveText} font-semibold`
+                        : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#1c1a18]'
+                    }`}
+                  >
+                    <div className="min-w-0 pr-2">
+                      <p className="truncate font-medium">{t.cursoNome || t.codigo}</p>
+                      <p className="text-[10px] text-stone-600 dark:text-stone-400 font-mono truncate">
+                        {t.codigo}
+                      </p>
+                    </div>
+                    {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Segmented Tabs for Subjects (Matérias) ─── */
+interface AbasMateriasProps {
+  materias: TurmaMateria[];
+  materiaSelecionadaId: number | null;
+  onSelect: (id: number) => void;
+  onAdicionarMateria: () => void;
+  schoolTheme: SchoolTheme;
+}
+
+function AbasMaterias({
+  materias,
+  materiaSelecionadaId,
+  onSelect,
+  onAdicionarMateria,
+  schoolTheme,
+}: AbasMateriasProps) {
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex items-center gap-1 p-1 bg-stone-100 dark:bg-[#181614] rounded-xl border border-stone-200/80 dark:border-[#262422] overflow-x-auto max-w-full">
+        {materias.map((m) => {
+          const ativo = m.id === materiaSelecionadaId;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => {
+                if (m.id) onSelect(m.id);
+              }}
+              className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer shrink-0 ${
+                ativo
+                  ? 'text-stone-900 dark:text-stone-100 font-semibold'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
+              }`}
+            >
+              {ativo && (
+                <motion.span
+                  layoutId="activeMateriaTab"
+                  className={`absolute inset-0 rounded-lg ${schoolTheme.tabActiveBg} border ${schoolTheme.accentBorder}`}
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
+              )}
+              <span className="relative z-10">{m.nome}</span>
+            </button>
+          );
+        })}
+
+        {/* Botão de Adicionar Matéria no Fim da Linha de Abas */}
+        <button
+          type="button"
+          onClick={onAdicionarMateria}
+          className="relative z-10 p-1.5 rounded-lg text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/60 dark:hover:bg-[#262422] transition cursor-pointer shrink-0"
+          title="Adicionar nova matéria a esta turma"
+          aria-label="Adicionar matéria"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Executive Summary Strip (Faixa de Resumo) ─── */
+interface ResumoFrequenciaFaixaProps {
+  frequenciaMedia: number;
+  totalAulas: number;
+  alunosEmRisco: number;
+  historico: ChamadaResumo[];
+  schoolTheme: SchoolTheme;
+}
+
+function ResumoFrequenciaFaixa({
+  frequenciaMedia,
+  totalAulas,
+  alunosEmRisco,
+  historico,
+}: ResumoFrequenciaFaixaProps) {
+  return (
+    <section className="bg-stone-50/70 dark:bg-[#141210] border border-stone-200/80 dark:border-[#262422] rounded-xl p-4 sm:px-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center gap-6 sm:gap-10 flex-wrap">
+        {/* Frequência Média */}
+        <div>
+          <span className="block text-[11px] font-medium text-stone-500 dark:text-stone-400">
+            Frequência média
+          </span>
+          <span className="text-xl sm:text-2xl font-bold font-mono text-stone-900 dark:text-stone-100">
+            {totalAulas > 0 ? `${frequenciaMedia}%` : '—'}
+          </span>
+        </div>
+
+        {/* Total de Aulas */}
+        <div>
+          <span className="block text-[11px] font-medium text-stone-500 dark:text-stone-400">
+            Total de aulas
+          </span>
+          <span className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-stone-100">
+            {totalAulas}
+          </span>
+        </div>
+
+        {/* Alunos em Risco */}
+        <div>
+          <span className="block text-[11px] font-medium text-stone-500 dark:text-stone-400">
+            Alunos em risco
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`text-xl sm:text-2xl font-bold ${
+                alunosEmRisco > 0
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : 'text-stone-900 dark:text-stone-100'
+              }`}
+            >
+              {alunosEmRisco}
+            </span>
+            {alunosEmRisco > 0 && (
+              <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                faltas acumuladas
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Sparkline de Evolução Aula a Aula */}
+      {historico.length >= 2 && (
+        <div className="border-t sm:border-t-0 sm:border-l border-stone-200 dark:border-[#262422] pt-3 sm:pt-0 sm:pl-6">
+          <span className="block text-[10px] font-medium text-stone-600 dark:text-stone-400 mb-1">
+            Tendência aula a aula
+          </span>
+          <SparklineFrequencia historico={historico} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ─── Attendance Seats Metaphor (Poltronas de Presença) ─── */
+function PoltronasPresenca({
+  presentes,
+  faltas,
+}: {
+  presentes: number;
+  faltas: number;
+}) {
+  const total = presentes + faltas;
+  const maxExibicao = 24;
+
+  // Se o número for muito grande para caber na linha, exibe amostragem proporcional
+  const presentesDots =
+    total > maxExibicao
+      ? Math.round((presentes / total) * maxExibicao)
+      : presentes;
+  const faltasDots =
+    total > maxExibicao ? maxExibicao - presentesDots : faltas;
+
+  return (
+    <div
+      className="flex items-center gap-1 flex-wrap"
+      aria-label={`${presentes} de ${total} presentes`}
+      title={`${presentes} presentes · ${faltas} faltas`}
+    >
+      {Array.from({ length: presentesDots }).map((_, i) => (
+        <span
+          key={`p-${i}`}
+          className="w-2 h-2 rounded-full bg-emerald-500 shadow-2xs transition-transform hover:scale-125"
+        />
+      ))}
+      {Array.from({ length: faltasDots }).map((_, i) => (
+        <span
+          key={`f-${i}`}
+          className="w-2 h-2 rounded-full border border-rose-500 bg-rose-500/20 shadow-2xs transition-transform hover:scale-125"
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ─── Chamada Row Component (Linha de Chamada) ─── */
+interface ChamadaLinhaProps {
+  chamada: ChamadaResumo;
+  onAbrir: () => void;
+  onEditar: () => void;
+}
+
+function ChamadaLinha({
+  chamada,
+  onAbrir,
+  onEditar,
+}: ChamadaLinhaProps) {
+  const { diaSemana, diaNumero, mesAbreviado } = parseDataFolhinha(
+    chamada.dataAula
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="group flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:px-5 rounded-xl border border-stone-200/80 dark:border-[#262422] bg-white dark:bg-[#141210] hover:border-stone-400/80 dark:hover:border-stone-700/80 hover:bg-stone-50/50 dark:hover:bg-[#181614] transition-all duration-150 gap-3"
+    >
+      {/* Esquerda: Folhinha de Calendário + Dados de Presença */}
+      <div className="flex items-center gap-4 min-w-0">
+        {/* Folhinha */}
+        <div className="w-11 h-12 rounded-lg bg-stone-100 dark:bg-[#1a1816] border border-stone-200/80 dark:border-[#2a2724] flex flex-col items-center justify-center shrink-0">
+          <span className="text-[9px] uppercase font-mono font-medium text-stone-500 dark:text-stone-400 leading-none">
+            {diaSemana}
+          </span>
+          <span className="text-base font-bold text-stone-900 dark:text-stone-100 leading-tight">
+            {diaNumero}
+          </span>
+          <span className="text-[9px] font-mono text-stone-500 dark:text-stone-400 leading-none">
+            {mesAbreviado}
+          </span>
+        </div>
+
+        {/* Centro: Poltronas e Contagem */}
+        <div className="min-w-0 space-y-1">
+          <PoltronasPresenca
+            presentes={chamada.totalPresentes}
+            faltas={chamada.totalFaltas}
+          />
+          <p className="text-[11px] text-stone-600 dark:text-stone-400">
+            <strong className="text-stone-800 dark:text-stone-200 font-semibold">
+              {chamada.totalPresentes} presentes
+            </strong>{' '}
+            · {chamada.totalFaltas} faltas
+          </p>
+        </div>
+      </div>
+
+      {/* Direita: Percentual Mono, Responsável e Ações */}
+      <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 border-stone-100 dark:border-[#262422] pt-2 sm:pt-0">
+        {/* Porcentagem em Fonte Mono */}
+        <span className="text-sm font-semibold font-mono text-stone-800 dark:text-stone-200">
+          {chamada.percentualPresenca}%
+        </span>
+
+        {/* Registrado por X */}
+        <div className="hidden md:block text-right max-w-[140px] truncate">
+          <span className="block text-[10px] text-stone-500 dark:text-stone-400">
+            Registrado por
+          </span>
+          <span className="text-xs text-stone-700 dark:text-stone-300 font-medium truncate block">
+            {chamada.responsavelRegistro || 'Coordenação'}
+          </span>
+        </div>
+
+        {/* Ações (Aparecem no hover / foco) */}
+        <div className="flex items-center gap-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={onAbrir}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white dark:bg-stone-100 dark:hover:bg-white dark:text-stone-900 text-xs font-medium transition cursor-pointer"
+          >
+            <span>Abrir chamada</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onEditar}
+            className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/60 dark:hover:bg-[#262422] transition cursor-pointer"
+            title="Editar chamada"
+            aria-label="Editar chamada"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Slide-over Drawer for Taking Attendance (Fazer a Chamada) ─── */
+interface ChamadaDrawerProps {
+  aberto: boolean;
+  modo: 'novo' | 'edicao' | 'detalhes';
+  turma: Turma | null;
+  materia: TurmaMateria | null;
+  dataAula: string;
+  onDataAulaChange: (d: string) => void;
+  responsavelNome: string;
+  onResponsavelChange: (r: string) => void;
+  conteudoMinistrado: string;
+  onConteudoChange: (c: string) => void;
+  itens: ChamadaItem[];
+  onTogglePresenca: (matriculaId: number, status: 'PRESENTE' | 'FALTA' | 'JUSTIFICADA') => void;
+  onMarcarTodos: (status: 'PRESENTE' | 'FALTA') => void;
+  onSalvar: () => Promise<void>;
+  onClose: () => void;
+  onMudarParaEdicao: () => void;
+  salvando: boolean;
+  loadingItens: boolean;
+  usuarioLogado: LoginResponse | null;
+  schoolTheme: SchoolTheme;
+}
+
+function ChamadaDrawer({
+  aberto,
+  modo,
+  turma,
+  materia,
+  dataAula,
+  onDataAulaChange,
+  responsavelNome,
+  onResponsavelChange,
+  conteudoMinistrado,
+  onConteudoChange,
+  itens,
+  onTogglePresenca,
+  onMarcarTodos,
+  onSalvar,
+  onClose,
+  onMudarParaEdicao,
+  salvando,
+  loadingItens,
+  usuarioLogado,
+  schoolTheme,
+}: ChamadaDrawerProps) {
+  const [focadoIndex, setFocadoIndex] = useState(0);
+
+  // Atalhos de teclado (P presente, F falta, setas para navegar)
+  useEffect(() => {
+    if (!aberto || modo === 'detalhes') return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      // Ignorar se o usuário estiver digitando em um input de texto
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'p' || e.key === 'P') {
+        if (itens[focadoIndex]) {
+          onTogglePresenca(itens[focadoIndex].matriculaId, 'PRESENTE');
+        }
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (itens[focadoIndex]) {
+          onTogglePresenca(itens[focadoIndex].matriculaId, 'FALTA');
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setFocadoIndex((prev) => Math.min(prev + 1, itens.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setFocadoIndex((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [aberto, modo, itens, focadoIndex, onTogglePresenca, onClose]);
+
+  const presentesCount = itens.filter((i) => i.status === 'PRESENTE').length;
+  const faltasCount = itens.filter((i) => i.status === 'FALTA').length;
+  const totalCount = itens.length;
+  const percentual = totalCount > 0 ? Math.round((presentesCount / totalCount) * 100) : 0;
+
+  return (
+    <AnimatePresence>
+      {aberto && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop com blur sutil */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+          />
+
+          {/* Drawer Lateral */}
+          <motion.aside
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+            className="relative z-10 w-full max-w-xl bg-white dark:bg-[#121110] border-l border-stone-200 dark:border-[#262422] shadow-2xl flex flex-col h-full overflow-hidden"
+          >
+            {/* Header do Drawer */}
+            <header className="p-4 sm:p-6 border-b border-stone-200/80 dark:border-[#262422] flex items-center justify-between shrink-0 bg-stone-50/50 dark:bg-[#151312]">
+              <div>
+                <span className="text-[10px] font-mono text-stone-500 dark:text-stone-400">
+                  {turma?.codigo} · {materia?.nome}
+                </span>
+                <h2 className="font-serif text-xl sm:text-2xl font-normal text-stone-900 dark:text-stone-100 tracking-tight">
+                  {modo === 'detalhes'
+                    ? 'Registro da Chamada'
+                    : modo === 'edicao'
+                    ? 'Editar Chamada'
+                    : 'Fazer Chamada'}
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {modo === 'detalhes' && (
+                  <button
+                    type="button"
+                    onClick={onMudarParaEdicao}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-[#262422] hover:bg-stone-100 dark:hover:bg-[#1f1d1a] text-xs font-medium text-stone-800 dark:text-stone-200 transition cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Editar</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-[#1f1d1a] transition cursor-pointer"
+                  title="Fechar (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </header>
+
+            {/* Conteúdo com Scroll */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+              {/* Contexto da Aula (Data + Professor) */}
+              <section className="space-y-3.5 p-3.5 rounded-xl bg-stone-50 dark:bg-[#171513] border border-stone-200/80 dark:border-[#262422]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Data da Aula */}
+                  <div>
+                    <label
+                      htmlFor="drawer-data-aula"
+                      className="block text-[11px] font-medium text-stone-600 dark:text-stone-400 mb-1"
+                    >
+                      Data da Aula
+                    </label>
+                    <input
+                      id="drawer-data-aula"
+                      type="date"
+                      disabled={modo === 'detalhes'}
+                      value={dataAula}
+                      onChange={(e) => onDataAulaChange(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-[#121110] border border-stone-200 dark:border-[#262422] text-stone-900 dark:text-stone-100 disabled:opacity-75 focus:outline-none focus:ring-1 focus:ring-stone-400"
+                    />
+                  </div>
+
+                  {/* Responsável */}
+                  <div>
+                    <label
+                      htmlFor="drawer-responsavel"
+                      className="block text-[11px] font-medium text-stone-600 dark:text-stone-400 mb-1"
+                    >
+                      Professor / Responsável
+                    </label>
+                    <input
+                      id="drawer-responsavel"
+                      type="text"
+                      disabled={modo === 'detalhes'}
+                      value={responsavelNome}
+                      onChange={(e) => onResponsavelChange(e.target.value)}
+                      placeholder="Nome do educador..."
+                      className="w-full px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-[#121110] border border-stone-200 dark:border-[#262422] text-stone-900 dark:text-stone-100 disabled:opacity-75 focus:outline-none focus:ring-1 focus:ring-stone-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Conteúdo Ministrado (Opcional) */}
+                <div>
+                  <label
+                    htmlFor="drawer-conteudo"
+                    className="block text-[11px] font-medium text-stone-600 dark:text-stone-400 mb-1"
+                  >
+                    Conteúdo trabalhado (opcional)
+                  </label>
+                  <input
+                    id="drawer-conteudo"
+                    type="text"
+                    disabled={modo === 'detalhes'}
+                    value={conteudoMinistrado}
+                    onChange={(e) => onConteudoChange(e.target.value)}
+                    placeholder="Ex: Exercício de improvisação e voz..."
+                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-[#121110] border border-stone-200 dark:border-[#262422] text-stone-900 dark:text-stone-100 disabled:opacity-75 focus:outline-none focus:ring-1 focus:ring-stone-400"
+                  />
+                </div>
+              </section>
+
+              {/* Ações Rápidas + Dica de Teclado */}
+              {modo !== 'detalhes' && itens.length > 0 && (
+                <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+                  <button
+                    type="button"
+                    onClick={() => onMarcarTodos('PRESENTE')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-[#262422] hover:bg-stone-100 dark:hover:bg-[#1a1816] text-stone-700 dark:text-stone-300 font-medium transition cursor-pointer"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Marcar todos presentes</span>
+                  </button>
+
+                  <p className="text-[10px] text-stone-400 font-mono hidden sm:block">
+                    Teclado: <kbd className="px-1 py-0.5 rounded bg-stone-100 dark:bg-[#201e1b]">P</kbd> presente · <kbd className="px-1 py-0.5 rounded bg-stone-100 dark:bg-[#201e1b]">F</kbd> falta
+                  </p>
+                </div>
+              )}
+
+              {/* Lista de Alunos (Táteis com Animação de Salto) */}
+              {loadingItens ? (
+                <div className="py-12 text-center">
+                  <div className="w-6 h-6 border-2 border-stone-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-xs text-stone-400">Carregando alunos da turma...</p>
+                </div>
+              ) : itens.length === 0 ? (
+                <div className="p-8 rounded-xl border border-dashed border-stone-200 dark:border-[#262422] text-center space-y-3">
+                  <Users className="w-6 h-6 mx-auto text-stone-400" />
+                  <p className="text-xs text-stone-600 dark:text-stone-400">
+                    Nenhum aluno matriculado nesta turma ainda.
+                  </p>
+                  <Link
+                    href="/matriculas"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-900 dark:text-stone-100 underline underline-offset-4"
+                  >
+                    Ir para Matrículas
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y divide-stone-100 dark:divide-[#201e1b] rounded-xl border border-stone-200/80 dark:border-[#262422] overflow-hidden">
+                  {itens.map((item, index) => {
+                    const isPresente = item.status === 'PRESENTE';
+                    const isFalta = item.status === 'FALTA';
+                    const isFocado = index === focadoIndex;
+
+                    return (
+                      <div
+                        key={item.matriculaId}
+                        onClick={() => setFocadoIndex(index)}
+                        className={`p-3 sm:px-4 flex items-center justify-between gap-3 transition-colors ${
+                          isFocado
+                            ? 'bg-stone-50 dark:bg-[#181614]'
+                            : 'hover:bg-stone-50/50 dark:hover:bg-[#141210]'
+                        }`}
+                      >
+                        {/* Aluno */}
+                        <div className="min-w-0 flex items-center gap-3">
+                          <span className="w-6 text-[11px] font-mono text-stone-400 shrink-0 text-right">
+                            {index + 1}.
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-stone-900 dark:text-stone-100 truncate">
+                              {item.alunoNome}
+                            </p>
+                            {item.alunoCpf && (
+                              <p className="text-[10px] text-stone-600 dark:text-stone-400 font-mono">
+                                {formatarCpfMascara(item.alunoCpf)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Botões Táteis de Presença (com animação física de salto) */}
+                        {modo === 'detalhes' ? (
+                          <span
+                            className={`text-[11px] font-mono font-medium px-2 py-0.5 rounded ${
+                              isPresente
+                                ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
+                                : 'text-rose-700 dark:text-rose-400 bg-rose-500/10'
+                            }`}
+                          >
+                            {isPresente ? 'Presente' : 'Faltou'}
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <motion.button
+                              type="button"
+                              whileTap={{ scale: 0.92 }}
+                              onClick={() =>
+                                onTogglePresenca(item.matriculaId, 'PRESENTE')
+                              }
+                              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
+                                isPresente
+                                  ? 'bg-emerald-600 text-white font-semibold shadow-2xs'
+                                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-[#201e1b]'
+                              }`}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>P</span>
+                            </motion.button>
+
+                            <motion.button
+                              type="button"
+                              whileTap={{ scale: 0.92 }}
+                              onClick={() =>
+                                onTogglePresenca(item.matriculaId, 'FALTA')
+                              }
+                              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
+                                isFalta
+                                  ? 'bg-rose-600 text-white font-semibold shadow-2xs'
+                                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-[#201e1b]'
+                              }`}
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>F</span>
+                            </motion.button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer Fixo do Drawer com Contador ao Vivo */}
+            <footer className="p-4 sm:p-5 border-t border-stone-200/80 dark:border-[#262422] bg-stone-50/70 dark:bg-[#151312] flex items-center justify-between shrink-0">
+              {/* Contador Fixo */}
+              <div className="text-xs font-mono text-stone-600 dark:text-stone-400">
+                <strong className="text-emerald-700 dark:text-emerald-400">
+                  {presentesCount} presentes
+                </strong>{' '}
+                · <span className="text-rose-700 dark:text-rose-400">{faltasCount} faltas</span>{' '}
+                ({percentual}%)
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3.5 py-2 rounded-xl text-xs font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition cursor-pointer"
+                >
+                  {modo === 'detalhes' ? 'Fechar' : 'Cancelar'}
+                </button>
+
+                {modo !== 'detalhes' && (
+                  <button
+                    type="button"
+                    onClick={onSalvar}
+                    disabled={salvando || itens.length === 0}
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${schoolTheme.primaryBg}`}
+                  >
+                    {salvando ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Salvando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Salvar chamada</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </footer>
+          </motion.aside>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ─── Main Component (DiarioChamadasView) ─── */
 interface DiarioChamadasViewProps {
   escolaId: number | null;
   turmas: Turma[];
   usuarioLogado: LoginResponse | null;
 }
 
-type ModoVisualizacao = 'lista' | 'nova_chamada' | 'foco_dia';
-
 export function DiarioChamadasView({
   escolaId,
   turmas,
   usuarioLogado,
 }: DiarioChamadasViewProps) {
-  // Verificação estrita de permissão (apenas ADMIN e ENCARREGADA da Secretaria)
+  // Verificação estrita de permissão (apenas ADMIN e ENCARREGADA)
   const temPermissao =
     usuarioLogado?.role === 'ROLE_ADMIN' ||
     usuarioLogado?.role === 'ROLE_ENCARREGADA';
@@ -66,64 +1032,43 @@ export function DiarioChamadasView({
   }, [turmas, escolaId]);
 
   // Estados de seleção
-  const [turmaSelecionadaId, setTurmaSelecionadaId] = useState<number | null>(
-    null
-  );
-  const [materiaSelecionadaId, setMateriaSelecionadaId] = useState<number | null>(
-    null
-  );
-
-  // Estados de navegação interna
-  const [modo, setModo] = useState<ModoVisualizacao>('lista');
+  const [turmaSelecionadaId, setTurmaSelecionadaId] = useState<number | null>(null);
+  const [materiaSelecionadaId, setMateriaSelecionadaId] = useState<number | null>(null);
 
   // Dados carregados da API
-  const [historicoChamadas, setHistoricoChamadas] = useState<ChamadaResumo[]>(
-    []
-  );
+  const [historicoChamadas, setHistoricoChamadas] = useState<ChamadaResumo[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
 
-  // Estado para formulário de chamada (Nova / Edição)
-  const [dataAulaForm, setDataAulaForm] = useState(
-    () => new Date().toISOString().split('T')[0]
-  );
-  const [responsavelNome, setResponsavelNome] = useState(
-    usuarioLogado?.nome || ''
-  );
-  const [conteudoMinistrado, setConteudoMinistrado] = useState('');
-  const [itensChamada, setItensChamada] = useState<ChamadaItem[]>([]);
-  const [loadingItens, setLoadingItens] = useState(false);
-  const [salvando, setSalvando] = useState(false);
+  // Drawer lateral (Slide-over)
+  const [drawerAberto, setDrawerAberto] = useState(false);
+  const [drawerModo, setDrawerModo] = useState<'novo' | 'edicao' | 'detalhes'>('novo');
+  const [dataAulaDrawer, setDataAulaDrawer] = useState(() => new Date().toISOString().split('T')[0]);
+  const [responsavelDrawer, setResponsavelDrawer] = useState(usuarioLogado?.nome || '');
+  const [conteudoDrawer, setConteudoDrawer] = useState('');
+  const [itensDrawer, setItensDrawer] = useState<ChamadaItem[]>([]);
+  const [loadingItensDrawer, setLoadingItensDrawer] = useState(false);
+  const [salvandoDrawer, setSalvandoDrawer] = useState(false);
+
+  // Matérias e Modais
+  const [materiasLocaisMap, setMateriasLocaisMap] = useState<Record<number, TurmaMateria[]>>({});
+  const [modalMateriasAberto, setModalMateriasAberto] = useState(false);
   const { carregarDadosEscola } = useApp();
 
-  // Modal para cadastrar e gerenciar matérias da turma
-  const [modalMateriasAberto, setModalMateriasAberto] = useState(false);
-  const [materiasLocaisMap, setMateriasLocaisMap] = useState<Record<number, TurmaMateria[]>>({});
+  // Feedback discreto
+  const [toastMsg, setToastMsg] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
 
-  // Estado para visualização focada do dia
-  const [chamadaFocada, setChamadaFocada] = useState<ChamadaDetalhe | null>(
-    null
-  );
-  const [loadingFoco, setLoadingFoco] = useState(false);
-
-  // Feedback do sistema
-  const [mensagemFeedback, setMensagemFeedback] = useState<{
-    tipo: 'sucesso' | 'erro' | 'aviso';
-    texto: string;
-  } | null>(null);
-
-  // Seleciona primeira turma automaticamente se houver
+  // Seleciona primeira turma automaticamente
   useEffect(() => {
     if (turmasEscola.length > 0 && !turmaSelecionadaId) {
       setTurmaSelecionadaId(turmasEscola[0].id || null);
     }
   }, [turmasEscola, turmaSelecionadaId]);
 
-  // Turma atual selecionada
   const turmaAtual = useMemo(() => {
     return turmasEscola.find((t) => t.id === turmaSelecionadaId) || null;
   }, [turmasEscola, turmaSelecionadaId]);
 
-  // Carregar matérias atualizadas da turma selecionada
+  // Carregar matérias da turma selecionada
   useEffect(() => {
     if (turmaSelecionadaId) {
       api.getMateriasTurma(turmaSelecionadaId)
@@ -134,7 +1079,6 @@ export function DiarioChamadasView({
     }
   }, [turmaSelecionadaId]);
 
-  // Matérias da turma atual (com fallback para cache em memória ou dados da turma)
   const materiasTurma = useMemo(() => {
     if (!turmaAtual?.id) return [];
     if (materiasLocaisMap[turmaAtual.id] !== undefined) {
@@ -143,33 +1087,11 @@ export function DiarioChamadasView({
     return turmaAtual.materias || [];
   }, [turmaAtual, materiasLocaisMap]);
 
-  // Sincroniza após cadastro ou edição de matéria
-  const handleMateriasAtualizadas = async () => {
-    if (turmaAtual && turmaAtual.id) {
-      const idTurma = turmaAtual.id;
-      try {
-        const mats = await api.getMateriasTurma(idTurma);
-        setMateriasLocaisMap((prev) => ({ ...prev, [idTurma]: mats }));
-        if (mats.length > 0 && !mats.some((m) => m.id === materiaSelecionadaId)) {
-          setMateriaSelecionadaId(mats[0].id || null);
-        }
-      } catch {}
-    }
-    carregarDadosEscola();
-    setMensagemFeedback({
-      tipo: 'sucesso',
-      texto: 'Grade de matérias da turma sincronizada com sucesso!',
-    });
-  };
-
-  // Seleciona primeira matéria da turma automaticamente quando a turma muda
+  // Seleciona primeira matéria automaticamente
   useEffect(() => {
     if (materiasTurma.length > 0) {
-      // Se a matéria atualmente selecionada não pertencer a esta turma, seleciona a primeira
-      const materiaExiste = materiasTurma.some(
-        (m) => m.id === materiaSelecionadaId
-      );
-      if (!materiaExiste) {
+      const existe = materiasTurma.some((m) => m.id === materiaSelecionadaId);
+      if (!existe) {
         setMateriaSelecionadaId(materiasTurma[0].id || null);
       }
     } else {
@@ -177,1143 +1099,380 @@ export function DiarioChamadasView({
     }
   }, [materiasTurma, materiaSelecionadaId]);
 
-  // Matéria atual selecionada
   const materiaAtual = useMemo(() => {
     return materiasTurma.find((m) => m.id === materiaSelecionadaId) || null;
   }, [materiasTurma, materiaSelecionadaId]);
 
-  // Preenche nome do responsável padrão quando o usuário logado mudar
-  useEffect(() => {
-    if (usuarioLogado?.nome && !responsavelNome) {
-      setResponsavelNome(usuarioLogado.nome);
-    }
-  }, [usuarioLogado, responsavelNome]);
+  // Paleta da escola
+  const schoolTheme = useMemo(() => {
+    return getSchoolTheme(turmaAtual?.escolaSigla);
+  }, [turmaAtual]);
 
   // Carregar histórico de chamadas ao mudar turma e matéria
-  useEffect(() => {
+  const carregarHistorico = useCallback(async () => {
     if (!turmaSelecionadaId || !materiaSelecionadaId) {
       setHistoricoChamadas([]);
       return;
     }
-
-    const carregarHistorico = async () => {
-      setLoadingHistorico(true);
-      try {
-        const dados = await api.listarChamadas(
-          turmaSelecionadaId,
-          materiaSelecionadaId
-        );
-        setHistoricoChamadas(dados);
-      } catch (err: any) {
-        setMensagemFeedback({
-          tipo: 'erro',
-          texto: err.message || 'Erro ao carregar histórico de chamadas.',
-        });
-      } finally {
-        setLoadingHistorico(false);
-      }
-    };
-
-    carregarHistorico();
+    setLoadingHistorico(true);
+    try {
+      const dados = await api.listarChamadas(turmaSelecionadaId, materiaSelecionadaId);
+      setHistoricoChamadas(dados);
+    } catch {
+      setHistoricoChamadas([]);
+    } finally {
+      setLoadingHistorico(false);
+    }
   }, [turmaSelecionadaId, materiaSelecionadaId]);
 
-  // Limpa feedback automaticamente após 4 segundos
   useEffect(() => {
-    if (mensagemFeedback) {
-      const timer = setTimeout(() => setMensagemFeedback(null), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [mensagemFeedback]);
+    carregarHistorico();
+  }, [carregarHistorico]);
 
-  // Iniciar Nova Chamada
-  const handleIniciarNovaChamada = async (dataPredefinida?: string) => {
+  // Cálculo das métricas da Faixa de Resumo
+  const frequenciaMedia = useMemo(() => {
+    if (historicoChamadas.length === 0) return 0;
+    const soma = historicoChamadas.reduce((acc, c) => acc + c.percentualPresenca, 0);
+    return Math.round(soma / historicoChamadas.length);
+  }, [historicoChamadas]);
+
+  const totalAulas = historicoChamadas.length;
+
+  const alunosEmRisco = useMemo(() => {
+    if (historicoChamadas.length === 0) return 0;
+    // Estimativa baseada nas aulas mais recentes com faltas
+    const ultimasFaltas = historicoChamadas.slice(0, 3).reduce((acc, c) => acc + c.totalFaltas, 0);
+    return Math.min(ultimasFaltas, Math.max(...historicoChamadas.map((c) => c.totalFaltas), 0));
+  }, [historicoChamadas]);
+
+  // Agrupamento de chamadas por mês
+  const chamadasPorMes = useMemo(() => {
+    const mapa = new Map<string, ChamadaResumo[]>();
+    for (const ch of historicoChamadas) {
+      const { mesAnoGrupo } = parseDataFolhinha(ch.dataAula);
+      if (!mapa.has(mesAnoGrupo)) {
+        mapa.set(mesAnoGrupo, []);
+      }
+      mapa.get(mesAnoGrupo)!.push(ch);
+    }
+    return Array.from(mapa.entries());
+  }, [historicoChamadas]);
+
+  // Abrir Drawer para Nova Chamada
+  const handleNovaChamada = async () => {
     if (!turmaSelecionadaId || !materiaSelecionadaId) return;
-
-    const dataAlvo =
-      dataPredefinida || new Date().toISOString().split('T')[0];
-    setDataAulaForm(dataAlvo);
-    if (materiaAtual?.professorResponsavel) {
-      setResponsavelNome(materiaAtual.professorResponsavel);
-    } else if (usuarioLogado?.nome && (!responsavelNome || responsavelNome === '')) {
-      setResponsavelNome(usuarioLogado.nome);
-    }
-    setLoadingItens(true);
-    setModo('nova_chamada');
+    const hoje = new Date().toISOString().split('T')[0];
+    setDataAulaDrawer(hoje);
+    setResponsavelDrawer(
+      materiaAtual?.professorResponsavel || usuarioLogado?.nome || ''
+    );
+    setConteudoDrawer('');
+    setDrawerModo('novo');
+    setDrawerAberto(true);
+    setLoadingItensDrawer(true);
 
     try {
       const alunos = await api.obterAlunosParaChamada(
         turmaSelecionadaId,
         materiaSelecionadaId,
-        dataAlvo
+        hoje
       );
-      setItensChamada(alunos);
-      if (alunos.length === 0) {
-        setMensagemFeedback(null);
-      }
-    } catch (err: any) {
-      console.warn('Erro ao carregar lista de alunos para chamada:', err);
-      setItensChamada([]);
-      setMensagemFeedback(null);
+      setItensDrawer(alunos);
+    } catch {
+      setItensDrawer([]);
     } finally {
-      setLoadingItens(false);
+      setLoadingItensDrawer(false);
     }
   };
 
-  // Focar na chamada do dia X
-  const handleFocarChamadaDia = async (data: string) => {
-    if (!materiaSelecionadaId) return;
-    setLoadingFoco(true);
-    setModo('foco_dia');
+  // Abrir Drawer para Abrir / Inspecionar Chamada
+  const handleAbrirChamada = async (dataAula: string) => {
+    if (!materiaSelecionadaId || !turmaSelecionadaId) return;
+    setDataAulaDrawer(dataAula);
+    setDrawerModo('detalhes');
+    setDrawerAberto(true);
+    setLoadingItensDrawer(true);
 
     try {
-      const detalhe = await api.obterDetalheChamada(materiaSelecionadaId, data);
-      setChamadaFocada(detalhe);
-    } catch (err: any) {
-      setMensagemFeedback({
-        tipo: 'erro',
-        texto: err.message || 'Erro ao carregar detalhes da chamada.',
-      });
-      setModo('lista');
+      const detalhe = await api.obterDetalheChamada(materiaSelecionadaId, dataAula);
+      setResponsavelDrawer(detalhe.responsavelRegistro || '');
+      setConteudoDrawer(detalhe.conteudoMinistrado || '');
+      setItensDrawer(detalhe.itens || []);
+    } catch {
+      setToastMsg({ tipo: 'erro', texto: 'Erro ao carregar detalhes da aula.' });
+      setDrawerAberto(false);
     } finally {
-      setLoadingFoco(false);
+      setLoadingItensDrawer(false);
     }
   };
 
-  // Alternar presença de um aluno
-  const handleTogglePresenca = (matriculaId: number, novoStatus: 'PRESENTE' | 'FALTA' | 'JUSTIFICADA') => {
-    setItensChamada((prev) =>
-      prev.map((item) =>
-        item.matriculaId === matriculaId ? { ...item, status: novoStatus } : item
+  // Abrir Drawer para Editar Chamada
+  const handleEditarChamada = async (dataAula: string) => {
+    if (!materiaSelecionadaId || !turmaSelecionadaId) return;
+    setDataAulaDrawer(dataAula);
+    setDrawerModo('edicao');
+    setDrawerAberto(true);
+    setLoadingItensDrawer(true);
+
+    try {
+      const detalhe = await api.obterDetalheChamada(materiaSelecionadaId, dataAula);
+      setResponsavelDrawer(detalhe.responsavelRegistro || '');
+      setConteudoDrawer(detalhe.conteudoMinistrado || '');
+      setItensDrawer(detalhe.itens || []);
+    } catch {
+      setToastMsg({ tipo: 'erro', texto: 'Erro ao carregar aula para edição.' });
+      setDrawerAberto(false);
+    } finally {
+      setLoadingItensDrawer(false);
+    }
+  };
+
+  // Alternar presença dentro do Drawer
+  const handleTogglePresencaDrawer = (
+    matriculaId: number,
+    novoStatus: 'PRESENTE' | 'FALTA' | 'JUSTIFICADA'
+  ) => {
+    setItensDrawer((prev) =>
+      prev.map((i) =>
+        i.matriculaId === matriculaId ? { ...i, status: novoStatus } : i
       )
     );
   };
 
-  // Ações em massa
-  const handleMarcarTodos = (status: 'PRESENTE' | 'FALTA') => {
-    setItensChamada((prev) => prev.map((item) => ({ ...item, status })));
+  // Marcar todos
+  const handleMarcarTodosDrawer = (status: 'PRESENTE' | 'FALTA') => {
+    setItensDrawer((prev) => prev.map((i) => ({ ...i, status })));
   };
 
-  // Salvar chamada
-  const handleSalvarChamada = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!turmaSelecionadaId || !materiaSelecionadaId) {
-      setMensagemFeedback({
-        tipo: 'erro',
-        texto: 'Selecione uma turma e uma matéria.',
-      });
+  // Salvar chamada pelo Drawer
+  const handleSalvarDrawer = async () => {
+    if (!turmaSelecionadaId || !materiaSelecionadaId) return;
+    if (!responsavelDrawer.trim()) {
+      setToastMsg({ tipo: 'erro', texto: 'Informe o nome do responsável.' });
+      return;
+    }
+    if (itensDrawer.length === 0) {
+      setToastMsg({ tipo: 'erro', texto: 'Turma sem alunos para registrar.' });
       return;
     }
 
-    if (!responsavelNome.trim()) {
-      setMensagemFeedback({
-        tipo: 'erro',
-        texto: 'Por favor, informe o nome do responsável pelo registro da chamada.',
-      });
-      return;
-    }
-
-    if (!dataAulaForm) {
-      setMensagemFeedback({
-        tipo: 'erro',
-        texto: 'Por favor, selecione a data da chamada.',
-      });
-      return;
-    }
-
-    if (itensChamada.length === 0) {
-      setMensagemFeedback({
-        tipo: 'aviso',
-        texto: 'Atenção: Não é possível registrar chamada em uma turma sem alunos cadastrados. Confirme matrículas na turma antes de continuar.',
-      });
-      return;
-    }
-
-    setSalvando(true);
+    setSalvandoDrawer(true);
     try {
-      const detalheSalvo = await api.salvarChamada({
+      await api.salvarChamada({
         turmaId: turmaSelecionadaId,
         materiaId: materiaSelecionadaId,
-        dataAula: dataAulaForm,
-        responsavelRegistro: responsavelNome.trim(),
-        conteudoMinistrado: conteudoMinistrado.trim() || undefined,
-        itens: itensChamada,
+        dataAula: dataAulaDrawer,
+        responsavelRegistro: responsavelDrawer.trim(),
+        conteudoMinistrado: conteudoDrawer.trim() || undefined,
+        itens: itensDrawer,
       });
 
-      setMensagemFeedback({
-        tipo: 'sucesso',
-        texto: `Chamada do dia ${formatarDataBrasileira(dataAulaForm)} registrada com sucesso por ${responsavelNome}!`,
-      });
-
-      // Atualiza histórico
-      const historicoAtualizado = await api.listarChamadas(
-        turmaSelecionadaId,
-        materiaSelecionadaId
-      );
-      setHistoricoChamadas(historicoAtualizado);
-
-      // Direciona imediatamente para a visão focada do dia X
-      setChamadaFocada(detalheSalvo);
-      setModo('foco_dia');
+      setToastMsg({ tipo: 'sucesso', texto: 'Chamada registrada com sucesso.' });
+      setDrawerAberto(false);
+      carregarHistorico();
     } catch (err: any) {
-      setMensagemFeedback({
-        tipo: 'erro',
-        texto: err.message || 'Erro ao salvar chamada.',
-      });
+      setToastMsg({ tipo: 'erro', texto: err.message || 'Erro ao salvar chamada.' });
     } finally {
-      setSalvando(false);
+      setSalvandoDrawer(false);
     }
   };
 
-  // Formatador de data
-  const formatarDataBrasileira = (isoDate: string) => {
-    if (!isoDate) return '';
-    const partes = isoDate.split('-');
-    if (partes.length === 3) {
-      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  // Temporizador do Toast
+  useEffect(() => {
+    if (toastMsg) {
+      const t = setTimeout(() => setToastMsg(null), 3500);
+      return () => clearTimeout(t);
     }
-    return isoDate;
-  };
+  }, [toastMsg]);
 
   // Se não tiver permissão
   if (!temPermissao) {
     return (
-      <main className="p-4 sm:p-8 max-w-4xl mx-auto">
-        <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 rounded-2xl p-6 sm:p-8 text-center space-y-3">
-          <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto">
-            <Shield className="w-6 h-6" />
-          </div>
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+      <main className="p-6 max-w-3xl mx-auto">
+        <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/60 rounded-xl p-6 text-center space-y-2">
+          <Shield className="w-6 h-6 text-rose-600 dark:text-rose-400 mx-auto" />
+          <h2 className="font-serif text-lg text-stone-900 dark:text-stone-100">
             Acesso Restrito ao Diário de Chamadas
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-lg mx-auto">
-            Por normas institucionais e diretrizes da Secretaria de Cultura, apenas
-            <strong> Administradores</strong> e <strong>Encarregadas</strong> possuem
-            permissão para realizar ou auditar as chamadas das turmas.
+          <p className="text-xs text-stone-600 dark:text-stone-400">
+            Apenas Administradores e Encarregadas possuem permissão para realizar chamadas.
           </p>
         </div>
       </main>
     );
   }
 
-  // Estatísticas em tempo real no formulário
-  const totalAlunosForm = itensChamada.length;
-  const presentesForm = itensChamada.filter((i) => i.status === 'PRESENTE').length;
-  const faltasForm = itensChamada.filter((i) => i.status === 'FALTA').length;
-  const pctPresencaForm =
-    totalAlunosForm > 0
-      ? Math.round((presentesForm / totalAlunosForm) * 100)
-      : 0;
-
   return (
-    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Toast de Feedback */}
-      {mensagemFeedback && (
+    <div className="space-y-6">
+      {/* Toast Feedback */}
+      {toastMsg && (
         <div
           role="alert"
-          className={`p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-3 shadow-md animate-in fade-in duration-200 ${
-            mensagemFeedback.tipo === 'sucesso'
-              ? 'bg-emerald-50 border border-emerald-300 text-emerald-900 dark:bg-emerald-950/80 dark:border-emerald-700 dark:text-emerald-200'
-              : mensagemFeedback.tipo === 'aviso'
-              ? 'bg-amber-50 border border-amber-300 text-amber-900 dark:bg-amber-950/80 dark:border-amber-700 dark:text-amber-200'
-              : 'bg-rose-50 border border-rose-300 text-rose-900 dark:bg-rose-950/80 dark:border-rose-700 dark:text-rose-200'
+          className={`fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg border flex items-center gap-2 animate-in fade-in duration-200 ${
+            toastMsg.tipo === 'sucesso'
+              ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+              : 'bg-rose-50 dark:bg-rose-950 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800'
           }`}
         >
-          {mensagemFeedback.tipo === 'sucesso' ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          ) : mensagemFeedback.tipo === 'aviso' ? (
-            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+          {toastMsg.tipo === 'sucesso' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+            <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
           )}
-          <span>{mensagemFeedback.texto}</span>
+          <span>{toastMsg.texto}</span>
         </div>
       )}
 
-      {/* SELETOR DE ESCOPO: TURMA E MATÉRIA (Sempre disponível no topo quando não estiver em foco_dia) */}
-      {modo !== 'foco_dia' && (
-        <section className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <CalendarDays className="w-4 h-4" />
-                </span>
-                <h1 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
-                  Diário de Classe & Chamadas
-                </h1>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Selecione a turma e a matéria para gerenciar o registro de presenças dos alunos.
-              </p>
-            </div>
+      {/* ─── 2. Cabeçalho de Página Enxuto (sem caixa gigante de filtros) ─── */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 dark:border-[#262422] pb-5">
+        <div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-normal text-stone-900 dark:text-stone-100 tracking-tight">
+            Diário de chamadas
+          </h1>
+          <div className="flex items-center gap-2.5 mt-2 flex-wrap">
+            {/* Turma: Combobox customizado */}
+            <ComboboxTurma
+              turmas={turmasEscola}
+              turmaSelecionadaId={turmaSelecionadaId}
+              onSelect={(id) => setTurmaSelecionadaId(id)}
+              schoolTheme={schoolTheme}
+            />
 
-            <div className="flex items-center gap-2.5 shrink-0">
-              {turmaAtual && (
-                <div title={`Alertas e Notificações da Turma ${turmaAtual.codigo}`}>
-                  <NotificacoesPopover
-                    escolaId={escolaId}
-                    turmaId={turmaAtual.id}
-                    turmaNome={turmaAtual.codigo}
-                  />
-                </div>
-              )}
-
-              {turmaAtual && materiaAtual && modo === 'lista' && (
-                <button
-                  type="button"
-                  onClick={() => handleIniciarNovaChamada()}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Nova Chamada</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Grid de Seletores */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Seletor de Turma */}
-            <div>
-              <label
-                htmlFor="select-turma"
-                className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5"
-              >
-                1. Selecione a Turma
-              </label>
-              {turmasEscola.length === 0 ? (
-                <div className="text-xs text-slate-400 p-2.5 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                  Nenhuma turma encontrada nesta escola.
-                </div>
-              ) : (
-                <select
-                  id="select-turma"
-                  value={turmaSelecionadaId || ''}
-                  onChange={(e) => {
-                    setTurmaSelecionadaId(Number(e.target.value));
-                    setModo('lista');
-                  }}
-                  className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition cursor-pointer"
-                >
-                  {turmasEscola.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.codigo} — {t.cursoNome || 'Sem curso'}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Seletor de Matéria (Independência Cronológica) */}
-            <div>
-              <label
-                htmlFor="select-materia"
-                className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5"
-              >
-                2. Selecione a Matéria (Componente Curricular)
-              </label>
-              {materiasTurma.length === 0 ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <Info className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                    <span>Esta turma ainda não possui matérias cadastradas.</span>
-                  </div>
-                  {turmaAtual && (
-                    <button
-                      type="button"
-                      onClick={() => setModalMateriasAberto(true)}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-lg font-bold text-xs shadow-xs transition cursor-pointer shrink-0"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Cadastrar Matéria</span>
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <select
-                    id="select-materia"
-                    value={materiaSelecionadaId || ''}
-                    onChange={(e) => {
-                      setMateriaSelecionadaId(Number(e.target.value));
-                      setModo('lista');
-                    }}
-                    className="flex-1 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition cursor-pointer"
-                  >
-                    {materiasTurma.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.nome}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setModalMateriasAberto(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs transition cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700"
-                    title="Adicionar ou gerenciar matérias desta turma"
-                  >
-                    <Plus className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    <span className="hidden sm:inline">Nova Matéria</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Chips de Matérias para Seleção Rápida */}
-          {materiasTurma.length > 0 && (
-            <div className="pt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mr-1">
-                Matérias da Turma:
-              </span>
-              {materiasTurma.map((m) => {
-                const ativa = m.id === materiaSelecionadaId;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => {
-                      setMateriaSelecionadaId(m.id || null);
-                      setModo('lista');
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                      ativa
-                        ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {m.nome}
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => setModalMateriasAberto(true)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 border border-dashed border-amber-300 dark:border-amber-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition cursor-pointer"
-                title="Cadastrar mais matérias nesta turma"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Adicionar Matéria</span>
-              </button>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ========================================================================= */}
-      {/* VISÃO 1: HISTÓRICO DE CHAMADAS REGISTRADAS                                  */}
-      {/* ========================================================================= */}
-      {modo === 'lista' && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                Chamadas Registradas
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {materiaAtual
-                  ? `Histórico de aulas para: ${materiaAtual.nome}`
-                  : 'Selecione uma matéria acima para visualizar o histórico.'}
-              </p>
-            </div>
-            <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-              Total: {historicoChamadas.length} {historicoChamadas.length === 1 ? 'aula' : 'aulas'}
-            </span>
-          </div>
-
-          {loadingHistorico ? (
-            <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-8 text-center">
-              <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                Carregando diário de chamadas...
-              </p>
-            </div>
-          ) : historicoChamadas.length === 0 ? (
-            <div className="bg-white dark:bg-[#121214] border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                Nenhuma chamada registrada para esta matéria
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                {materiaAtual
-                  ? `Comece a registrar a frequência dos alunos na matéria "${materiaAtual.nome}".`
-                  : 'Selecione uma matéria acima para começar.'}
-              </p>
-              {turmaAtual && materiaAtual && (
-                <button
-                  type="button"
-                  onClick={() => handleIniciarNovaChamada()}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Realizar Primeira Chamada</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {historicoChamadas.map((ch) => (
-                <div
-                  key={`${ch.materiaId}-${ch.dataAula}`}
-                  className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 hover:border-amber-400/80 dark:hover:border-amber-600/80 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between space-y-4 group"
-                >
-                  <div>
-                    {/* Topo do card: Data + Badge de Presença */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-500" />
-                        </span>
-                        <div>
-                          <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">
-                            Data da Aula
-                          </span>
-                          <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                            {formatarDataBrasileira(ch.dataAula)}
-                          </h4>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold ${
-                          ch.percentualPresenca >= 75
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300'
-                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300'
-                        }`}
-                      >
-                        {ch.percentualPresenca}%
-                      </span>
-                    </div>
-
-                    {/* Responsável pelo Registro */}
-                    <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] font-bold flex items-center justify-center text-slate-600 dark:text-slate-300">
-                        {ch.responsavelRegistro?.charAt(0)?.toUpperCase() || 'R'}
-                      </span>
-                      <div className="min-w-0">
-                        <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 leading-none">
-                          Registrado por
-                        </span>
-                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate block">
-                          {ch.responsavelRegistro || 'Não informado'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Resumo de Presenças */}
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-                      <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-xl p-2">
-                        <span className="block text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">
-                          Presentes
-                        </span>
-                        <span className="text-sm font-extrabold text-emerald-800 dark:text-emerald-300">
-                          {ch.totalPresentes}
-                        </span>
-                      </div>
-                      <div className="bg-rose-50/70 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 rounded-xl p-2">
-                        <span className="block text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase">
-                          Faltas
-                        </span>
-                        <span className="text-sm font-extrabold text-rose-800 dark:text-rose-300">
-                          {ch.totalFaltas}
-                        </span>
-                      </div>
-                    </div>
-
-                    {ch.conteudoMinistrado && (
-                      <p className="mt-2.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 italic">
-                        "{ch.conteudoMinistrado}"
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Ações do Card */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleFocarChamadaDia(ch.dataAula)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Focar Chamada</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleIniciarNovaChamada(ch.dataAula)}
-                      className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                      title="Editar chamada"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ========================================================================= */}
-      {/* VISÃO 2: NOVA CHAMADA / FORMULÁRIO DE REGISTRO                           */}
-      {/* ========================================================================= */}
-      {modo === 'nova_chamada' && (
-        <form onSubmit={handleSalvarChamada} className="space-y-6">
-          {/* Barra de Ações Superior */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setModo('lista')}
-                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shrink-0"
-                title="Voltar ao diário"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
-                  Realizar Chamada de Aula
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {turmaAtual?.codigo} • {materiaAtual?.nome}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setModo('lista')}
-                className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={salvando || !responsavelNome.trim() || itensChamada.length === 0}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 text-white font-bold text-xs shadow-xs transition cursor-pointer disabled:cursor-not-allowed"
-                title={itensChamada.length === 0 ? 'Não há alunos cadastrados nesta turma' : undefined}
-              >
-                {salvando ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Salvando...</span>
-                  </>
-                ) : itensChamada.length === 0 ? (
-                  <>
-                    <Users className="w-4 h-4 opacity-70" />
-                    <span>Sem Alunos na Turma</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>Salvar Chamada</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* CAIXINHA DO RESPONSÁVEL (SOLICITAÇÃO PRINCIPAL DO USUÁRIO) + DADOS DA AULA */}
-          <div className="bg-white dark:bg-[#121214] border border-amber-300 dark:border-amber-700/60 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
-              <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <Shield className="w-4 h-4" />
-              </span>
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                  Identificação do Registro & Controle
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  O nome informado será gravado em cada presença deste dia para auditoria institucional.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Caixinha do Nome do Responsável */}
-              <div className="md:col-span-2">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label
-                    htmlFor="input-responsavel"
-                    className="block text-xs font-extrabold text-slate-800 dark:text-slate-200"
-                  >
-                    Professor / Responsável pela Chamada Deste Dia <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    {materiaAtual?.professorResponsavel && materiaAtual.professorResponsavel !== responsavelNome && (
-                      <button
-                        type="button"
-                        onClick={() => setResponsavelNome(materiaAtual.professorResponsavel!)}
-                        className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800 hover:bg-amber-100 transition cursor-pointer"
-                      >
-                        Usar Prof. da Matéria: {materiaAtual.professorResponsavel}
-                      </button>
-                    )}
-                    {usuarioLogado?.nome && usuarioLogado.nome !== responsavelNome && (
-                      <button
-                        type="button"
-                        onClick={() => setResponsavelNome(usuarioLogado.nome)}
-                        className="text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition cursor-pointer"
-                      >
-                        Usar Meu Usuário ({usuarioLogado.nome})
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="relative">
-                  <input
-                    id="input-responsavel"
-                    type="text"
-                    required
-                    value={responsavelNome}
-                    onChange={(e) => setResponsavelNome(e.target.value)}
-                    placeholder="Nome do professor ou educador que ministrou a aula..."
-                    className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
-                  />
-                  {responsavelNome.trim() && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </span>
-                  )}
-                </div>
-                {!responsavelNome.trim() && (
-                  <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold mt-1">
-                    É obrigatório colocar o nome de quem realizou a chamada antes de salvar.
-                  </p>
-                )}
-              </div>
-
-              {/* Data da Aula */}
-              <div>
-                <label
-                  htmlFor="input-data-aula"
-                  className="block text-xs font-extrabold text-slate-800 dark:text-slate-200 mb-1.5"
-                >
-                  Data da Aula <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  id="input-data-aula"
-                  type="date"
-                  required
-                  value={dataAulaForm}
-                  onChange={(e) => {
-                    const novaData = e.target.value;
-                    setDataAulaForm(novaData);
-                    handleIniciarNovaChamada(novaData);
-                  }}
-                  className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition cursor-pointer"
-                />
-              </div>
-
-              {/* Conteúdo Ministrado (Opcional) */}
-              <div className="md:col-span-3">
-                <label
-                  htmlFor="input-conteudo"
-                  className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5"
-                >
-                  Conteúdo / Observações da Aula (Opcional)
-                </label>
-                <input
-                  id="input-conteudo"
-                  type="text"
-                  maxLength={500}
-                  value={conteudoMinistrado}
-                  onChange={(e) => setConteudoMinistrado(e.target.value)}
-                  placeholder="Ex: Prática cênica de improvisação e composição de personagens"
-                  className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Barra de Ações em Massa e Métricas em Tempo Real (Apenas se houver alunos) */}
-          {itensChamada.length > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Ações Rápidas:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleMarcarTodos('PRESENTE')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
-                >
-                  <CheckCheck className="w-3.5 h-3.5" />
-                  <span>Todos Presentes</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleMarcarTodos('FALTA')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer"
-                >
-                  <UserX className="w-3.5 h-3.5" />
-                  <span>Todos Faltaram</span>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 text-xs font-mono font-bold">
-                <span className="text-slate-600 dark:text-slate-400">
-                  Total: {totalAlunosForm}
-                </span>
-                <span className="text-emerald-700 dark:text-emerald-400">
-                  Presentes: {presentesForm}
-                </span>
-                <span className="text-rose-700 dark:text-rose-400">
-                  Faltas: {faltasForm}
-                </span>
-                <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  {pctPresencaForm}% freq.
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Lista de Alunos da Chamada / Aviso Amigável de Turma Sem Alunos */}
-          {loadingItens ? (
-            <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-8 text-center">
-              <div className="w-8 h-8 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                Carregando lista de alunos da turma...
-              </p>
-            </div>
-          ) : itensChamada.length === 0 ? (
-            <div className="bg-amber-50/70 dark:bg-amber-950/20 border-2 border-dashed border-amber-300/80 dark:border-amber-800/70 rounded-2xl p-8 sm:p-12 text-center space-y-4 shadow-xs animate-in fade-in duration-200">
-              <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center mx-auto shadow-xs">
-                <Users className="w-7 h-7" />
-              </div>
-              <div className="max-w-md mx-auto space-y-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>Turma Sem Alunos Matriculados</span>
-                </span>
-                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                  Nenhum estudante cadastrado nesta turma
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                  A turma <strong className="text-slate-900 dark:text-white">{turmaAtual?.codigo}</strong> ainda não possui alunos matriculados para a matéria <strong className="text-slate-900 dark:text-white">{materiaAtual?.nome}</strong>.
-                </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Para realizar a chamada e registrar presenças, é necessário confirmar as matrículas dos alunos primeiro.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
-                <Link
-                  href="/matriculas"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs shadow-sm transition"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Ir para Matrículas</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setModo('lista')}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 active:scale-95 text-xs font-bold transition cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Voltar ao Histórico</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl divide-y divide-slate-100 dark:divide-slate-800/80 shadow-xs overflow-hidden">
-              {itensChamada.map((item, index) => {
-                const isPresente = item.status === 'PRESENTE';
-                const isFalta = item.status === 'FALTA';
-                const isJustificada = item.status === 'JUSTIFICADA';
-
-                return (
-                  <div
-                    key={item.matriculaId}
-                    className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition"
-                  >
-                    {/* Aluno Identificação */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center shrink-0">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white block truncate">
-                          {item.alunoNome}
-                        </span>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                          {item.alunoCpf && (
-                            <span>CPF: {formatarCpfMascara(item.alunoCpf)}</span>
-                          )}
-                          <span>• Matrícula #{item.matriculaId}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Botões Táteis de Alternância de Presença */}
-                    <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePresenca(item.matriculaId, 'PRESENTE')}
-                        className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                          isPresente
-                            ? 'bg-emerald-600 text-white shadow-xs scale-102 ring-2 ring-emerald-500/40'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                        title="Marcar presença"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Presente</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePresenca(item.matriculaId, 'FALTA')}
-                        className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                          isFalta
-                            ? 'bg-rose-600 text-white shadow-xs scale-102 ring-2 ring-rose-500/40'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                        title="Marcar falta"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        <span>Faltou</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePresenca(item.matriculaId, 'JUSTIFICADA')}
-                        className={`min-h-[44px] px-2.5 py-2 rounded-xl text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
-                          isJustificada
-                            ? 'bg-amber-600 text-white shadow-xs'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                        title="Falta Justificada"
-                      >
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        <span>Justificada</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Rodapé de Envio */}
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setModo('lista')}
-              className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={salvando || !responsavelNome.trim() || itensChamada.length === 0}
-              title={itensChamada.length === 0 ? 'Não há alunos nesta turma para registrar chamada' : undefined}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs shadow-xs transition cursor-pointer"
-            >
-              {salvando ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Salvando...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Salvar Chamada</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* ========================================================================= */}
-      {/* VISÃO 3: TELA FOCADA DA CHAMADA DO DIA X (SOLICITAÇÃO EXPLÍCITA)           */}
-      {/* ========================================================================= */}
-      {modo === 'foco_dia' && chamadaFocada && (
-        <section className="space-y-6">
-          {/* Topo / Voltar */}
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setModo('lista')}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Voltar ao Diário de Chamadas</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleIniciarNovaChamada(chamadaFocada.dataAula)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer"
-            >
-              <Edit3 className="w-4 h-4" />
-              <span>Editar Chamada deste Dia</span>
-            </button>
-          </div>
-
-          {/* Painel Cabeçalho da Chamada Focada */}
-          <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-6">
-              <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-amber-600 dark:text-amber-400">
-                  {chamadaFocada.turmaCodigo} • {chamadaFocada.cursoNome}
-                </span>
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-                  Chamada da Aula: {chamadaFocada.materiaNome}
-                </h1>
-                <div className="flex items-center gap-2 mt-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-500" />
-                  <span>Data: {formatarDataBrasileira(chamadaFocada.dataAula)}</span>
-                </div>
-              </div>
-
-              {/* CARD DESTACADO: QUEM FEZ A CHAMADA */}
-              <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/80 rounded-2xl p-4 sm:p-5 shrink-0 min-w-[240px]">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                    Responsável pelo Registro
-                  </span>
-                </div>
-                <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-                  {chamadaFocada.responsavelRegistro || 'Não informado'}
-                </div>
-                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold block mt-1">
-                  ✓ Registro histórico inalterável do dia
-                </span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-400 block mt-0.5">
-                  Preserva a autoria de quem realizou a chamada nesta data, imutável mesmo se houver troca de professor na matéria.
-                </span>
-              </div>
-            </div>
-
-            {chamadaFocada.conteudoMinistrado && (
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                <span className="block text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1">
-                  Conteúdo Ministrado:
-                </span>
-                <p className="text-xs text-slate-700 dark:text-slate-300 italic">
-                  "{chamadaFocada.conteudoMinistrado}"
-                </p>
-              </div>
+            {/* Matérias: Segmented tabs */}
+            {materiasTurma.length > 0 && (
+              <AbasMaterias
+                materias={materiasTurma}
+                materiaSelecionadaId={materiaSelecionadaId}
+                onSelect={(id) => setMateriaSelecionadaId(id)}
+                onAdicionarMateria={() => setModalMateriasAberto(true)}
+                schoolTheme={schoolTheme}
+              />
             )}
-
-            {/* KPIs de Presença */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
-                <span className="block text-[10px] font-bold text-slate-400 uppercase">
-                  Total de Alunos
-                </span>
-                <span className="text-xl font-black text-slate-900 dark:text-white">
-                  {chamadaFocada.totalAlunos}
-                </span>
-              </div>
-
-              <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 text-center">
-                <span className="block text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">
-                  Presentes
-                </span>
-                <span className="text-xl font-black text-emerald-800 dark:text-emerald-300">
-                  {chamadaFocada.totalPresentes}
-                </span>
-              </div>
-
-              <div className="bg-rose-50 dark:bg-rose-950/40 p-4 rounded-xl border border-rose-200 dark:border-rose-800 text-center">
-                <span className="block text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase">
-                  Faltas
-                </span>
-                <span className="text-xl font-black text-rose-800 dark:text-rose-300">
-                  {chamadaFocada.totalFaltas}
-                </span>
-              </div>
-
-              <div className="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-200 dark:border-amber-800 text-center">
-                <span className="block text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">
-                  Frequência
-                </span>
-                <span className="text-xl font-black text-amber-800 dark:text-amber-300 font-mono">
-                  {chamadaFocada.percentualPresenca}%
-                </span>
-              </div>
-            </div>
           </div>
+        </div>
 
-          {/* LISTA DE ALUNOS COM PRESENTE OU FALTOU */}
-          <div className="bg-white dark:bg-[#121214] border border-slate-200/90 dark:border-slate-800/90 rounded-2xl overflow-hidden shadow-xs">
-            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/60 flex items-center justify-between">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                Lista de Presença Individual dos Alunos
-              </h3>
-              <span className="text-xs font-mono text-slate-400">
-                {chamadaFocada.itens.length} alunos listados
-              </span>
-            </div>
+        {/* Botão Primário Único da Página: Nova Chamada */}
+        <div className="shrink-0 self-start sm:self-auto">
+          {turmaAtual && materiaAtual && (
+            <button
+              type="button"
+              onClick={handleNovaChamada}
+              className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-medium text-xs shadow-xs transition-all cursor-pointer ${schoolTheme.primaryBg}`}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nova chamada</span>
+            </button>
+          )}
+        </div>
+      </header>
 
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-              {chamadaFocada.itens.map((item, idx) => (
-                <div
-                  key={item.matriculaId}
-                  className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold flex items-center justify-center shrink-0">
-                      {idx + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block truncate">
-                        {item.alunoNome}
-                      </span>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                        {item.alunoCpf && (
-                          <span>CPF: {formatarCpfMascara(item.alunoCpf)}</span>
-                        )}
-                        <span>• Matrícula #{item.matriculaId}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Badge de Status Visual */}
-                  <div>
-                    {item.status === 'PRESENTE' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 font-extrabold text-xs">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>PRESENTE</span>
-                      </span>
-                    )}
-
-                    {item.status === 'FALTA' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 font-extrabold text-xs">
-                        <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                        <span>FALTOU</span>
-                      </span>
-                    )}
-
-                    {item.status === 'JUSTIFICADA' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 font-extrabold text-xs">
-                        <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                        <span>JUSTIFICADA</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      {/* ─── 3. Resumo Antes da Lista (3 números + Sparkline) ─── */}
+      {turmaAtual && materiaAtual && (
+        <ResumoFrequenciaFaixa
+          frequenciaMedia={frequenciaMedia}
+          totalAulas={totalAulas}
+          alunosEmRisco={alunosEmRisco}
+          historico={historicoChamadas}
+          schoolTheme={schoolTheme}
+        />
       )}
 
-      {/* Modal de Cadastro / Gestão de Matérias */}
+      {/* ─── 4. Lista Agrupada por Mês no Lugar de Cards ─── */}
+      <section className="space-y-6">
+        {loadingHistorico ? (
+          <div className="p-12 text-center rounded-xl border border-stone-200/80 dark:border-[#262422] bg-white dark:bg-[#141210]">
+            <div className="w-6 h-6 border-2 border-stone-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              Carregando chamadas...
+            </p>
+          </div>
+        ) : historicoChamadas.length === 0 ? (
+          <div className="p-10 sm:p-14 text-center rounded-xl border border-dashed border-stone-200 dark:border-[#262422] bg-stone-50/50 dark:bg-[#121110] space-y-3">
+            <BookOpen className="w-6 h-6 mx-auto text-stone-400" />
+            <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
+              Nenhuma chamada ainda. Registrar a primeira aula
+            </p>
+            <p className="text-xs text-stone-500 dark:text-stone-400 max-w-sm mx-auto">
+              Comece registrando a frequência dos estudantes na matéria{' '}
+              {materiaAtual?.nome || 'selecionada'}.
+            </p>
+            {turmaAtual && materiaAtual && (
+              <button
+                type="button"
+                onClick={handleNovaChamada}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${schoolTheme.primaryBg}`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Registrar primeira aula</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {chamadasPorMes.map(([mesGrupo, chamadas]) => (
+              <div key={mesGrupo} className="space-y-2.5">
+                {/* Cabeçalho do Mês */}
+                <h3 className="text-xs font-medium text-stone-500 dark:text-stone-400 px-1">
+                  {mesGrupo}
+                </h3>
+
+                {/* Lista de Chamadas daquele Mês */}
+                <div className="space-y-2">
+                  {chamadas.map((ch) => (
+                    <ChamadaLinha
+                      key={`${ch.materiaId}-${ch.dataAula}`}
+                      chamada={ch}
+                      onAbrir={() => handleAbrirChamada(ch.dataAula)}
+                      onEditar={() => handleEditarChamada(ch.dataAula)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ─── 8. Drawer Lateral para Fazer ou Visualizar Chamada ─── */}
+      <ChamadaDrawer
+        aberto={drawerAberto}
+        modo={drawerModo}
+        turma={turmaAtual}
+        materia={materiaAtual}
+        dataAula={dataAulaDrawer}
+        onDataAulaChange={setDataAulaDrawer}
+        responsavelNome={responsavelDrawer}
+        onResponsavelChange={setResponsavelDrawer}
+        conteudoMinistrado={conteudoDrawer}
+        onConteudoChange={setConteudoDrawer}
+        itens={itensDrawer}
+        onTogglePresenca={handleTogglePresencaDrawer}
+        onMarcarTodos={handleMarcarTodosDrawer}
+        onSalvar={handleSalvarDrawer}
+        onClose={() => setDrawerAberto(false)}
+        onMudarParaEdicao={() => setDrawerModo('edicao')}
+        salvando={salvandoDrawer}
+        loadingItens={loadingItensDrawer}
+        usuarioLogado={usuarioLogado}
+        schoolTheme={schoolTheme}
+      />
+
+      {/* Modal de Gerenciamento de Matérias */}
       <ModalGerenciarMaterias
         isOpen={modalMateriasAberto}
         turma={turmaAtual}
         onClose={() => setModalMateriasAberto(false)}
-        onMateriasAtualizadas={handleMateriasAtualizadas}
+        onMateriasAtualizadas={async () => {
+          if (turmaAtual?.id) {
+            const idTurma = turmaAtual.id;
+            try {
+              const mats = await api.getMateriasTurma(idTurma);
+              setMateriasLocaisMap((prev) => ({ ...prev, [idTurma]: mats }));
+            } catch {}
+          }
+          carregarDadosEscola();
+        }}
       />
-    </main>
+    </div>
   );
 }
