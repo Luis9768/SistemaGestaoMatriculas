@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { Search, Plus, X, ArrowRight, Layers, BookOpen, User, Clock, Info } from 'lucide-react';
 import { Turma, Curso, Escola } from '@/lib/api';
 import { ModalGerenciarMaterias } from '@/components/ModalGerenciarMaterias';
@@ -25,86 +26,371 @@ interface TurmasOfertasViewProps {
   onTurmasAtualizadas?: () => void;
 }
 
-interface EscolaTheme {
+export interface EscolaTheme {
   sigla: string;
   nome: string;
-  accentBar: string;
-  tagStyle: string;
-  progressColor: string;
+  accentBorder: string;
+  accentGlow: string;
+  seatFree: string;
   btnAtivo: string;
 }
 
-const ESCOLAS_THEME: Record<string, EscolaTheme> = {
+export const ESCOLAS_THEME: Record<string, EscolaTheme> = {
   ELT: {
     sigla: 'ELT',
     nome: 'Escola Livre de Teatro',
-    accentBar: 'bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-600',
-    tagStyle:
-      'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/50 dark:text-violet-300 dark:border-violet-800/60',
-    progressColor: 'bg-violet-600 dark:bg-violet-500',
-    btnAtivo:
-      'bg-violet-700 hover:bg-violet-800 active:bg-violet-900 text-white dark:bg-violet-600 dark:hover:bg-violet-500 shadow-violet-500/20',
+    accentBorder: 'border-l-[#7c3aed]',
+    accentGlow: 'hover:border-[#7c3aed]/50',
+    seatFree: 'bg-[#7c3aed] ring-1 ring-[#a78bfa]/40',
+    btnAtivo: 'bg-[#6d28d9] hover:bg-[#7c3aed] text-white shadow-xs',
   },
   ELD: {
     sigla: 'ELD',
     nome: 'Escola Livre de Dança',
-    accentBar: 'bg-gradient-to-r from-rose-600 via-pink-500 to-red-500',
-    tagStyle:
-      'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/60',
-    progressColor: 'bg-rose-600 dark:bg-rose-500',
-    btnAtivo:
-      'bg-rose-700 hover:bg-rose-800 active:bg-rose-900 text-white dark:bg-rose-600 dark:hover:bg-rose-500 shadow-rose-500/20',
+    accentBorder: 'border-l-[#db2777]',
+    accentGlow: 'hover:border-[#db2777]/50',
+    seatFree: 'bg-[#db2777] ring-1 ring-[#f472b6]/40',
+    btnAtivo: 'bg-[#be185d] hover:bg-[#db2777] text-white shadow-xs',
   },
   ELCV: {
     sigla: 'ELCV',
     nome: 'Escola Livre de Cinema e Vídeo',
-    accentBar: 'bg-gradient-to-r from-sky-600 via-cyan-500 to-blue-600',
-    tagStyle:
-      'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/60',
-    progressColor: 'bg-sky-600 dark:bg-sky-500',
-    btnAtivo:
-      'bg-sky-700 hover:bg-sky-800 active:bg-sky-900 text-white dark:bg-sky-600 dark:hover:bg-sky-500 shadow-sky-500/20',
+    accentBorder: 'border-l-[#0284c7]',
+    accentGlow: 'hover:border-[#0284c7]/50',
+    seatFree: 'bg-[#0284c7] ring-1 ring-[#38bdf8]/40',
+    btnAtivo: 'bg-[#0284c7] hover:bg-[#0ea5e9] text-white shadow-xs',
   },
   EMIA: {
     sigla: 'EMIA',
     nome: 'Escola Municipal de Iniciação Artística',
-    accentBar: 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500',
-    tagStyle:
-      'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60',
-    progressColor: 'bg-amber-600 dark:bg-amber-500',
-    btnAtivo:
-      'bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white dark:bg-amber-600 dark:hover:bg-amber-500 shadow-amber-500/20',
+    accentBorder: 'border-l-[#d97706]',
+    accentGlow: 'hover:border-[#d97706]/50',
+    seatFree: 'bg-[#d97706] ring-1 ring-[#fbbf24]/40',
+    btnAtivo: 'bg-[#d97706] hover:bg-[#f59e0b] text-stone-950 font-bold shadow-xs',
   },
   ELIA: {
     sigla: 'EMIA',
     nome: 'Escola Municipal de Iniciação Artística',
-    accentBar: 'bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500',
-    tagStyle:
-      'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60',
-    progressColor: 'bg-amber-600 dark:bg-amber-500',
-    btnAtivo:
-      'bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white dark:bg-amber-600 dark:hover:bg-amber-500 shadow-amber-500/20',
+    accentBorder: 'border-l-[#d97706]',
+    accentGlow: 'hover:border-[#d97706]/50',
+    seatFree: 'bg-[#d97706] ring-1 ring-[#fbbf24]/40',
+    btnAtivo: 'bg-[#d97706] hover:bg-[#f59e0b] text-stone-950 font-bold shadow-xs',
   },
 };
 
-const DEFAULT_THEME: EscolaTheme = {
+export const DEFAULT_THEME: EscolaTheme = {
   sigla: 'GERAL',
   nome: 'Secretaria de Cultura',
-  accentBar: 'bg-slate-500 dark:bg-slate-600',
-  tagStyle:
-    'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
-  progressColor: 'bg-blue-600 dark:bg-blue-500',
-  btnAtivo: 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-500',
+  accentBorder: 'border-l-stone-500',
+  accentGlow: 'hover:border-stone-400',
+  seatFree: 'bg-stone-700 dark:bg-stone-300 ring-1 ring-stone-400/40',
+  btnAtivo:
+    'bg-stone-900 hover:bg-stone-800 text-white dark:bg-stone-100 dark:hover:bg-white dark:text-stone-900 shadow-xs',
 };
 
-const formatarDataBr = (dataStr?: string) => {
-  if (!dataStr) return 'Não definida';
-  const partes = dataStr.split('-');
-  if (partes.length === 3) {
-    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+/**
+ * Formata a linha de decisão do curso (Dias · Horário · Faixa etária).
+ */
+export function formatarLinhaDecisao(turma: Turma, curso?: Curso): string {
+  const partes: string[] = [];
+
+  if (turma.diasHorariosLocal && turma.diasHorariosLocal.trim()) {
+    const horarioLimpo = turma.diasHorariosLocal
+      .replace(/\s*•\s*/g, ' · ')
+      .replace(/\s*\|\s*/g, ' · ')
+      .trim();
+    partes.push(horarioLimpo);
+  } else if (curso?.cargaHoraria) {
+    partes.push(`${curso.cargaHoraria}h`);
   }
-  return dataStr;
-};
+
+  if (turma.idadeMinima && turma.idadeMaxima) {
+    partes.push(`${turma.idadeMinima} a ${turma.idadeMaxima} anos`);
+  } else if (turma.idadeMinima) {
+    partes.push(`${turma.idadeMinima}+ anos`);
+  } else if (turma.idadeMaxima) {
+    partes.push(`Até ${turma.idadeMaxima} anos`);
+  }
+
+  if (partes.length === 0) {
+    return 'Horários em definição com a coordenação';
+  }
+
+  return partes.join(' · ');
+}
+
+/**
+ * Visualização de assentos de teatro (poltronas).
+ * Pontos preenchidos representam vagas ocupadas e pontos iluminados representam vagas disponíveis.
+ */
+interface TeatroAssentosProps {
+  total: number;
+  ocupadas: number;
+  corAssentoLivre: string;
+  isEncerrada?: boolean;
+}
+
+export function TeatroAssentos({
+  total,
+  ocupadas,
+  corAssentoLivre,
+  isEncerrada,
+}: TeatroAssentosProps) {
+  const totalPoltronas = Math.min(Math.max(total || 20, 16), 25);
+  const ocupadasPoltronas = Math.min(
+    totalPoltronas,
+    Math.round(((ocupadas || 0) / Math.max(total || 1, 1)) * totalPoltronas)
+  );
+
+  return (
+    <div
+      className="flex items-center gap-1 flex-wrap max-w-[210px] py-0.5"
+      aria-label={`${ocupadas} de ${total} vagas ocupadas`}
+    >
+      {Array.from({ length: totalPoltronas }).map((_, index) => {
+        const isOcupado = index < ocupadasPoltronas;
+        return (
+          <motion.span
+            key={index}
+            initial={{ opacity: 0, scale: 0.3 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              duration: 0.18,
+              delay: 0.06 + index * 0.015,
+              ease: [0.2, 0.8, 0.2, 1],
+            }}
+            className={`w-2.5 h-3 rounded-t-[3px] rounded-b-[1px] transition-all duration-200 group-hover/contador:scale-110 ${
+              isEncerrada
+                ? 'bg-stone-200 dark:bg-stone-800'
+                : isOcupado
+                ? 'bg-stone-300 dark:bg-stone-700/80'
+                : `${corAssentoLivre} shadow-xs`
+            }`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Skeleton para carregamento das turmas no mesmo layout editorial.
+ */
+export function TurmaCardSkeleton() {
+  return (
+    <div className="relative bg-white dark:bg-[#121110] rounded-xl border border-stone-200/70 dark:border-[#262422] p-5 sm:p-6 flex flex-col justify-between animate-pulse">
+      <div>
+        <div className="flex justify-between items-center">
+          <div className="h-3 w-16 bg-stone-200 dark:bg-stone-800 rounded" />
+          <div className="h-4 w-20 bg-stone-200 dark:bg-stone-800 rounded-md" />
+        </div>
+        <div className="h-6 w-3/4 bg-stone-200 dark:bg-stone-800 rounded mt-3" />
+        <div className="h-3.5 w-1/2 bg-stone-100 dark:bg-stone-800/60 rounded mt-2.5" />
+        <div className="h-3.5 w-1/3 bg-stone-100 dark:bg-stone-800/60 rounded mt-2" />
+      </div>
+      <div className="mt-6 pt-2">
+        <div className="flex justify-between items-end">
+          <div className="h-6 w-32 bg-stone-200 dark:bg-stone-800 rounded" />
+          <div className="h-5 w-16 bg-stone-200 dark:bg-stone-800 rounded" />
+        </div>
+        <div className="mt-5 flex justify-between items-center">
+          <div className="h-4 w-16 bg-stone-100 dark:bg-stone-800 rounded" />
+          <div className="h-8.5 w-24 bg-stone-200 dark:bg-stone-800 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Card Editorial e Teatral da Turma
+ */
+interface TurmaCardProps {
+  turma: Turma;
+  index: number;
+  curso?: Curso;
+  theme: EscolaTheme;
+  onDetalhes: (turma: Turma) => void;
+  onMatricular: (turmaId: number) => void;
+}
+
+export function TurmaCard({
+  turma,
+  index,
+  curso,
+  theme,
+  onDetalhes,
+  onMatricular,
+}: TurmaCardProps) {
+  const ocupacao =
+    turma.vagasTotais > 0 ? ((turma.vagasOcupadas ?? 0) / turma.vagasTotais) * 100 : 0;
+  const vagasRestantes = Math.max(0, turma.vagasTotais - (turma.vagasOcupadas ?? 0));
+  const linhaDecisao = formatarLinhaDecisao(turma, curso);
+
+  // Status semântico exclusivo para exceções (sem ruído quando normal)
+  const isEncerrada = !turma.matriculaAberta;
+  const isEsgotado = !isEncerrada && (vagasRestantes === 0 || ocupacao >= 100);
+  const isPoucasVagas =
+    !isEncerrada && !isEsgotado && (vagasRestantes <= 3 || ocupacao >= 80);
+
+  return (
+    <motion.div
+      id={`turma-card-${turma.id}`}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.35,
+        delay: Math.min(index * 0.04, 0.35),
+        ease: [0.2, 0.8, 0.2, 1],
+      }}
+      onClick={() => onDetalhes(turma)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onDetalhes(turma);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className={`group relative bg-white dark:bg-[#121110] rounded-xl border border-stone-200/90 dark:border-[#262422] border-l-4 ${theme.accentBorder} ${theme.accentGlow} shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-5 sm:p-6 flex flex-col justify-between cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-stone-400`}
+    >
+      {/* Textura sutil de grão analógico */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-xl opacity-[0.035] dark:opacity-[0.06] bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px]"
+        aria-hidden="true"
+      />
+
+      {/* BLOCO 1: TÍTULO & META (Hierarquia e leitura claras) */}
+      <div className="relative z-10">
+        {/* Linha superior: Código discreto + Status semântico quando exceção */}
+        <div className="flex items-center justify-between gap-2 min-h-[20px]">
+          <span className="font-mono text-[11px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+            {turma.codigo}
+          </span>
+
+          {isEncerrada && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-stone-100 text-stone-600 dark:bg-stone-900/80 dark:text-stone-400 border border-stone-200/80 dark:border-stone-800">
+              Encerrada
+            </span>
+          )}
+
+          {isEsgotado && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-stone-100 text-stone-600 dark:bg-stone-900/80 dark:text-stone-400 border border-stone-200/80 dark:border-stone-800">
+              Esgotado
+            </span>
+          )}
+
+          {isPoucasVagas && (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              Últimas {vagasRestantes} {vagasRestantes === 1 ? 'vaga' : 'vagas'}
+            </span>
+          )}
+        </div>
+
+        {/* 1. Nome do curso grande em fonte serifada com palco */}
+        <h3
+          className="font-serif font-bold text-lg sm:text-xl text-stone-900 dark:text-[#EDE8E0] tracking-tight leading-snug mt-2.5 line-clamp-2"
+          title={turma.cursoNome}
+        >
+          {turma.cursoNome}
+        </h3>
+
+        {/* 2. Linha que decide: Dias · Horário · Idade */}
+        <p className="text-xs text-stone-600 dark:text-stone-400 font-medium mt-2 leading-relaxed">
+          {linhaDecisao}
+        </p>
+
+        {/* 3. Professor ou coordenação em texto simples com nome real */}
+        <p className="text-xs text-stone-500 dark:text-stone-400 font-normal mt-1 truncate">
+          {turma.educadorResponsavel
+            ? `${turma.educadorResponsavel}`
+            : 'Coordenação Pedagógica'}
+        </p>
+      </div>
+
+      {/* BLOCO 2: VAGAS & AÇÃO (Respiro generoso entre grupos) */}
+      <div className="relative z-10 mt-6 pt-1">
+        {/* Assentos como poltronas de teatro + Número mono em destaque */}
+        <div
+          className="flex items-end justify-between gap-3 p-2.5 rounded-lg bg-stone-50/70 dark:bg-stone-900/40 border border-stone-200/40 dark:border-stone-800/40 transition-colors group-hover:border-stone-300/60 dark:group-hover:border-stone-700/60"
+          title={`${turma.vagasOcupadas ?? 0}/${turma.vagasTotais} vagas ocupadas (${Math.round(ocupacao)}% preenchido)`}
+        >
+          <div className="space-y-1">
+            <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wider block">
+              Poltronas da Turma
+            </span>
+            <TeatroAssentos
+              total={turma.vagasTotais}
+              ocupadas={turma.vagasOcupadas ?? 0}
+              corAssentoLivre={theme.seatFree}
+              isEncerrada={isEncerrada}
+            />
+          </div>
+
+          <div className="group/contador flex flex-col items-end shrink-0 cursor-help">
+            <span className="font-mono text-base sm:text-lg font-bold text-stone-900 dark:text-stone-100 tracking-tight leading-none">
+              {vagasRestantes > 0 ? `${vagasRestantes} vagas` : '0 vagas'}
+            </span>
+            <span className="text-[10px] text-stone-400 dark:text-stone-500 font-sans tracking-normal mt-0.5">
+              {isEncerrada
+                ? 'encerrada'
+                : vagasRestantes === 0
+                ? 'esgotado'
+                : 'disponíveis'}
+            </span>
+          </div>
+        </div>
+
+        {/* Rodapé de Ações: Detalhes com stretched-feel e Botão com Wipe */}
+        <div className="mt-4 flex items-center justify-between gap-2.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDetalhes(turma);
+            }}
+            className="text-xs font-medium text-stone-500 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-stone-200 underline-offset-4 hover:underline transition-colors flex items-center gap-1 cursor-pointer py-1"
+          >
+            <span>Ver detalhes</span>
+          </button>
+
+          {isEncerrada ? (
+            <span className="h-8.5 px-3.5 rounded-lg inline-flex items-center justify-center text-xs font-medium text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-900/60 border border-stone-200/70 dark:border-stone-800/60 cursor-not-allowed">
+              Encerrada
+            </span>
+          ) : isEsgotado ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (turma.id) onMatricular(turma.id);
+              }}
+              className="group/btn relative overflow-hidden h-8.5 px-3.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-transparent hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+            >
+              <span>Lista de espera</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (turma.id) onMatricular(turma.id);
+              }}
+              className={`group/btn relative overflow-hidden h-8.5 px-4 rounded-lg ${theme.btnAtivo} text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98`}
+            >
+              {/* Wipe suave de 250ms da esquerda para a direita no hover */}
+              <span className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover/btn:translate-x-0 transition-transform duration-250 ease-out pointer-events-none" />
+              <span className="relative z-10">Matricular</span>
+              <ArrowRight className="relative z-10 w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-1" />
+            </button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export function TurmasOfertasView({
   turmas,
@@ -292,135 +578,21 @@ export function TurmasOfertasView({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {turmasFiltradas.map((t) => {
-            const ocupacao = t.vagasTotais > 0 ? ((t.vagasOcupadas ?? 0) / t.vagasTotais) * 100 : 0;
-            const vagasRestantes = Math.max(0, t.vagasTotais - (t.vagasOcupadas ?? 0));
-
-            // Cores conforme a lotação: verde até ~60%, âmbar acima de ~80%, vermelho lotado
-            let corBarra = 'bg-emerald-500';
-            let corTextoVagas = 'text-emerald-600 dark:text-emerald-400';
-            if (ocupacao >= 100 || vagasRestantes === 0) {
-              corBarra = 'bg-rose-500';
-              corTextoVagas = 'text-rose-600 dark:text-rose-400';
-            } else if (ocupacao >= 80) {
-              corBarra = 'bg-amber-500';
-              corTextoVagas = 'text-amber-600 dark:text-amber-400';
-            }
+          {turmasFiltradas.map((t, index) => {
+            const curso = cursos.find((c) => c.id === t.cursoId);
+            const sigla = getEscolaSigla(t);
+            const theme = ESCOLAS_THEME[sigla] || DEFAULT_THEME;
 
             return (
-              <div
+              <TurmaCard
                 key={t.id}
-                id={`turma-card-${t.id}`}
-                className="group relative bg-white dark:bg-[#121214] rounded-2xl border border-slate-200/90 dark:border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-slate-300 dark:hover:border-zinc-700/80 hover:-translate-y-0.5 transition-all duration-200 p-5 sm:p-5.5 flex flex-col justify-between"
-              >
-                <div>
-                  {/* Topo do Card: Código pequeno em Mono (substitui tag redundante) e Status Discreto */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs font-semibold text-slate-500 dark:text-zinc-400 tracking-wider uppercase">
-                      {t.codigo}
-                    </span>
-
-                    {t.matriculaAberta ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Matrículas Abertas
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200/60 dark:bg-zinc-900/60 dark:text-zinc-500 dark:border-zinc-800/60">
-                        Encerrada
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Hierarquia Invertida: Nome Legível do Curso é o Título Principal (Sans-serif) */}
-                  <h3
-                    className="font-sans font-semibold text-[17px] sm:text-lg text-slate-900 dark:text-white tracking-tight leading-snug mt-2 line-clamp-2"
-                    title={t.cursoNome}
-                  >
-                    {t.cursoNome}
-                  </h3>
-
-                  {/* Bloco de Informações Compacto com Ícones (Educador, Horário, Matérias) */}
-                  <div className="mt-4 space-y-2 text-xs text-slate-600 dark:text-zinc-300">
-                    <div className="flex items-center gap-2">
-                      <User className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" aria-hidden="true" />
-                      <span className="font-medium truncate text-slate-800 dark:text-zinc-200">
-                        {t.educadorResponsavel || 'Coordenação da Escola'}
-                      </span>
-                    </div>
-
-                    {t.diasHorariosLocal && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" aria-hidden="true" />
-                        <span className="font-mono text-[11px] text-slate-600 dark:text-zinc-400 truncate">
-                          {t.diasHorariosLocal}
-                        </span>
-                      </div>
-                    )}
-
-                    {t.materias && t.materias.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" aria-hidden="true" />
-                        <span className="text-[11px] text-slate-600 dark:text-zinc-400">
-                          {t.materias.length} {t.materias.length === 1 ? 'matéria curricular' : 'matérias curriculares'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Ocupação com Destaque Único nas Vagas Restantes e Barra Dinâmica */}
-                  <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-white/[0.06]">
-                    <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="text-slate-500 dark:text-zinc-400 font-medium">Ocupação</span>
-                      <span className={`text-xs font-semibold ${corTextoVagas}`}>
-                        {vagasRestantes > 0
-                          ? `${vagasRestantes} ${vagasRestantes === 1 ? 'vaga restante' : 'vagas restantes'}`
-                          : 'Vagas esgotadas'}
-                      </span>
-                    </div>
-
-                    <div className="w-full bg-slate-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${corBarra}`}
-                        style={{ width: `${Math.min(100, Math.round(ocupacao))}%` }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 dark:text-zinc-500 mt-1.5">
-                      <span>{t.vagasOcupadas ?? 0}/{t.vagasTotais} vagas</span>
-                      <span>{Math.round(ocupacao)}% preenchido</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rodapé: Botão Detalhes Ghost com Borda e Matricular Primário Mais Largo */}
-                <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center gap-2.5 mt-5">
-                  <button
-                    type="button"
-                    onClick={() => abrirModalDetalhesTurma(t)}
-                    className="h-9 px-3.5 rounded-xl border border-slate-200 dark:border-zinc-700/80 bg-transparent hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-medium transition flex items-center gap-1.5 cursor-pointer active:scale-98"
-                    title="Ver informações detalhadas da turma"
-                  >
-                    <Info className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-400" aria-hidden="true" />
-                    <span>Detalhes</span>
-                  </button>
-
-                  {t.matriculaAberta ? (
-                    <button
-                      type="button"
-                      onClick={() => onMatricularNaTurma(t.id!)}
-                      className="flex-1 h-9 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
-                    >
-                      <span>Matricular</span>
-                      <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                    </button>
-                  ) : (
-                    <span className="flex-1 h-9 rounded-xl inline-flex items-center justify-center text-xs font-medium text-slate-400 dark:text-zinc-600 bg-slate-100/60 dark:bg-zinc-900/50 border border-slate-200/50 dark:border-zinc-800/50 cursor-not-allowed">
-                      Encerrada
-                    </span>
-                  )}
-                </div>
-              </div>
+                turma={t}
+                index={index}
+                curso={curso}
+                theme={theme}
+                onDetalhes={abrirModalDetalhesTurma}
+                onMatricular={onMatricularNaTurma}
+              />
             );
           })}
         </div>
