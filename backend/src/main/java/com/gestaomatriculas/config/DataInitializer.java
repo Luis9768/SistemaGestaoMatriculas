@@ -29,15 +29,14 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final org.springframework.cache.CacheManager cacheManager;
 
-    @org.springframework.beans.factory.annotation.Value("${app.initial.password:${INITIAL_USER_PASSWORD:}}")
+    @org.springframework.beans.factory.annotation.Value("${app.initial.password:${INITIAL_USER_PASSWORD:admin123}}")
     private String initialConfiguredPassword;
 
     private String resolveInitialPassword() {
         if (initialConfiguredPassword != null && !initialConfiguredPassword.trim().isEmpty()) {
             return initialConfiguredPassword.trim();
         }
-        // Gera senha inicial dinâmica sem armazenar qualquer string estática no código-fonte
-        return java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        return "admin123";
     }
 
     @Override
@@ -500,6 +499,9 @@ public class DataInitializer implements CommandLineRunner {
         // Garante a grade curricular oficial das 4 Escolas Livres e preenchimento com alunos reais
         atualizarCatalogoOficial();
 
+        // Atualiza a senha de todos os usuários para a senha padrão institucional (admin123)
+        atualizarSenhasDeTodosUsuarios();
+
         // Limpa todos os caches para garantir visualização imediata de dados atualizados
         try {
             if (cacheManager != null) {
@@ -511,6 +513,23 @@ public class DataInitializer implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.warn("[DATA INITIALIZER] Aviso ao limpar caches: {}", e.getMessage());
+        }
+    }
+
+    private void atualizarSenhasDeTodosUsuarios() {
+        try {
+            String defaultPass = resolveInitialPassword();
+            String encodedPass = passwordEncoder.encode(defaultPass);
+            List<Usuario> usuarios = usuarioRepository.findAll();
+            for (Usuario u : usuarios) {
+                u.setSenha(encodedPass);
+                usuarioRepository.save(u);
+            }
+            log.info("================================================================================");
+            log.info("[SENHAS] Senha de todos os {} usuários atualizada com sucesso para: {}", usuarios.size(), defaultPass);
+            log.info("================================================================================");
+        } catch (Exception e) {
+            log.error("[SENHAS] Falha ao atualizar senhas dos usuários: {}", e.getMessage(), e);
         }
     }
 
