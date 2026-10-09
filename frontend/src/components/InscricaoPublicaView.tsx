@@ -45,6 +45,14 @@ export function InscricaoPublicaView({
   onVoltarLogin,
 }: InscricaoPublicaViewProps) {
   const [turmaId, setTurmaId] = useState<number>(turmaPreSelecionadaId || (turmas[0]?.id || 0));
+
+  React.useEffect(() => {
+    if (turmaPreSelecionadaId) {
+      setTurmaId(turmaPreSelecionadaId);
+    } else if (!turmaId && turmas.length > 0 && turmas[0]?.id) {
+      setTurmaId(turmas[0].id);
+    }
+  }, [turmaPreSelecionadaId, turmas]);
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');

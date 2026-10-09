@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { Search, Plus, X, ArrowRight, Layers, BookOpen, User, Clock, Info } from 'lucide-react';
 import { Turma, Curso, Escola } from '@/lib/api';
 import { ModalGerenciarMaterias } from '@/components/ModalGerenciarMaterias';
+import { ModalMatricularTurma } from '@/components/ModalMatricularTurma';
 import { useApp } from '@/context/AppContext';
 import {
   Select,
@@ -22,7 +23,7 @@ interface TurmasOfertasViewProps {
   termoBuscaInicial?: string;
   destacarTurmaId?: number | null;
   onAbrirModalTurma: () => void;
-  onMatricularNaTurma: (turmaId: number) => void;
+  onMatricularNaTurma?: (turmaId: number) => void;
   onTurmasAtualizadas?: () => void;
 }
 
@@ -407,6 +408,7 @@ export function TurmasOfertasView({
   const [filtroAbertas, setFiltroAbertas] = useState<'todas' | 'abertas' | 'fechadas'>('todas');
   const [buscaCodigo, setBuscaCodigo] = useState(termoBuscaInicial || '');
   const [turmaGerenciarMaterias, setTurmaGerenciarMaterias] = useState<Turma | null>(null);
+  const [turmaParaMatricular, setTurmaParaMatricular] = useState<Turma | null>(null);
 
   const isEncarregada = usuarioLogado?.role === 'ROLE_ENCARREGADA';
   const permittedSchoolIds: number[] = usuarioLogado?.escolasIds?.length
@@ -591,11 +593,26 @@ export function TurmasOfertasView({
                 curso={curso}
                 theme={theme}
                 onDetalhes={abrirModalDetalhesTurma}
-                onMatricular={onMatricularNaTurma}
+                onMatricular={(turmaId) => {
+                  const targetTurma = turmasFiltradas.find((item) => item.id === turmaId) || t;
+                  setTurmaParaMatricular(targetTurma);
+                }}
               />
             );
           })}
         </div>
+      )}
+
+      {/* Modal Matricular Aluno na Turma */}
+      {turmaParaMatricular && (
+        <ModalMatricularTurma
+          isOpen={Boolean(turmaParaMatricular)}
+          turma={turmaParaMatricular}
+          onClose={() => setTurmaParaMatricular(null)}
+          onMatriculaSucesso={() => {
+            onTurmasAtualizadas?.();
+          }}
+        />
       )}
 
       {/* Modal Gerenciar Matérias */}

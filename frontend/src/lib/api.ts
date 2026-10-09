@@ -991,6 +991,24 @@ export const api = {
     return res.json();
   },
 
+  async matricular(payload: {
+    alunoId: number;
+    turmaId: number;
+    canalOrigem?: 'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ';
+    observacoes?: string;
+  }): Promise<Matricula> {
+    const res = await fetch(`${API_BASE}/matriculas`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao realizar matrícula' }));
+      throw new Error(err.message || 'Erro ao realizar matrícula');
+    }
+    return res.json();
+  },
+
   async cancelarMatricula(id: number): Promise<Matricula> {
     const res = await fetch(`${API_BASE}/matriculas/${id}/cancelar`, {
       method: 'PATCH',
