@@ -29,14 +29,8 @@ export default function DirecionamentoPage() {
   useEffect(() => {
     if (!loading && !userEfetivo) {
       router.replace('/login');
-    } else if (!loading && userEfetivo?.role === 'ROLE_ENCARREGADA') {
-      const qtd = userEfetivo.escolasIds?.length || userEfetivo.escolas?.length || (userEfetivo.escolaId ? 1 : 0);
-      if (qtd === 1 && userEfetivo.escolaId) {
-        setEscolaSelecionada(userEfetivo.escolaId);
-        router.replace('/turmas');
-      }
     }
-  }, [loading, userEfetivo, router, setEscolaSelecionada]);
+  }, [loading, userEfetivo, router]);
 
   if (loading || !userEfetivo) {
     return (
