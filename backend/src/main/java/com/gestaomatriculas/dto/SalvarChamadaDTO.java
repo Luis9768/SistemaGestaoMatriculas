@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -24,6 +25,7 @@ public class SalvarChamadaDTO {
     private Long materiaId;
 
     @NotNull(message = "Data da aula é obrigatória")
+    @PastOrPresent(message = "Não é permitido registrar chamada para datas futuras. A data limite é o dia de hoje.")
     private LocalDate dataAula;
 
     @NotBlank(message = "O nome do responsável pelo registro da chamada é obrigatório")

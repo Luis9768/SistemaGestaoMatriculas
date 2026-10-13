@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  AlertCircle,
   Plus,
   Search,
   Save,
@@ -676,6 +677,16 @@ function ChamadaDrawer({
 }: ChamadaDrawerProps) {
   const [focadoIndex, setFocadoIndex] = useState(0);
 
+  const hojeLocal = useMemo(() => {
+    const d = new Date();
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  }, []);
+
+  const dataInvalidaFutura = Boolean(dataAula && dataAula > hojeLocal);
+
   // Atalhos de teclado (P presente, F falta, setas para navegar)
   useEffect(() => {
     if (!aberto || modo === 'detalhes') return;
@@ -778,20 +789,35 @@ function ChamadaDrawer({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Data da Aula */}
                   <div>
-                    <label
-                      htmlFor="drawer-data-aula"
-                      className="block text-[11px] font-medium text-stone-600 dark:text-stone-400 mb-1"
-                    >
-                      Data da Aula
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label
+                        htmlFor="drawer-data-aula"
+                        className="block text-[11px] font-medium text-stone-600 dark:text-stone-400"
+                      >
+                        Data da Aula
+                      </label>
+                      {dataInvalidaFutura && (
+                        <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> Data futura bloqueada
+                        </span>
+                      )}
+                    </div>
                     <input
                       id="drawer-data-aula"
                       type="date"
                       disabled={modo === 'detalhes'}
                       value={dataAula}
+                      max={hojeLocal}
                       onChange={(e) => onDataAulaChange(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-[#121110] border border-stone-200 dark:border-[#262422] text-stone-900 dark:text-stone-100 disabled:opacity-75 focus:outline-none focus:ring-1 focus:ring-stone-400"
+                      className={`w-full px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-[#121110] border text-stone-900 dark:text-stone-100 disabled:opacity-75 focus:outline-none focus:ring-1 ${
+                        dataInvalidaFutura
+                          ? 'border-rose-500 focus:ring-rose-500'
+                          : 'border-stone-200 dark:border-[#262422] focus:ring-stone-400'
+                      }`}
                     />
+                    <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1">
+                      Permitido apenas até a data de hoje ({hojeLocal.split('-').reverse().join('/')}).
+                    </p>
                   </div>
 
                   {/* Responsável */}
@@ -983,7 +1009,8 @@ function ChamadaDrawer({
                   <button
                     type="button"
                     onClick={onSalvar}
-                    disabled={salvando || itens.length === 0}
+                    disabled={salvando || itens.length === 0 || dataInvalidaFutura}
+                    title={dataInvalidaFutura ? 'Não é permitido registrar chamada para datas futuras' : undefined}
                     className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${schoolTheme.primaryBg}`}
                   >
                     {salvando ? (
@@ -1009,6 +1036,14 @@ function ChamadaDrawer({
 }
 
 /* ─── Main Component (DiarioChamadasView) ─── */
+function getHojeLocalIso(): string {
+  const d = new Date();
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
 interface DiarioChamadasViewProps {
   escolaId: number | null;
   turmas: Turma[];
@@ -1042,7 +1077,7 @@ export function DiarioChamadasView({
   // Drawer lateral (Slide-over)
   const [drawerAberto, setDrawerAberto] = useState(false);
   const [drawerModo, setDrawerModo] = useState<'novo' | 'edicao' | 'detalhes'>('novo');
-  const [dataAulaDrawer, setDataAulaDrawer] = useState(() => new Date().toISOString().split('T')[0]);
+  const [dataAulaDrawer, setDataAulaDrawer] = useState(() => getHojeLocalIso());
   const [responsavelDrawer, setResponsavelDrawer] = useState(usuarioLogado?.nome || '');
   const [conteudoDrawer, setConteudoDrawer] = useState('');
   const [itensDrawer, setItensDrawer] = useState<ChamadaItem[]>([]);
@@ -1158,10 +1193,44 @@ export function DiarioChamadasView({
     return Array.from(mapa.entries());
   }, [historicoChamadas]);
 
+  // Mudança de Data no Drawer com validação preventiva contra datas futuras
+  const handleDataAulaChange = async (novaData: string) => {
+    setDataAulaDrawer(novaData);
+    if (!novaData) return;
+
+    const hoje = getHojeLocalIso();
+    if (novaData > hoje) {
+      setToastMsg({
+        tipo: 'erro',
+        texto: `Não é permitido registrar chamada para datas futuras (${novaData.split('-').reverse().join('/')}). Selecione até a data de hoje.`,
+      });
+      return;
+    }
+
+    if (drawerModo === 'novo' && turmaSelecionadaId && materiaSelecionadaId) {
+      setLoadingItensDrawer(true);
+      try {
+        const alunos = await api.obterAlunosParaChamada(
+          turmaSelecionadaId,
+          materiaSelecionadaId,
+          novaData
+        );
+        setItensDrawer(alunos);
+      } catch (err: any) {
+        setToastMsg({
+          tipo: 'erro',
+          texto: err.message || 'Erro ao carregar lista de alunos para a data.',
+        });
+      } finally {
+        setLoadingItensDrawer(false);
+      }
+    }
+  };
+
   // Abrir Drawer para Nova Chamada
   const handleNovaChamada = async () => {
     if (!turmaSelecionadaId || !materiaSelecionadaId) return;
-    const hoje = new Date().toISOString().split('T')[0];
+    const hoje = getHojeLocalIso();
     setDataAulaDrawer(hoje);
     setResponsavelDrawer(
       materiaAtual?.professorResponsavel || usuarioLogado?.nome || ''
@@ -1247,6 +1316,16 @@ export function DiarioChamadasView({
   // Salvar chamada pelo Drawer
   const handleSalvarDrawer = async () => {
     if (!turmaSelecionadaId || !materiaSelecionadaId) return;
+
+    const hoje = getHojeLocalIso();
+    if (dataAulaDrawer > hoje) {
+      setToastMsg({
+        tipo: 'erro',
+        texto: 'Não é permitido registrar chamada para datas futuras. Selecione até a data de hoje.',
+      });
+      return;
+    }
+
     if (!responsavelDrawer.trim()) {
       setToastMsg({ tipo: 'erro', texto: 'Informe o nome do responsável.' });
       return;
@@ -1440,7 +1519,7 @@ export function DiarioChamadasView({
         turma={turmaAtual}
         materia={materiaAtual}
         dataAula={dataAulaDrawer}
-        onDataAulaChange={setDataAulaDrawer}
+        onDataAulaChange={handleDataAulaChange}
         responsavelNome={responsavelDrawer}
         onResponsavelChange={setResponsavelDrawer}
         conteudoMinistrado={conteudoDrawer}

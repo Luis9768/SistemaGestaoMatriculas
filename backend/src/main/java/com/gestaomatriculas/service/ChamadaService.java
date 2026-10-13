@@ -69,6 +69,15 @@ public class ChamadaService {
         // Se informou a data, verifica se já há registros cadastrados para pré-carregar
         Map<Long, RegistroPresenca> mapaPresencasExistentes = new HashMap<>();
         if (dataAula != null) {
+            LocalDate hoje = LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"));
+            if (dataAula.isAfter(hoje)) {
+                throw new BusinessException(String.format(
+                        "Não é permitido abrir chamada para datas futuras (%s). O registro só pode ser realizado até a data de hoje (%s).",
+                        dataAula.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                        hoje.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                ));
+            }
+
             List<RegistroPresenca> existentes = registroPresencaRepository.findByMateriaIdAndDataAula(materiaId, dataAula);
             for (RegistroPresenca r : existentes) {
                 mapaPresencasExistentes.put(r.getMatricula().getId(), r);
@@ -229,8 +238,17 @@ public class ChamadaService {
             throw new BusinessException("A matéria não pertence à turma indicada.");
         }
 
-        if (dto.getResponsavelRegistro() == null || dto.getResponsavelRegistro().trim().isEmpty()) {
-            throw new BusinessException("O nome do responsável pelo registro da chamada é obrigatório.");
+        if (dto.getDataAula() == null) {
+            throw new BusinessException("A data da aula é obrigatória.");
+        }
+
+        LocalDate hoje = LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"));
+        if (dto.getDataAula().isAfter(hoje)) {
+            throw new BusinessException(String.format(
+                    "Não é permitido adicionar ou registrar chamada para datas futuras (%s). O diário de classe só pode ser preenchido até a data de hoje (%s) ou retroativo.",
+                    dto.getDataAula().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    hoje.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            ));
         }
 
         String responsavelFormatado = dto.getResponsavelRegistro().trim();
