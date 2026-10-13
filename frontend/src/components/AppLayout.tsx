@@ -13,6 +13,7 @@ import {
   Search,
   FileSpreadsheet,
   ShieldCheck,
+  History,
   ArrowLeft,
   LogOut,
   CheckCircle2,
@@ -69,6 +70,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Administração',
     items: [
       { href: '/usuarios', label: 'Equipe da Secretaria', icon: ShieldCheck, adminOnly: true },
+      { href: '/auditoria', label: 'Histórico & Auditoria', icon: History, adminOnly: true },
       { href: '/importacao', label: 'Importação em Lote', icon: FileSpreadsheet },
     ],
   },

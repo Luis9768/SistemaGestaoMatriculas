@@ -7,6 +7,7 @@ import com.gestaomatriculas.exception.ResourceNotFoundException;
 import com.gestaomatriculas.model.Escola;
 import com.gestaomatriculas.model.Usuario;
 import com.gestaomatriculas.model.enums.Role;
+import com.gestaomatriculas.model.enums.TipoAcaoAuditoria;
 import com.gestaomatriculas.repository.EscolaRepository;
 import com.gestaomatriculas.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final EscolaRepository escolaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditoriaService auditoriaService;
 
     @Transactional(readOnly = true)
     public List<UsuarioDTO> listar(Role role) {
@@ -88,6 +90,16 @@ public class UsuarioService {
         Usuario salvo = usuarioRepository.save(novo);
         log.info("Novo usuário cadastrado pelo administrador: {} ({}) com {} escolas vinculadas",
                 salvo.getEmail(), salvo.getRole(), salvo.getTodasEscolas().size());
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.CADASTRO_USUARIO,
+                "Usuario",
+                salvo.getId().toString(),
+                String.format("Cadastro do usuário '%s' (%s) com perfil %s", salvo.getNome(), salvo.getEmail(), salvo.getRole()),
+                salvo.getEscola() != null ? salvo.getEscola().getId() : null,
+                salvo.getEscola() != null ? salvo.getEscola().getSigla() : null
+        );
+
         return toDTO(salvo);
     }
 
@@ -137,6 +149,16 @@ public class UsuarioService {
         Usuario salvo = usuarioRepository.save(u);
         log.info("Usuário atualizado com sucesso: {} (Role: {}, Ativo: {}, Escolas: {})",
                 salvo.getEmail(), salvo.getRole(), salvo.getAtivo(), salvo.getTodasEscolas().size());
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.ATUALIZACAO_USUARIO,
+                "Usuario",
+                salvo.getId().toString(),
+                String.format("Atualização cadastral do usuário '%s' (%s) - Perfil: %s, Ativo: %s", salvo.getNome(), salvo.getEmail(), salvo.getRole(), salvo.getAtivo()),
+                salvo.getEscola() != null ? salvo.getEscola().getId() : null,
+                salvo.getEscola() != null ? salvo.getEscola().getSigla() : null
+        );
+
         return toDTO(salvo);
     }
 
@@ -148,6 +170,16 @@ public class UsuarioService {
         u.setAtivo(!Boolean.TRUE.equals(u.getAtivo()));
         Usuario salvo = usuarioRepository.save(u);
         log.info("Status de acesso do usuário {} alterado para: {}", salvo.getEmail(), salvo.getAtivo() ? "ATIVO" : "INATIVO");
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.ATUALIZACAO_USUARIO,
+                "Usuario",
+                salvo.getId().toString(),
+                String.format("Alteração de status do usuário '%s' para %s", salvo.getNome(), Boolean.TRUE.equals(salvo.getAtivo()) ? "ATIVO" : "INATIVO"),
+                salvo.getEscola() != null ? salvo.getEscola().getId() : null,
+                salvo.getEscola() != null ? salvo.getEscola().getSigla() : null
+        );
+
         return toDTO(salvo);
     }
 

@@ -1297,6 +1297,29 @@ export const api = {
     }
     return res.json();
   },
+
+  async listarAuditoria(filtros?: AuditoriaFiltros): Promise<PaginaAuditoria> {
+    const params = new URLSearchParams();
+    if (filtros?.tipoAcao) params.append('tipoAcao', filtros.tipoAcao);
+    if (filtros?.escolaId) params.append('escolaId', String(filtros.escolaId));
+    if (filtros?.usuarioId) params.append('usuarioId', String(filtros.usuarioId));
+    if (filtros?.dataInicio) params.append('dataInicio', filtros.dataInicio);
+    if (filtros?.dataFim) params.append('dataFim', filtros.dataFim);
+    if (filtros?.termo) params.append('termo', filtros.termo);
+    if (filtros?.page !== undefined) params.append('page', String(filtros.page));
+    if (filtros?.size !== undefined) params.append('size', String(filtros.size));
+
+    const qs = params.toString();
+    const url = qs ? `${API_BASE}/auditoria?${qs}` : `${API_BASE}/auditoria`;
+    const res = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao carregar histórico de auditoria' }));
+      throw new Error(err.message || 'Erro ao carregar histórico de auditoria');
+    }
+    return res.json();
+  },
 };
 
 export interface Notificacao {
@@ -1315,4 +1338,56 @@ export interface Notificacao {
   acaoRotulo?: string;
   acaoTipo?: 'ABRIR_PERFIL' | 'ABRIR_TURMA' | 'EMITIR_DECLARACAO';
   dataHora: string;
+}
+
+export type TipoAcaoAuditoria =
+  | 'LOGIN'
+  | 'CRIACAO_MATRICULA'
+  | 'CANCELAMENTO_MATRICULA'
+  | 'DESLIGAMENTO_MATRICULA'
+  | 'INSCRICAO_EXTERNA'
+  | 'REGISTRO_CHAMADA'
+  | 'EDICAO_CHAMADA'
+  | 'CRIACAO_TURMA'
+  | 'ATUALIZACAO_TURMA'
+  | 'CRIACAO_MATERIA'
+  | 'CADASTRO_USUARIO'
+  | 'ATUALIZACAO_USUARIO'
+  | 'ATUALIZACAO_ALUNO'
+  | 'IMPORTACAO_LOTE';
+
+export interface AuditoriaAcaoDTO {
+  id: number;
+  usuarioId?: number;
+  usuarioNome: string;
+  usuarioEmail?: string;
+  usuarioRole?: string;
+  escolaId?: number;
+  escolaSigla?: string;
+  tipoAcao: TipoAcaoAuditoria;
+  tipoAcaoDescricao: string;
+  entidade: string;
+  entidadeId?: string;
+  detalhes: string;
+  ipOrigem?: string;
+  criadoEm: string;
+}
+
+export interface AuditoriaFiltros {
+  tipoAcao?: TipoAcaoAuditoria;
+  escolaId?: number;
+  usuarioId?: number;
+  dataInicio?: string;
+  dataFim?: string;
+  termo?: string;
+  page?: number;
+  size?: number;
+}
+
+export interface PaginaAuditoria {
+  content: AuditoriaAcaoDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
 }

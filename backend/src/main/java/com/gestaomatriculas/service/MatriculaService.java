@@ -8,6 +8,7 @@ import com.gestaomatriculas.model.enums.CanalOrigem;
 import com.gestaomatriculas.model.enums.ModalidadeCurso;
 import com.gestaomatriculas.model.enums.StatusMatricula;
 import com.gestaomatriculas.model.enums.StatusPresenca;
+import com.gestaomatriculas.model.enums.TipoAcaoAuditoria;
 import com.gestaomatriculas.repository.AlunoRepository;
 import com.gestaomatriculas.repository.MatriculaRepository;
 import com.gestaomatriculas.repository.RegistroPresencaRepository;
@@ -37,6 +38,7 @@ public class MatriculaService {
     private final AlunoService alunoService;
     private final RegistroPresencaRepository registroPresencaRepository;
     private final SecurityService securityService;
+    private final AuditoriaService auditoriaService;
 
     @Transactional(readOnly = true)
     public List<MatriculaDTO> listar(Long escolaId, Long turmaId, Long alunoId, CanalOrigem canal, StatusMatricula status) {
@@ -157,6 +159,24 @@ public class MatriculaService {
             turmaRepository.save(turma);
         }
 
+        String siglaEscola = (turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getSigla() : null;
+        Long idEscola = (turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.CANCELAMENTO_MATRICULA,
+                "Matrícula",
+                String.valueOf(matricula.getId()),
+                String.format("Matrícula #%d do aluno %s cancelada na turma %s [%s]",
+                        matricula.getId(),
+                        matricula.getAluno() != null ? matricula.getAluno().getNome() : "N/I",
+                        turma != null ? turma.getCodigo() : "N/I",
+                        siglaEscola != null ? siglaEscola : "REDE"),
+                idEscola,
+                siglaEscola
+        );
+
         return toDTO(atualizada);
     }
 
@@ -181,6 +201,23 @@ public class MatriculaService {
             turma.setVagasOcupadas(turma.getVagasOcupadas() - 1);
             turmaRepository.save(turma);
         }
+
+        String siglaEscola = (turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getSigla() : null;
+        Long idEscola = (turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.DESLIGAMENTO_MATRICULA,
+                "Matrícula",
+                String.valueOf(matricula.getId()),
+                String.format("Aluno %s desligado da turma %s por faltas. Motivo: %s",
+                        matricula.getAluno() != null ? matricula.getAluno().getNome() : "N/I",
+                        turma != null ? turma.getCodigo() : "N/I",
+                        motivo != null ? motivo : "Faltas acumuladas"),
+                idEscola,
+                siglaEscola
+        );
 
         return toDTO(atualizada);
     }
@@ -226,6 +263,23 @@ public class MatriculaService {
 
         turma.setVagasOcupadas(turma.getVagasOcupadas() + 1);
         turmaRepository.save(turma);
+
+        String siglaEscola = (turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getSigla() : null;
+        Long idEscola = (turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                canal == CanalOrigem.SITE ? TipoAcaoAuditoria.INSCRICAO_EXTERNA : TipoAcaoAuditoria.CRIACAO_MATRICULA,
+                "Matrícula",
+                String.valueOf(salva.getId()),
+                String.format("Matrícula #%d confirmada para o aluno %s (%s) na turma %s [%s] via %s",
+                        salva.getId(), aluno.getNome(), aluno.getCpf(), turma.getCodigo(),
+                        siglaEscola != null ? siglaEscola : "REDE",
+                        canal != null ? canal.name() : "SISTEMA"),
+                idEscola,
+                siglaEscola
+        );
 
         return toDTO(salva);
     }

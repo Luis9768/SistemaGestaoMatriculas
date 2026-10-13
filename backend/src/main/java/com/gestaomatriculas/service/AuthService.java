@@ -7,6 +7,7 @@ import com.gestaomatriculas.dto.RedefinirSenhaDTO;
 import com.gestaomatriculas.dto.UsuarioDTO;
 import com.gestaomatriculas.exception.BusinessException;
 import com.gestaomatriculas.model.Usuario;
+import com.gestaomatriculas.model.enums.TipoAcaoAuditoria;
 import com.gestaomatriculas.repository.UsuarioRepository;
 import com.gestaomatriculas.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
     private final Optional<StringRedisTemplate> redisTemplate;
+    private final AuditoriaService auditoriaService;
 
     // Estrutura em memória para códigos de recuperação (NÃO é salvo no banco de dados)
     private record CodigoRecuperacaoInfo(String codigo, LocalDateTime expiracao) {}
@@ -76,6 +78,16 @@ public class AuthService {
         Long primId = usuario.getEscola() != null ? usuario.getEscola().getId() : (!escolasIds.isEmpty() ? escolasIds.get(0) : null);
         String primNome = usuario.getEscola() != null ? usuario.getEscola().getNome() : (!escolasDTO.isEmpty() ? escolasDTO.get(0).getNome() : "Todas as Escolas (Administrador Geral)");
         String primSigla = usuario.getEscola() != null ? usuario.getEscola().getSigla() : (!escolasDTO.isEmpty() ? escolasDTO.get(0).getSigla() : "ADMIN");
+
+        auditoriaService.registrarAcaoComUsuario(
+                usuario,
+                TipoAcaoAuditoria.LOGIN,
+                "Usuario",
+                usuario.getId().toString(),
+                String.format("Autenticação com sucesso no sistema (%s - %s)", usuario.getEmail(), usuario.getRole()),
+                primId,
+                primSigla
+        );
 
         return LoginResponseDTO.builder()
                 .token(token)

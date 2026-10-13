@@ -8,6 +8,7 @@ import com.gestaomatriculas.model.Curso;
 import com.gestaomatriculas.model.Turma;
 import com.gestaomatriculas.model.TurmaMateria;
 import com.gestaomatriculas.model.enums.StatusTurma;
+import com.gestaomatriculas.model.enums.TipoAcaoAuditoria;
 import com.gestaomatriculas.repository.CursoRepository;
 import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.TurmaMateriaRepository;
@@ -33,6 +34,7 @@ public class TurmaService {
     private final TurmaMateriaRepository turmaMateriaRepository;
     private final RegistroPresencaRepository registroPresencaRepository;
     private final SecurityService securityService;
+    private final AuditoriaService auditoriaService;
 
     @Cacheable(value = "turmas", key = "'curso_' + (#cursoId != null ? #cursoId : 'todos') + '_escola_' + (#escolaId != null ? #escolaId : 'todas') + '_abertas_' + (#apenasAbertas != null ? #apenasAbertas : 'false')")
     @Transactional(readOnly = true)
@@ -99,6 +101,22 @@ public class TurmaService {
 
         Turma salva = turmaRepository.save(turma);
         processarMaterias(salva, dto);
+
+        String siglaEscolaCriada = (salva.getCurso() != null && salva.getCurso().getEscola() != null)
+                ? salva.getCurso().getEscola().getSigla() : null;
+        Long idEscolaCriada = (salva.getCurso() != null && salva.getCurso().getEscola() != null)
+                ? salva.getCurso().getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.CRIACAO_TURMA,
+                "Turma",
+                salva.getCodigo(),
+                String.format("Turma %s criada com %d vagas para o curso %s [%s]",
+                        salva.getCodigo(), salva.getVagasTotais(), curso.getNome(), siglaEscolaCriada != null ? siglaEscolaCriada : "REDE"),
+                idEscolaCriada,
+                siglaEscolaCriada
+        );
+
         return toDTO(salva);
     }
 
@@ -163,6 +181,22 @@ public class TurmaService {
         }
 
         Turma atualizada = turmaRepository.save(turma);
+
+        String siglaEscolaAtu = (atualizada.getCurso() != null && atualizada.getCurso().getEscola() != null)
+                ? atualizada.getCurso().getEscola().getSigla() : null;
+        Long idEscolaAtu = (atualizada.getCurso() != null && atualizada.getCurso().getEscola() != null)
+                ? atualizada.getCurso().getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.ATUALIZACAO_TURMA,
+                "Turma",
+                atualizada.getCodigo(),
+                String.format("Turma %s atualizada (Vagas: %d, Status: %s) [%s]",
+                        atualizada.getCodigo(), atualizada.getVagasTotais(), atualizada.getStatus(), siglaEscolaAtu != null ? siglaEscolaAtu : "REDE"),
+                idEscolaAtu,
+                siglaEscolaAtu
+        );
+
         return toDTO(atualizada);
     }
 
@@ -269,6 +303,21 @@ public class TurmaService {
             turma.setMaterias(new ArrayList<>());
         }
         turma.getMaterias().add(salva);
+
+        String siglaEscolaMat = (turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getSigla() : null;
+        Long idEscolaMat = (turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.CRIACAO_MATERIA,
+                "Disciplina",
+                String.valueOf(salva.getId()),
+                String.format("Disciplina %s adicionada à turma %s [%s]",
+                        salva.getNome(), turma.getCodigo(), siglaEscolaMat != null ? siglaEscolaMat : "REDE"),
+                idEscolaMat,
+                siglaEscolaMat
+        );
 
         return TurmaMateriaDTO.builder()
                 .id(salva.getId())

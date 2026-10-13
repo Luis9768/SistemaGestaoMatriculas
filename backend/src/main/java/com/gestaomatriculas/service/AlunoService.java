@@ -6,6 +6,7 @@ import com.gestaomatriculas.exception.ResourceNotFoundException;
 import com.gestaomatriculas.model.*;
 import com.gestaomatriculas.model.enums.StatusMatricula;
 import com.gestaomatriculas.model.enums.StatusPresenca;
+import com.gestaomatriculas.model.enums.TipoAcaoAuditoria;
 import com.gestaomatriculas.repository.AlunoRepository;
 import com.gestaomatriculas.repository.MatriculaRepository;
 import com.gestaomatriculas.repository.RegistroPresencaRepository;
@@ -32,6 +33,7 @@ public class AlunoService {
     private final MatriculaRepository matriculaRepository;
     private final RegistroPresencaRepository registroPresencaRepository;
     private final SecurityService securityService;
+    private final AuditoriaService auditoriaService;
 
     @Transactional(readOnly = true)
     public List<AlunoDTO> listarTodos() {
@@ -416,7 +418,21 @@ public class AlunoService {
             responsavelRepository.save(r);
         }
 
-        return toDTO(alunoRepository.save(aluno));
+        Aluno salvo = alunoRepository.save(aluno);
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.ATUALIZACAO_ALUNO,
+                "Aluno",
+                salvo.getId().toString(),
+                String.format("Atualização dos dados de contato do aluno '%s' (Email: %s, Tel: %s)",
+                        salvo.getNome(),
+                        salvo.getEmail() != null ? salvo.getEmail() : "N/D",
+                        salvo.getTelefone() != null ? salvo.getTelefone() : "N/D"),
+                null,
+                null
+        );
+
+        return toDTO(salvo);
     }
 
     @Transactional

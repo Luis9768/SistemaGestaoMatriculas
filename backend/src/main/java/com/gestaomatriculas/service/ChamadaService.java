@@ -13,6 +13,7 @@ import com.gestaomatriculas.model.Turma;
 import com.gestaomatriculas.model.TurmaMateria;
 import com.gestaomatriculas.model.enums.StatusMatricula;
 import com.gestaomatriculas.model.enums.StatusPresenca;
+import com.gestaomatriculas.model.enums.TipoAcaoAuditoria;
 import com.gestaomatriculas.repository.MatriculaRepository;
 import com.gestaomatriculas.repository.RegistroPresencaRepository;
 import com.gestaomatriculas.repository.TurmaMateriaRepository;
@@ -35,6 +36,7 @@ public class ChamadaService {
     private final TurmaMateriaRepository turmaMateriaRepository;
     private final MatriculaRepository matriculaRepository;
     private final com.gestaomatriculas.security.SecurityService securityService;
+    private final AuditoriaService auditoriaService;
 
     private void validarAcessoEscola(Turma turma) {
         if (securityService.isEncarregada() && turma.getCurso() != null && turma.getCurso().getEscola() != null) {
@@ -261,6 +263,21 @@ public class ChamadaService {
 
             registroPresencaRepository.save(registro);
         }
+
+        String siglaEscola = (turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getSigla() : null;
+        Long idEscola = (turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.REGISTRO_CHAMADA,
+                "Diário de Chamada",
+                String.format("%s/%s/%s", turma.getCodigo(), materia.getNome(), dto.getDataAula()),
+                String.format("Chamada realizada na turma %s, disciplina %s, data %s por %s (%d estudantes)",
+                        turma.getCodigo(), materia.getNome(), dto.getDataAula(), responsavelFormatado, dto.getItens().size()),
+                idEscola,
+                siglaEscola
+        );
 
         return obterDetalheChamada(dto.getMateriaId(), dto.getDataAula());
     }
