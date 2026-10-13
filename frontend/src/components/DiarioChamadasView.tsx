@@ -189,7 +189,7 @@ function SparklineFrequencia({ historico }: { historico: ChamadaResumo[] }) {
   const pathD = `M ${points.join(' L ')}`;
   const primeiro = dados[0];
   const ultimo = dados[dados.length - 1];
-  const diff = ultimo - primeiro;
+  const diff = Math.round((ultimo - primeiro) * 10) / 10;
 
   return (
     <div className="flex items-center gap-2.5">
@@ -215,12 +215,12 @@ function SparklineFrequencia({ historico }: { historico: ChamadaResumo[] }) {
       </svg>
 
       <div className="text-[11px] font-mono flex items-center gap-1 font-medium">
-        {diff > 1 ? (
+        {diff > 0.5 ? (
           <span className="text-emerald-700 dark:text-emerald-400 flex items-center gap-0.5">
             <TrendingUp className="w-3.5 h-3.5" />
             +{diff}%
           </span>
-        ) : diff < -1 ? (
+        ) : diff < -0.5 ? (
           <span className="text-rose-700 dark:text-rose-400 flex items-center gap-0.5">
             <TrendingDown className="w-3.5 h-3.5" />
             {diff}%
@@ -589,7 +589,7 @@ function ChamadaLinha({
       <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 border-stone-100 dark:border-[#262422] pt-2 sm:pt-0">
         {/* Porcentagem em Fonte Mono */}
         <span className="text-sm font-semibold font-mono text-stone-800 dark:text-stone-200">
-          {chamada.percentualPresenca}%
+          {Math.round(chamada.percentualPresenca)}%
         </span>
 
         {/* Registrado por X */}
