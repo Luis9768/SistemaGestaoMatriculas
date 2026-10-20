@@ -41,6 +41,12 @@ public class Turma {
     @Column(name = "data_fechamento_matricula", nullable = false)
     private LocalDate dataFechamentoMatricula;
 
+    @Column(name = "data_inicio_suplencia")
+    private LocalDate dataInicioSuplencia;
+
+    @Column(name = "data_fim_suplencia")
+    private LocalDate dataFimSuplencia;
+
     @NotNull
     @Column(name = "data_inicio_aulas", nullable = false)
     private LocalDate dataInicioAulas;
@@ -92,8 +98,20 @@ public class Turma {
     private LocalDateTime updatedAt;
 
     public boolean isPeriodoMatriculaAberto() {
-        LocalDate hoje = LocalDate.now();
-        return !hoje.isBefore(dataAberturaMatricula) && !hoje.isAfter(dataFechamentoMatricula) && status == StatusTurma.ABERTA;
+        if (status != StatusTurma.ABERTA) {
+            return false;
+        }
+        LocalDate hoje = LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"));
+        if (dataFimAulas != null && hoje.isAfter(dataFimAulas)) {
+            return false;
+        }
+        if (dataFimSuplencia != null && hoje.isAfter(dataFimSuplencia)) {
+            return false;
+        }
+        if (dataFimSuplencia == null && dataFechamentoMatricula != null && hoje.isAfter(dataFechamentoMatricula)) {
+            return false;
+        }
+        return true;
     }
 
     public boolean temVagasDisponiveis() {
@@ -106,4 +124,3 @@ public class Turma {
         return true;
     }
 }
-

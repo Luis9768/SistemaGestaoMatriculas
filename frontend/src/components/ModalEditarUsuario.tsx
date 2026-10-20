@@ -435,7 +435,7 @@ export function ModalEditarUsuario({
 
             <button
               type="submit"
-              disabled={loading || !ativo}
+              disabled={loading}
               className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold transition shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}

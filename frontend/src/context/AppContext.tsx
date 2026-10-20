@@ -108,6 +108,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     codigo: '',
     dataAberturaMatricula: '',
     dataFechamentoMatricula: '',
+    dataInicioSuplencia: '',
+    dataFimSuplencia: '',
     dataInicioAulas: '',
     dataFimAulas: '',
     vagasTotais: 30,
@@ -202,7 +204,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [usuarioLogado]);
 
   useEffect(() => {
-    if (escolaSelecionada !== null && usuarioLogado) {
+    if (usuarioLogado) {
       // Boas Práticas & LGPD: Rotas institucionais e de autenticação NÃO devem carregar
       // dados sensíveis (alunos/matrículas) antecipadamente.
       if (pathname === '/direcionamento' || pathname === '/login' || pathname === '/') {
@@ -415,13 +417,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      await api.createTurma(novaTurma);
+      const turmaCriada = await api.createTurma({
+        ...novaTurma,
+        cursoId: Number(novaTurma.cursoId),
+      });
+      setTurmas((prev) => [turmaCriada, ...prev.filter((t) => t.id !== turmaCriada.id)]);
       setShowModalTurma(false);
       setNovaTurma({
         cursoId: cursos[0]?.id || 0,
         codigo: '',
         dataAberturaMatricula: '',
         dataFechamentoMatricula: '',
+        dataInicioSuplencia: '',
+        dataFimSuplencia: '',
         dataInicioAulas: '',
         dataFimAulas: '',
         vagasTotais: 30,
@@ -429,7 +437,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         idadeMaxima: undefined,
         materiasNomes: [],
       });
-      mostrarFeedback('sucesso', `Turma ${novaTurma.codigo} aberta com sucesso!`);
+      mostrarFeedback('sucesso', `Turma ${turmaCriada.codigo || novaTurma.codigo} aberta com sucesso!`);
       await carregarDadosEscola();
     } catch (e: any) {
       mostrarFeedback('erro', 'Erro ao criar turma: ' + e.message);
@@ -456,9 +464,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       : (activeUser?.escolas?.map((e) => e.id) || (activeUser?.escolaId ? [activeUser.escolaId] : []));
 
     const isEncarregada = activeUser?.role === 'ROLE_ENCARREGADA';
-    const cursosPermitidos = isEncarregada && permittedIds.length > 0
+    let cursosPermitidos = isEncarregada && permittedIds.length > 0
       ? cursos.filter((c) => !c.escolaId || permittedIds.includes(c.escolaId))
       : cursos;
+
+    if (escolaSelecionada) {
+      const daEscolaAtiva = cursosPermitidos.filter((c) => c.escolaId === escolaSelecionada);
+      if (daEscolaAtiva.length > 0) {
+        cursosPermitidos = daEscolaAtiva;
+      }
+    }
 
     let targetCursoId = cursoId;
     if (targetCursoId) {
@@ -473,10 +488,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       targetCursoId = cursosPermitidos[0]?.id || 0;
     }
 
-    if (targetCursoId) {
-      setTurmaCursoPreSelecionadoId(targetCursoId);
-      setNovaTurma((prev) => ({ ...prev, cursoId: targetCursoId }));
-    }
+    setTurmaCursoPreSelecionadoId(targetCursoId || null);
+    setNovaTurma((prev) => ({
+      ...prev,
+      cursoId: targetCursoId || 0,
+      codigo: '',
+    }));
     setShowModalTurma(true);
   };
 

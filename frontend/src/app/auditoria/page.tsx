@@ -209,7 +209,7 @@ export default function AuditoriaPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="w-full mx-auto py-2 space-y-6">
         {/* Cabeçalho da Página */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-stone-800/80 dark:border-[#27272a]">
           <div>

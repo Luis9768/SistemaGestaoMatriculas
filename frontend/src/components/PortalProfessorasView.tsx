@@ -30,7 +30,7 @@ export function PortalProfessorasView({
   onSalvarCurso,
   onAbrirNovaTurma,
 }: PortalProfessorasViewProps) {
-  const { usuarioLogado } = useApp();
+  const { usuarioLogado, turmas, abrirModalDetalhesTurma } = useApp();
   const [modoAba, setModoAba] = useState<'catalogo' | 'novo'>('catalogo');
   const [cursoExpandidoId, setCursoExpandidoId] = useState<number | null>(null);
 
@@ -131,8 +131,8 @@ export function PortalProfessorasView({
       setErroMsg('Informe uma carga horária válida para o conteúdo do curso (ex: 500h).');
       return;
     }
-    if (disciplinas.length === 0) {
-      setErroMsg('Adicione pelo menos 1 disciplina com sua respectiva carga horária.');
+    if (modalidade === 'FORMACAO' && disciplinas.length === 0) {
+      setErroMsg('Para cursos de Formação, adicione pelo menos 1 matéria/disciplina com sua respectiva carga horária.');
       return;
     }
 
@@ -154,10 +154,14 @@ export function PortalProfessorasView({
         duracaoEstimada: duracaoTexto.trim() || undefined,
         cargaHoraria: cargaFinal,
         ativo: true,
-        disciplinas,
+        disciplinas: modalidade === 'FORMACAO' ? disciplinas : [],
       });
 
-      setSucessoMsg(`Curso "${nomeCurso}" (${cargaFinal}h de conteúdo) e suas ${disciplinas.length} disciplinas foram salvos com sucesso!`);
+      setSucessoMsg(
+        modalidade === 'FORMACAO'
+          ? `Curso "${nomeCurso}" (${cargaFinal}h de conteúdo) e suas ${disciplinas.length} disciplinas foram salvos com sucesso!`
+          : `Curso "${nomeCurso}" (${cargaFinal}h de conteúdo) foi salvo com sucesso!`
+      );
       setNomeCurso('');
       setDescricao('');
       setCargaHorariaCurso('');
@@ -387,7 +391,8 @@ export function PortalProfessorasView({
             </div>
           </div>
 
-          {/* BLOCO 2: MATRIZ CURRICULAR DAS DISCIPLINAS */}
+          {/* BLOCO 2: MATRIZ CURRICULAR DAS DISCIPLINAS — EXCLUSIVO PARA FORMAÇÃO */}
+          {modalidade === 'FORMACAO' && (
           <div className="bg-white dark:bg-[#121214] rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-[#27272a] shadow-xs space-y-6">
             <div className="border-b border-slate-100 dark:border-[#27272a]/80 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -395,10 +400,10 @@ export function PortalProfessorasView({
                   <span className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 flex items-center justify-center text-xs font-black">
                     2
                   </span>
-                  <span>Disciplinas e Cargas Horárias</span>
+                  <span>Disciplinas e Cargas Horárias (Exclusivo Formação)</span>
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Adicione as disciplinas que compõem a matriz deste curso e suas respectivas horas
+                  Adicione as disciplinas que compõem a matriz deste curso de Formação
                 </p>
               </div>
 
@@ -540,6 +545,7 @@ export function PortalProfessorasView({
               )}
             </div>
           </div>
+          )}
 
           {/* Botões Finais de Ação */}
           <div className="flex items-center justify-end space-x-4 pt-4">
@@ -590,6 +596,7 @@ export function PortalProfessorasView({
               cursosFiltrados.map((curso) => {
                 const isExpandido = cursoExpandidoId === curso.id;
                 const temDisciplinas = curso.disciplinas && curso.disciplinas.length > 0;
+                const turmasDoCurso = turmas.filter((t) => t.cursoId === curso.id);
 
                 return (
                   <div
@@ -642,18 +649,20 @@ export function PortalProfessorasView({
                           </button>
                         )}
 
-                        <button
-                          onClick={() => setCursoExpandidoId(isExpandido ? null : curso.id!)}
-                          className="p-2 border border-slate-300 dark:border-[#27272a] hover:bg-slate-100 dark:hover:bg-[#18181b] rounded-xl text-slate-700 dark:text-zinc-300 cursor-pointer transition"
-                          title="Ver Disciplinas"
-                        >
-                          {isExpandido ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </button>
+                        {curso.modalidade === 'FORMACAO' && (
+                          <button
+                            onClick={() => setCursoExpandidoId(isExpandido ? null : curso.id!)}
+                            className="p-2 border border-slate-300 dark:border-[#27272a] hover:bg-slate-100 dark:hover:bg-[#18181b] rounded-xl text-slate-700 dark:text-zinc-300 cursor-pointer transition"
+                            title="Ver Disciplinas da Formação"
+                          >
+                            {isExpandido ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Gaveta de Disciplinas Cadastradas pelas Professoras */}
-                    {isExpandido && (
+                    {/* Gaveta de Disciplinas Cadastradas (Exclusivo Formação) */}
+                    {curso.modalidade === 'FORMACAO' && isExpandido && (
                       <div className="p-6 bg-slate-50/60 dark:bg-[#09090b]/60 border-t border-slate-100 dark:border-[#27272a]/80 space-y-4 animate-in fade-in duration-150">
                         <div className="flex items-center justify-between">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 flex items-center gap-2">

@@ -496,11 +496,13 @@ function ResumoFrequenciaFaixa({
 function PoltronasPresenca({
   presentes,
   faltas,
+  justificadas = 0,
 }: {
   presentes: number;
   faltas: number;
+  justificadas?: number;
 }) {
-  const total = presentes + faltas;
+  const total = presentes + faltas + justificadas;
   const maxExibicao = 24;
 
   // Se o número for muito grande para caber na linha, exibe amostragem proporcional
@@ -508,19 +510,31 @@ function PoltronasPresenca({
     total > maxExibicao
       ? Math.round((presentes / total) * maxExibicao)
       : presentes;
+  const justificadasDots =
+    total > maxExibicao
+      ? Math.round((justificadas / total) * maxExibicao)
+      : justificadas;
   const faltasDots =
-    total > maxExibicao ? maxExibicao - presentesDots : faltas;
+    total > maxExibicao
+      ? Math.max(0, maxExibicao - presentesDots - justificadasDots)
+      : faltas;
 
   return (
     <div
       className="flex items-center gap-1 flex-wrap"
-      aria-label={`${presentes} de ${total} presentes`}
-      title={`${presentes} presentes · ${faltas} faltas`}
+      aria-label={`${presentes} presentes, ${justificadas} ausências justificadas e ${faltas} faltas de ${total}`}
+      title={`${presentes} presentes · ${justificadas} ausências justificadas · ${faltas} faltas`}
     >
       {Array.from({ length: presentesDots }).map((_, i) => (
         <span
           key={`p-${i}`}
           className="w-2 h-2 rounded-full bg-emerald-500 shadow-2xs transition-transform hover:scale-125"
+        />
+      ))}
+      {Array.from({ length: justificadasDots }).map((_, i) => (
+        <span
+          key={`j-${i}`}
+          className="w-2 h-2 rounded-full bg-amber-500 shadow-2xs transition-transform hover:scale-125"
         />
       ))}
       {Array.from({ length: faltasDots }).map((_, i) => (
@@ -576,12 +590,20 @@ function ChamadaLinha({
           <PoltronasPresenca
             presentes={chamada.totalPresentes}
             faltas={chamada.totalFaltas}
+            justificadas={chamada.totalJustificadas || 0}
           />
           <p className="text-[11px] text-stone-600 dark:text-stone-400">
             <strong className="text-stone-800 dark:text-stone-200 font-semibold">
               {chamada.totalPresentes} presentes
             </strong>{' '}
             · {chamada.totalFaltas} faltas
+            {(chamada.totalJustificadas || 0) > 0 && (
+              <span className="text-amber-700 dark:text-amber-400 font-medium">
+                {' '}
+                · {chamada.totalJustificadas}{' '}
+                {chamada.totalJustificadas === 1 ? 'ausência justificada' : 'ausências justificadas'}
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -643,6 +665,7 @@ interface ChamadaDrawerProps {
   onConteudoChange: (c: string) => void;
   itens: ChamadaItem[];
   onTogglePresenca: (matriculaId: number, status: 'PRESENTE' | 'FALTA' | 'JUSTIFICADA') => void;
+  onJustificativaChange: (matriculaId: number, justificativa: string) => void;
   onMarcarTodos: (status: 'PRESENTE' | 'FALTA') => void;
   onSalvar: () => Promise<void>;
   onClose: () => void;
@@ -666,6 +689,7 @@ function ChamadaDrawer({
   onConteudoChange,
   itens,
   onTogglePresenca,
+  onJustificativaChange,
   onMarcarTodos,
   onSalvar,
   onClose,
@@ -687,7 +711,7 @@ function ChamadaDrawer({
 
   const dataInvalidaFutura = Boolean(dataAula && dataAula > hojeLocal);
 
-  // Atalhos de teclado (P presente, F falta, setas para navegar)
+  // Atalhos de teclado (P presente, F falta, J ausência justificada, setas para navegar)
   useEffect(() => {
     if (!aberto || modo === 'detalhes') return;
 
@@ -703,6 +727,10 @@ function ChamadaDrawer({
       } else if (e.key === 'f' || e.key === 'F') {
         if (itens[focadoIndex]) {
           onTogglePresenca(itens[focadoIndex].matriculaId, 'FALTA');
+        }
+      } else if (e.key === 'j' || e.key === 'J') {
+        if (itens[focadoIndex]) {
+          onTogglePresenca(itens[focadoIndex].matriculaId, 'JUSTIFICADA');
         }
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -721,8 +749,10 @@ function ChamadaDrawer({
 
   const presentesCount = itens.filter((i) => i.status === 'PRESENTE').length;
   const faltasCount = itens.filter((i) => i.status === 'FALTA').length;
+  const justificadasCount = itens.filter((i) => i.status === 'JUSTIFICADA').length;
   const totalCount = itens.length;
-  const percentual = totalCount > 0 ? Math.round((presentesCount / totalCount) * 100) : 0;
+  const percentual =
+    totalCount > 0 ? Math.round(((presentesCount + justificadasCount) / totalCount) * 100) : 0;
 
   return (
     <AnimatePresence>
@@ -873,7 +903,9 @@ function ChamadaDrawer({
                   </button>
 
                   <p className="text-[10px] text-stone-400 font-mono hidden sm:block">
-                    Teclado: <kbd className="px-1 py-0.5 rounded bg-stone-100 dark:bg-[#201e1b]">P</kbd> presente · <kbd className="px-1 py-0.5 rounded bg-stone-100 dark:bg-[#201e1b]">F</kbd> falta
+                    Teclado: <kbd className="px-1 py-0.5 rounded bg-stone-100 dark:bg-[#201e1b]">P</kbd> presente ·{' '}
+                    <kbd className="px-1 py-0.5 rounded bg-stone-100 dark:bg-[#201e1b]">F</kbd> falta ·{' '}
+                    <kbd className="px-1 py-0.5 rounded bg-stone-100 dark:bg-[#201e1b]">J</kbd> ausência justificada
                   </p>
                 </div>
               )}
@@ -902,79 +934,130 @@ function ChamadaDrawer({
                   {itens.map((item, index) => {
                     const isPresente = item.status === 'PRESENTE';
                     const isFalta = item.status === 'FALTA';
+                    const isJustificada = item.status === 'JUSTIFICADA';
                     const isFocado = index === focadoIndex;
 
                     return (
                       <div
                         key={item.matriculaId}
                         onClick={() => setFocadoIndex(index)}
-                        className={`p-3 sm:px-4 flex items-center justify-between gap-3 transition-colors ${
+                        className={`p-3 sm:px-4 space-y-2 transition-colors ${
                           isFocado
                             ? 'bg-stone-50 dark:bg-[#181614]'
                             : 'hover:bg-stone-50/50 dark:hover:bg-[#141210]'
                         }`}
                       >
-                        {/* Aluno */}
-                        <div className="min-w-0 flex items-center gap-3">
-                          <span className="w-6 text-[11px] font-mono text-stone-400 shrink-0 text-right">
-                            {index + 1}.
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-stone-900 dark:text-stone-100 truncate">
-                              {item.alunoNome}
-                            </p>
-                            {item.alunoCpf && (
-                              <p className="text-[10px] text-stone-600 dark:text-stone-400 font-mono">
-                                {formatarCpfMascara(item.alunoCpf)}
+                        <div className="flex items-center justify-between gap-3">
+                          {/* Aluno */}
+                          <div className="min-w-0 flex items-center gap-3">
+                            <span className="w-6 text-[11px] font-mono text-stone-400 shrink-0 text-right">
+                              {index + 1}.
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-stone-900 dark:text-stone-100 truncate">
+                                {item.alunoNome}
                               </p>
-                            )}
+                              {item.alunoCpf && (
+                                <p className="text-[10px] text-stone-600 dark:text-stone-400 font-mono">
+                                  {formatarCpfMascara(item.alunoCpf)}
+                                </p>
+                              )}
+                            </div>
                           </div>
+
+                          {/* Botões Táteis de Presença, Falta e Ausência Justificada */}
+                          {modo === 'detalhes' ? (
+                            <span
+                              className={`text-[11px] font-mono font-medium px-2.5 py-0.5 rounded ${
+                                isPresente
+                                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
+                                  : isJustificada
+                                  ? 'text-amber-700 dark:text-amber-400 bg-amber-500/10'
+                                  : 'text-rose-700 dark:text-rose-400 bg-rose-500/10'
+                              }`}
+                            >
+                              {isPresente
+                                ? 'Presente'
+                                : isJustificada
+                                ? 'Ausência Justificada'
+                                : 'Faltou'}
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.92 }}
+                                onClick={() =>
+                                  onTogglePresenca(item.matriculaId, 'PRESENTE')
+                                }
+                                title="Presente (Tecla P)"
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
+                                  isPresente
+                                    ? 'bg-emerald-600 text-white font-semibold shadow-2xs'
+                                    : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-[#201e1b]'
+                                }`}
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Presença</span>
+                              </motion.button>
+
+                              <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.92 }}
+                                onClick={() =>
+                                  onTogglePresenca(item.matriculaId, 'FALTA')
+                                }
+                                title="Falta (Tecla F)"
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
+                                  isFalta
+                                    ? 'bg-rose-600 text-white font-semibold shadow-2xs'
+                                    : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-[#201e1b]'
+                                }`}
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                                <span>Falta</span>
+                              </motion.button>
+
+                              <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.92 }}
+                                onClick={() =>
+                                  onTogglePresenca(item.matriculaId, 'JUSTIFICADA')
+                                }
+                                title="Ausência Justificada (Tecla J)"
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
+                                  isJustificada
+                                    ? 'bg-amber-600 text-white font-semibold shadow-2xs'
+                                    : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-[#201e1b]'
+                                }`}
+                              >
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                <span>Justificada</span>
+                              </motion.button>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Botões Táteis de Presença (com animação física de salto) */}
-                        {modo === 'detalhes' ? (
-                          <span
-                            className={`text-[11px] font-mono font-medium px-2 py-0.5 rounded ${
-                              isPresente
-                                ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
-                                : 'text-rose-700 dark:text-rose-400 bg-rose-500/10'
-                            }`}
-                          >
-                            {isPresente ? 'Presente' : 'Faltou'}
-                          </span>
-                        ) : (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <motion.button
-                              type="button"
-                              whileTap={{ scale: 0.92 }}
-                              onClick={() =>
-                                onTogglePresenca(item.matriculaId, 'PRESENTE')
-                              }
-                              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
-                                isPresente
-                                  ? 'bg-emerald-600 text-white font-semibold shadow-2xs'
-                                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-[#201e1b]'
-                              }`}
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>P</span>
-                            </motion.button>
-
-                            <motion.button
-                              type="button"
-                              whileTap={{ scale: 0.92 }}
-                              onClick={() =>
-                                onTogglePresenca(item.matriculaId, 'FALTA')
-                              }
-                              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1 ${
-                                isFalta
-                                  ? 'bg-rose-600 text-white font-semibold shadow-2xs'
-                                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-[#201e1b]'
-                              }`}
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              <span>F</span>
-                            </motion.button>
+                        {/* Campo ou Exibição de Justificativa quando Ausência Justificada */}
+                        {isJustificada && (
+                          <div className="pl-9">
+                            {modo === 'detalhes' ? (
+                              item.justificativa ? (
+                                <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1.5">
+                                  <strong>Justificativa:</strong> {item.justificativa}
+                                </p>
+                              ) : null
+                            ) : (
+                              <input
+                                type="text"
+                                value={item.justificativa || ''}
+                                onChange={(e) =>
+                                  onJustificativaChange(item.matriculaId, e.target.value)
+                                }
+                                placeholder="Motivo da ausência justificada (ex: atestado médico, trabalho...)"
+                                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-[#121110] border border-amber-300 dark:border-amber-800/70 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                              />
+                            )}
                           </div>
                         )}
                       </div>
@@ -991,7 +1074,16 @@ function ChamadaDrawer({
                 <strong className="text-emerald-700 dark:text-emerald-400">
                   {presentesCount} presentes
                 </strong>{' '}
-                · <span className="text-rose-700 dark:text-rose-400">{faltasCount} faltas</span>{' '}
+                · <span className="text-rose-700 dark:text-rose-400">{faltasCount} faltas</span>
+                {justificadasCount > 0 && (
+                  <>
+                    {' '}
+                    ·{' '}
+                    <span className="text-amber-700 dark:text-amber-400">
+                      {justificadasCount} justificada{justificadasCount > 1 ? 's' : ''}
+                    </span>
+                  </>
+                )}{' '}
                 ({percentual}%)
               </div>
 
@@ -1092,11 +1184,17 @@ export function DiarioChamadasView({
   // Feedback discreto
   const [toastMsg, setToastMsg] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
 
-  // Seleciona primeira turma automaticamente
+  // Seleciona primeira turma automaticamente ou quando uma nova turma é criada
+  const prevTurmasCountRef = useRef<number>(0);
   useEffect(() => {
-    if (turmasEscola.length > 0 && !turmaSelecionadaId) {
-      setTurmaSelecionadaId(turmasEscola[0].id || null);
+    if (turmasEscola.length > 0) {
+      const existe = turmasEscola.some((t) => t.id === turmaSelecionadaId);
+      const criouNova = prevTurmasCountRef.current > 0 && turmasEscola.length > prevTurmasCountRef.current;
+      if (!turmaSelecionadaId || !existe || criouNova) {
+        setTurmaSelecionadaId(turmasEscola[0].id || null);
+      }
     }
+    prevTurmasCountRef.current = turmasEscola.length;
   }, [turmasEscola, turmaSelecionadaId]);
 
   const turmaAtual = useMemo(() => {
@@ -1296,21 +1394,41 @@ export function DiarioChamadasView({
     }
   };
 
-  // Alternar presença dentro do Drawer
+  // Alternar presença dentro do Drawer (limpa justificativa se mudar para PRESENTE ou FALTA)
   const handleTogglePresencaDrawer = (
     matriculaId: number,
     novoStatus: 'PRESENTE' | 'FALTA' | 'JUSTIFICADA'
   ) => {
     setItensDrawer((prev) =>
       prev.map((i) =>
-        i.matriculaId === matriculaId ? { ...i, status: novoStatus } : i
+        i.matriculaId === matriculaId
+          ? {
+              ...i,
+              status: novoStatus,
+              justificativa: novoStatus === 'JUSTIFICADA' ? i.justificativa : undefined,
+            }
+          : i
       )
     );
   };
 
-  // Marcar todos
+  // Atualizar texto da justificativa quando Ausência Justificada
+  const handleJustificativaChangeDrawer = (
+    matriculaId: number,
+    justificativa: string
+  ) => {
+    setItensDrawer((prev) =>
+      prev.map((i) =>
+        i.matriculaId === matriculaId ? { ...i, justificativa } : i
+      )
+    );
+  };
+
+  // Marcar todos (limpa justificativa residual)
   const handleMarcarTodosDrawer = (status: 'PRESENTE' | 'FALTA') => {
-    setItensDrawer((prev) => prev.map((i) => ({ ...i, status })));
+    setItensDrawer((prev) =>
+      prev.map((i) => ({ ...i, status, justificativa: undefined }))
+    );
   };
 
   // Salvar chamada pelo Drawer
@@ -1417,8 +1535,8 @@ export function DiarioChamadasView({
               schoolTheme={schoolTheme}
             />
 
-            {/* Matérias: Segmented tabs */}
-            {materiasTurma.length > 0 && (
+            {/* Matérias: Segmented tabs — Exclusivo para Formação */}
+            {turmaAtual?.cursoModalidade === 'FORMACAO' && materiasTurma.length > 0 && (
               <AbasMaterias
                 materias={materiasTurma}
                 materiaSelecionadaId={materiaSelecionadaId}
@@ -1526,6 +1644,7 @@ export function DiarioChamadasView({
         onConteudoChange={setConteudoDrawer}
         itens={itensDrawer}
         onTogglePresenca={handleTogglePresencaDrawer}
+        onJustificativaChange={handleJustificativaChangeDrawer}
         onMarcarTodos={handleMarcarTodosDrawer}
         onSalvar={handleSalvarDrawer}
         onClose={() => setDrawerAberto(false)}

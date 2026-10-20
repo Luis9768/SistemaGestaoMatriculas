@@ -123,12 +123,15 @@ export interface Turma {
   id?: number;
   cursoId: number;
   cursoNome?: string;
+  cursoModalidade?: 'FORMACAO' | 'NUCLEO' | 'OFICINA';
   escolaId?: number;
   escolaNome?: string;
   escolaSigla?: string;
   codigo: string;
   dataAberturaMatricula: string;
   dataFechamentoMatricula: string;
+  dataInicioSuplencia?: string;
+  dataFimSuplencia?: string;
   dataInicioAulas: string;
   dataFimAulas: string;
   vagasTotais: number;
@@ -790,7 +793,10 @@ export const api = {
     const params = new URLSearchParams();
     if (escolaId) params.append('escolaId', escolaId.toString());
     if (tipo) params.append('tipo', tipo);
-    const res = await fetch(`${API_BASE}/cursos?${params.toString()}`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/cursos?${params.toString()}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (!res.ok) throw new Error('Erro ao buscar cursos');
     return res.json();
   },
@@ -841,15 +847,31 @@ export const api = {
     if (cursoId) params.append('cursoId', cursoId.toString());
     if (escolaId) params.append('escolaId', escolaId.toString());
     if (apenasAbertas) params.append('apenasAbertas', 'true');
-    const res = await fetch(`${API_BASE}/turmas?${params.toString()}`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/turmas?${params.toString()}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (!res.ok) throw new Error('Erro ao buscar turmas');
     return res.json();
   },
 
   async getTurmaPorId(id: number): Promise<Turma> {
-    const res = await fetch(`${API_BASE}/turmas/${id}`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/turmas/${id}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (!res.ok) throw new Error('Erro ao buscar detalhes da turma');
     return res.json();
+  },
+
+  async getProximoCodigoTurma(cursoId: number): Promise<string> {
+    const res = await fetch(`${API_BASE}/turmas/proximo-codigo?cursoId=${cursoId}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) throw new Error('Erro ao gerar código automático da turma');
+    const data = await res.json();
+    return data.codigo;
   },
 
   async createTurma(data: Turma): Promise<Turma> {
@@ -1126,8 +1148,28 @@ export const api = {
     return res.json();
   },
 
+  async getRelatorioPrefeitura(escolaId?: number): Promise<RelatorioPrefeituraData | null> {
+    const params = new URLSearchParams();
+    if (escolaId) params.append('escolaId', escolaId.toString());
+    const res = await fetch(`${API_BASE}/dashboard/relatorio-prefeitura?${params.toString()}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        return null;
+      }
+      const err = await res.json().catch(() => ({ message: 'Erro ao carregar relatório da prefeitura' }));
+      throw new Error(err.message || 'Erro ao carregar relatório da prefeitura');
+    }
+    return res.json();
+  },
+
   async getDashboardTurma(turmaId: number): Promise<TurmaDashboard | null> {
-    const res = await fetch(`${API_BASE}/dashboard/turma/${turmaId}`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/dashboard/turma/${turmaId}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
         return null;
@@ -1142,7 +1184,10 @@ export const api = {
   async getUsuarios(role?: string): Promise<Usuario[]> {
     const params = new URLSearchParams();
     if (role) params.append('role', role);
-    const res = await fetch(`${API_BASE}/usuarios?${params.toString()}`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/usuarios?${params.toString()}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store',
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Erro ao buscar usuários' }));
       throw new Error(err.message || 'Erro ao buscar usuários');
@@ -1390,4 +1435,43 @@ export interface PaginaAuditoria {
   totalPages: number;
   size: number;
   number: number;
+}
+
+export interface EscolaPrefeituraItem {
+  escolaId: number;
+  escolaSigla: string;
+  escolaNome: string;
+  matriculadosFormacao: number;
+  matriculadosNucleo: number;
+  matriculadosOficina: number;
+  totalMatriculadosAtivos: number;
+  evasoesFaltas: number;
+  cancelamentosVoluntarios: number;
+  totalDesistencias: number;
+  taxaDesistencia: number;
+}
+
+export interface AlunoAtivoPrefeitura {
+  matriculaId: number;
+  alunoId: number;
+  alunoNome: string;
+  alunoCpf: string;
+  escolaId: number;
+  escolaSigla: string;
+  escolaNome: string;
+  cursoNome: string;
+  modalidade: 'FORMACAO' | 'NUCLEO' | 'OFICINA' | string;
+  turmaCodigo: string;
+  dataMatricula: string;
+}
+
+export interface RelatorioPrefeituraData {
+  totalRedeFormacao: number;
+  totalRedeNucleo: number;
+  totalRedeOficina: number;
+  totalRedeMatriculadosAtivos: number;
+  totalRedeDesistencias: number;
+  taxaRedeDesistencia: number;
+  escolas: EscolaPrefeituraItem[];
+  alunosAtivos: AlunoAtivoPrefeitura[];
 }

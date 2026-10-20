@@ -176,14 +176,24 @@ export function ModalDetalhesTurma({
               Prazos & Calendário Oficial
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="space-y-1">
                 <span className="text-slate-400 dark:text-slate-500 block">
-                  Período de Matrículas:
+                  Período de Inscrições:
                 </span>
                 <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
                   {formatarDataBr(turma.dataAberturaMatricula)} até{' '}
                   {formatarDataBr(turma.dataFechamentoMatricula)}
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-slate-400 dark:text-slate-500 block">
+                  Período de Suplências:
+                </span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                  {formatarDataBr(turma.dataInicioSuplencia)} até{' '}
+                  {formatarDataBr(turma.dataFimSuplencia)}
                 </span>
               </div>
 
@@ -241,60 +251,62 @@ export function ModalDetalhesTurma({
             </div>
           </div>
 
-          {/* BLOCO 5: MATÉRIAS CURRICULARES */}
-          <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/70 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-slate-500" />
-                Matérias Curriculares ({materias.length})
-              </span>
+          {/* BLOCO 5: MATÉRIAS CURRICULARES (Exclusivo para Formação) */}
+          {turma.cursoModalidade === 'FORMACAO' && (
+            <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/70 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] uppercase font-extrabold tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+                  Matérias Curriculares ({materias.length})
+                </span>
 
-              {onGerenciarMaterias && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onGerenciarMaterias(turma);
-                  }}
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>Gerenciar Matérias</span>
-                </button>
-              )}
-            </div>
-
-            {materias.length > 0 ? (
-              <div className="space-y-1.5">
-                {materias.map((m, idx) => (
-                  <div
-                    key={m.id || idx}
-                    className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between gap-2 text-xs"
+                {onGerenciarMaterias && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onGerenciarMaterias(turma);
+                    }}
+                    className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <div>
-                      <span className="font-semibold text-slate-900 dark:text-white block">
-                        {m.nome}
-                      </span>
-                      {m.professorResponsavel && (
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Docente: {m.professorResponsavel}
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Gerenciar Matérias</span>
+                  </button>
+                )}
+              </div>
+
+              {materias.length > 0 ? (
+                <div className="space-y-1.5">
+                  {materias.map((m, idx) => (
+                    <div
+                      key={m.id || idx}
+                      className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between gap-2 text-xs"
+                    >
+                      <div>
+                        <span className="font-semibold text-slate-900 dark:text-white block">
+                          {m.nome}
+                        </span>
+                        {m.professorResponsavel && (
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Docente: {m.professorResponsavel}
+                          </span>
+                        )}
+                      </div>
+                      {m.cargaHoraria && (
+                        <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
+                          {m.cargaHoraria}h
                         </span>
                       )}
                     </div>
-                    {m.cargaHoraria && (
-                      <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
-                        {m.cargaHoraria}h
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-400 dark:text-slate-500 italic">
-                Nenhuma matéria cadastrada para esta turma.
-              </p>
-            )}
-          </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 dark:text-slate-500 italic">
+                  Nenhuma matéria cadastrada para esta turma.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* RODAPÉ DE AÇÕES */}

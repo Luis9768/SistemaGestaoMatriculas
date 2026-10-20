@@ -1,8 +1,8 @@
 package com.gestaomatriculas.dto;
 
+import com.gestaomatriculas.model.enums.ModalidadeCurso;
 import com.gestaomatriculas.model.enums.StatusTurma;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -19,15 +19,21 @@ public class TurmaDTO {
     @NotNull(message = "O ID do curso é obrigatório")
     private Long cursoId;
     private String cursoNome;
+    private ModalidadeCurso cursoModalidade;
 
-    @NotBlank(message = "O código da turma é obrigatório")
     private String codigo;
 
-    @NotNull(message = "A data de abertura de matrícula é obrigatória")
+    @NotNull(message = "A data de início das inscrições é obrigatória")
     private LocalDate dataAberturaMatricula;
 
-    @NotNull(message = "A data de fechamento de matrícula é obrigatória")
+    @NotNull(message = "A data de fim das inscrições é obrigatória")
     private LocalDate dataFechamentoMatricula;
+
+    @NotNull(message = "A data de início das suplências é obrigatória")
+    private LocalDate dataInicioSuplencia;
+
+    @NotNull(message = "A data de fim das suplências é obrigatória")
+    private LocalDate dataFimSuplencia;
 
     @NotNull(message = "A data de início das aulas é obrigatória")
     private LocalDate dataInicioAulas;
@@ -56,4 +62,3 @@ public class TurmaDTO {
     private java.util.List<TurmaMateriaDTO> materias;
     private java.util.List<String> materiasNomes;
 }
-

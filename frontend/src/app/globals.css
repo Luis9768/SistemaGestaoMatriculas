@@ -42,6 +42,49 @@
   --font-mono: var(--font-geist-mono);
   --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
   --font-fighter: var(--font-fighter-attack), 'FighterAttack', cursive;
+
+  /* Tipografia ampliada para acessibilidade visual das encarregadas */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.35rem;
+  --text-sm: 0.96875rem;
+  --text-sm--line-height: 1.45rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.6rem;
+  --text-lg: 1.2rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.35rem;
+  --text-xl--line-height: 1.85rem;
+}
+
+/* Mantém a tela de Direcionamento com as proporções e fontes originais */
+.direcionamento-original-scale {
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+}
+
+/* Elevação de micro-textos arbitrários exceto na tela de Direcionamento */
+:not(.direcionamento-original-scale) > [class*="text-[8px]"]:not(.direcionamento-original-scale *),
+:not(.direcionamento-original-scale) > [class*="text-[9px]"]:not(.direcionamento-original-scale *) {
+  font-size: 0.75rem !important;
+  line-height: 1.15rem !important;
+}
+
+[class*="text-[10px]"]:not(.direcionamento-original-scale *) {
+  font-size: 0.8125rem !important;
+  line-height: 1.2rem !important;
+}
+
+[class*="text-[11px]"]:not(.direcionamento-original-scale *) {
+  font-size: 0.84375rem !important;
+  line-height: 1.25rem !important;
 }
 
 .font-serif {
@@ -135,4 +178,3 @@ body {
   box-shadow: 
     0 20px 45px -5px rgba(0, 0, 0, 0.8);
 }
-

@@ -169,7 +169,7 @@ export function DirecionamentoEscolasView({
   const primeiroNome = usuarioLogado?.nome ? usuarioLogado.nome.trim().split(/\s+/)[0] : 'Coordenação';
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200 relative overflow-hidden">
+    <div className="direcionamento-original-scale min-h-screen bg-[#F1F5F9] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200 relative overflow-hidden">
       {/* Top Header Institucional Integrado */}
       <GraffitiBannerHeader onLogout={onLogout} />
 

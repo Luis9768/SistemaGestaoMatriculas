@@ -8,7 +8,6 @@ import {
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
-  Shield,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -21,19 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-function getIniciaisAluno(nome?: string): string {
-  if (!nome) return 'AL';
-  const palavras = nome
-    .trim()
-    .split(/\s+/)
-    .map((p) => p.replace(/[^a-zA-ZÀ-ÿ]/g, ''))
-    .filter(Boolean);
-
-  if (palavras.length === 0) return 'AL';
-  if (palavras.length === 1) return palavras[0].slice(0, 2).toUpperCase();
-  return (palavras[0][0] + palavras[1][0]).toUpperCase();
-}
 
 function mascararCpf(cpf?: string): string {
   if (!cpf) return '—';
@@ -92,15 +78,6 @@ export function MatriculasView({
   const [itensPorPagina, setItensPorPagina] = useState(25);
 
   const schoolTheme = getSchoolThemeColors(escolaAtual?.sigla || filtroEscolaSigla);
-
-  // Identificar quantidade de turmas por participante para remover estranhamento de linhas do mesmo aluno
-  const matriculasPorAluno = useMemo(() => {
-    const map = new Map<number, number>();
-    matriculas.forEach((m) => {
-      map.set(m.alunoId, (map.get(m.alunoId) || 0) + 1);
-    });
-    return map;
-  }, [matriculas]);
 
   // Lista de siglas de escolas disponíveis para filtro por núcleo
   const escolasDisponiveis = useMemo(() => {
@@ -249,7 +226,7 @@ export function MatriculasView({
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Seletor por Núcleo/Escola se não houver escola pré-fixada */}
           {!escolaSelecionada && escolasDisponiveis.length > 1 && (
-            <div className="w-full sm:w-[150px]">
+            <div className="w-full sm:w-auto sm:min-w-[165px]">
               <Select
                 value={filtroEscolaSigla || 'ALL'}
                 onValueChange={(val) => setFiltroEscolaSigla(val === 'ALL' ? '' : val)}
@@ -270,7 +247,7 @@ export function MatriculasView({
           )}
 
           {/* Seletor shadcn UI: Canal de Origem */}
-          <div className="w-full sm:w-[170px]">
+          <div className="w-full sm:w-auto sm:min-w-[190px]">
             <Select
               value={filtroCanal || 'ALL'}
               onValueChange={(val) => setFiltroCanal(val === 'ALL' ? '' : val)}
@@ -290,7 +267,7 @@ export function MatriculasView({
           </div>
 
           {/* Seletor shadcn UI: Status da Matrícula */}
-          <div className="w-full sm:w-[175px]">
+          <div className="w-full sm:w-auto sm:min-w-[195px]">
             <Select
               value={filtroStatus || 'ALL'}
               onValueChange={(val) => setFiltroStatus(val === 'ALL' ? '' : val)}
@@ -340,7 +317,7 @@ export function MatriculasView({
         </div>
       </div>
 
-      {/* Tabela de Matrículas Reestruturada */}
+      {/* Tabela de Matrículas */}
       <div className="bg-white dark:bg-[#121214] rounded-2xl border border-slate-200/90 dark:border-[#27272a] shadow-xs overflow-hidden">
         {/* Barra superior de contagem rápida */}
         <div className="px-5 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
@@ -366,11 +343,11 @@ export function MatriculasView({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <colgroup>
-              <col className="w-[32%]" />
               <col className="w-[26%]" />
-              <col className="w-[24%]" />
+              <col className="w-[26%]" />
+              <col className="w-[28%]" />
               <col className="w-[10%]" />
-              <col className="w-[8%]" />
+              <col className="w-[10%]" />
             </colgroup>
             <thead className="bg-slate-50/95 dark:bg-[#18181b]/95 backdrop-blur-xs text-[#8b8b95] font-semibold sticky top-0 z-10 border-b border-slate-200/80 dark:border-zinc-800 text-[11px] uppercase tracking-[0.06em]">
               <tr>
@@ -394,8 +371,6 @@ export function MatriculasView({
                 </tr>
               ) : (
                 matriculasPaginadas.map((m) => {
-                  const iniciais = getIniciaisAluno(m.alunoNome);
-                  const totalTurmasAluno = matriculasPorAluno.get(m.alunoId) || 1;
                   const cpfRevelado = Boolean(cpfsRevelados[m.id]);
 
                   return (
@@ -403,74 +378,35 @@ export function MatriculasView({
                       key={m.id}
                       className="hover:bg-slate-50/70 dark:hover:bg-white/[0.03] transition-colors group"
                     >
-                      {/* 1. Nome do Participante (Avatar + Nome semibold + ID + Menor + Contador turmas) */}
+                      {/* 1. Nome do Participante (limpo, sem avatares/IDs/contadores extras) */}
                       <td className="px-4 py-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-[#18181b] border border-slate-200/80 dark:border-[#27272a] text-slate-700 dark:text-zinc-300 font-semibold text-xs flex items-center justify-center shrink-0">
-                            {iniciais}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <button
-                                type="button"
-                                onClick={() => onOpenPerfilAluno(m.alunoId)}
-                                className="font-semibold text-slate-900 dark:text-zinc-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors truncate max-w-[210px] text-left cursor-pointer"
-                                title="Abrir prontuário do aluno"
-                              >
-                                {m.alunoNome}
-                              </button>
-                              {m.alunoMenorDeIdade && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 shrink-0">
-                                  Menor
-                                </span>
-                              )}
-                              {totalTurmasAluno > 1 && (
-                                <span
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-200/60 dark:border-zinc-700/50 shrink-0"
-                                  title={`Participante matriculado em ${totalTurmasAluno} turmas`}
-                                >
-                                  {totalTurmasAluno} turmas
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono tabular-nums font-normal mt-0.5">
-                              ID #{m.alunoId}
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => onOpenPerfilAluno(m.alunoId)}
+                            className="font-semibold text-slate-900 dark:text-zinc-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-left cursor-pointer"
+                            title="Abrir prontuário do aluno"
+                          >
+                            {m.alunoNome}
+                          </button>
+                          {m.alunoMenorDeIdade && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                              Menor
+                            </span>
+                          )}
                         </div>
                       </td>
 
-                      {/* 2. Contato: E-mail em cima (com Resp. para menor) e CPF mascarado embaixo */}
+                      {/* 2. Contato: E-mail e CPF mascarado */}
                       <td className="px-4 py-3">
                         <div className="min-w-0">
-                          {/* Linha 1: E-mail */}
-                          {m.alunoMenorDeIdade ? (
-                            <div
-                              className="flex items-center gap-1 text-slate-800 dark:text-zinc-300 font-normal text-xs truncate max-w-[240px]"
-                              title={
-                                m.alunoEmail
-                                  ? `Responsável: ${m.alunoEmail}`
-                                  : 'Responsável sem e-mail'
-                              }
-                            >
-                              <Shield className="w-3 h-3 text-amber-500/80 shrink-0" />
-                              <span className="truncate">
-                                <span className="text-zinc-500 dark:text-zinc-400 text-[11px] mr-1">
-                                  Resp.:
-                                </span>
-                                {m.alunoEmail || 'Não informado'}
-                              </span>
-                            </div>
-                          ) : (
-                            <div
-                              className="text-slate-800 dark:text-zinc-300 font-normal text-xs truncate max-w-[240px]"
-                              title={m.alunoEmail}
-                            >
-                              {m.alunoEmail || '—'}
-                            </div>
-                          )}
+                          <div
+                            className="text-slate-800 dark:text-zinc-300 font-normal text-xs truncate"
+                            title={m.alunoEmail}
+                          >
+                            {m.alunoEmail || '—'}
+                          </div>
 
-                          {/* Linha 2: CPF mascarado com revelar ao clicar */}
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="font-mono text-[11px] text-[#a1a1aa] dark:text-zinc-400 tabular-nums font-normal select-all">
                               {cpfRevelado
@@ -495,10 +431,10 @@ export function MatriculasView({
                         </div>
                       </td>
 
-                      {/* 3. Turma & Curso: Curso como principal, código em mono abaixo com ponto do núcleo */}
+                      {/* 3. Turma & Curso */}
                       <td className="px-4 py-3">
                         <div
-                          className="text-xs font-medium text-slate-900 dark:text-zinc-200 truncate max-w-[240px]"
+                          className="text-xs font-medium text-slate-900 dark:text-zinc-200 truncate"
                           title={m.cursoNome}
                         >
                           {m.cursoNome}
@@ -517,12 +453,12 @@ export function MatriculasView({
                         </div>
                       </td>
 
-                      {/* 4. Status: Ponto colorido + texto alinhado à esquerda */}
+                      {/* 4. Status */}
                       <td className="px-4 py-3 text-left whitespace-nowrap">
                         {renderStatus(m.status)}
                       </td>
 
-                      {/* 5. Ações: Sticky right para nunca vazar ou cortar */}
+                      {/* 5. Ações */}
                       <td className="px-4 py-3 text-right whitespace-nowrap sticky right-0 bg-white dark:bg-[#121214] group-hover:bg-slate-50/90 dark:group-hover:bg-[#161618] transition-colors z-10 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.4)]">
                         <div className="flex items-center justify-end gap-1.5">
                           <button

@@ -167,6 +167,14 @@ public class UsuarioService {
         Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
 
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null
+                && u.getEmail().equalsIgnoreCase(auth.getName())
+                && Boolean.TRUE.equals(u.getAtivo())) {
+            throw new BusinessException("Você não pode bloquear o seu próprio login enquanto estiver autenticado.");
+        }
+
         u.setAtivo(!Boolean.TRUE.equals(u.getAtivo()));
         Usuario salvo = usuarioRepository.save(u);
         log.info("Status de acesso do usuário {} alterado para: {}", salvo.getEmail(), salvo.getAtivo() ? "ATIVO" : "INATIVO");

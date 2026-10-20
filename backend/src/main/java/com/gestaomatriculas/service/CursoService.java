@@ -77,9 +77,11 @@ public class CursoService {
             modalidade = (dto.getTipo() == TipoCurso.REGULAR) ? ModalidadeCurso.FORMACAO : ModalidadeCurso.OFICINA;
         }
 
-        // Calcula carga horária total somando as disciplinas, se fornecidas
+        boolean isFormacao = modalidade == ModalidadeCurso.FORMACAO;
+
+        // Calcula carga horária total somando as disciplinas apenas se for Formação
         int cargaCalculada = (dto.getCargaHoraria() != null && dto.getCargaHoraria() > 0) ? dto.getCargaHoraria() : 0;
-        if (dto.getDisciplinas() != null && !dto.getDisciplinas().isEmpty()) {
+        if (isFormacao && dto.getDisciplinas() != null && !dto.getDisciplinas().isEmpty()) {
             int somaDisciplinas = dto.getDisciplinas().stream()
                     .mapToInt(d -> d.getCargaHoraria() != null ? d.getCargaHoraria() : 0)
                     .sum();
@@ -88,7 +90,7 @@ public class CursoService {
             }
         }
         if (cargaCalculada == 0) {
-            cargaCalculada = 40; // Default razoável caso não informado
+            cargaCalculada = isFormacao ? 240 : 60;
         }
 
         Curso curso = Curso.builder()
@@ -97,7 +99,7 @@ public class CursoService {
                 .escola(escola)
                 .tipo(dto.getTipo() != null ? dto.getTipo() : TipoCurso.OFICINA)
                 .modalidade(modalidade)
-                .duracaoMeses(dto.getDuracaoMeses() != null ? dto.getDuracaoMeses() : 2)
+                .duracaoMeses(dto.getDuracaoMeses() != null ? dto.getDuracaoMeses() : (isFormacao ? 24 : 4))
                 .duracaoEstimada(dto.getDuracaoEstimada() != null && !dto.getDuracaoEstimada().isBlank() ? dto.getDuracaoEstimada().trim() : null)
                 .cargaHoraria(cargaCalculada)
                 .ativo(dto.getAtivo() == null ? true : dto.getAtivo())
@@ -106,8 +108,8 @@ public class CursoService {
 
         Curso salvo = cursoRepository.save(curso);
 
-        // Salva as disciplinas cadastradas pelas professoras
-        if (dto.getDisciplinas() != null && !dto.getDisciplinas().isEmpty()) {
+        // Apenas cursos da modalidade FORMACAO possuem disciplinas/matérias
+        if (isFormacao && dto.getDisciplinas() != null && !dto.getDisciplinas().isEmpty()) {
             for (DisciplinaDTO discDto : dto.getDisciplinas()) {
                 if (discDto.getNome() != null && !discDto.getNome().trim().isEmpty()) {
                     Disciplina d = Disciplina.builder()
@@ -156,8 +158,10 @@ public class CursoService {
             curso.setEscola(escola);
         }
 
-        // Se disciplinas foram enviadas, atualiza a lista
-        if (dto.getDisciplinas() != null) {
+        boolean isFormacao = curso.getModalidade() == ModalidadeCurso.FORMACAO;
+
+        // Se for Formação e disciplinas foram enviadas, atualiza a lista
+        if (isFormacao && dto.getDisciplinas() != null) {
             curso.getDisciplinas().clear();
             int soma = 0;
             for (DisciplinaDTO discDto : dto.getDisciplinas()) {
@@ -179,6 +183,11 @@ public class CursoService {
             } else if (dto.getCargaHoraria() != null) {
                 curso.setCargaHoraria(dto.getCargaHoraria());
             }
+        } else if (!isFormacao) {
+            curso.getDisciplinas().clear();
+            if (dto.getCargaHoraria() != null && dto.getCargaHoraria() > 0) {
+                curso.setCargaHoraria(dto.getCargaHoraria());
+            }
         } else if (dto.getCargaHoraria() != null) {
             curso.setCargaHoraria(dto.getCargaHoraria());
         }
@@ -192,6 +201,10 @@ public class CursoService {
     public DisciplinaDTO adicionarDisciplina(Long cursoId, DisciplinaDTO discDto) {
         Curso curso = cursoRepository.findById(cursoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + cursoId));
+
+        if (curso.getModalidade() != ModalidadeCurso.FORMACAO) {
+            throw new BusinessException("Apenas cursos da modalidade Formação possuem adição e edição de matérias/disciplinas. Núcleos e Oficinas são de curta duração.");
+        }
 
         if (securityService.isEncarregada() && curso.getEscola() != null && !securityService.temAcessoAEscola(curso.getEscola().getId())) {
             throw new BusinessException("Acesso negado: você não possui permissão para adicionar disciplinas a cursos desta escola.");
@@ -222,6 +235,10 @@ public class CursoService {
         Curso curso = cursoRepository.findById(cursoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com id: " + cursoId));
 
+        if (curso.getModalidade() != ModalidadeCurso.FORMACAO) {
+            throw new BusinessException("Apenas cursos da modalidade Formação possuem gerenciamento de matérias/disciplinas.");
+        }
+
         if (securityService.isEncarregada() && curso.getEscola() != null && !securityService.temAcessoAEscola(curso.getEscola().getId())) {
             throw new BusinessException("Acesso negado: você não possui permissão para remover disciplinas de cursos desta escola.");
         }
@@ -239,6 +256,10 @@ public class CursoService {
 
     @Transactional(readOnly = true)
     public List<DisciplinaDTO> listarDisciplinas(Long cursoId) {
+        Curso curso = cursoRepository.findById(cursoId).orElse(null);
+        if (curso != null && curso.getModalidade() != ModalidadeCurso.FORMACAO) {
+            return List.of();
+        }
         return disciplinaRepository.findByCursoIdOrderByNomeAsc(cursoId).stream()
                 .map(this::toDisciplinaDTO)
                 .collect(Collectors.toList());
@@ -260,7 +281,7 @@ public class CursoService {
 
     public CursoDTO toDTO(Curso curso) {
         List<DisciplinaDTO> discDtos = new ArrayList<>();
-        if (curso.getDisciplinas() != null) {
+        if (curso.getModalidade() == ModalidadeCurso.FORMACAO && curso.getDisciplinas() != null) {
             discDtos = curso.getDisciplinas().stream()
                     .map(this::toDisciplinaDTO)
                     .collect(Collectors.toList());

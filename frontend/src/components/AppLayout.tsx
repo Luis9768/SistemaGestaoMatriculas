@@ -29,6 +29,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import { api } from '@/lib/api';
 import { getSchoolThemeColors } from '@/lib/escolaUtils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
@@ -192,6 +193,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     });
   };
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.removeAttribute('data-font-scale');
+    }
+  }, []);
+
   // Fechar dropdowns ao clicar fora
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -226,6 +233,29 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       router.replace('/login');
     }
   }, [loading, usuarioLogado, router]);
+
+  // Gera automaticamente o próximo código da turma (ex: ELT-01-2026) ao abrir o modal ou trocar o curso
+  useEffect(() => {
+    if (!showModalTurma || !novaTurma.cursoId) return;
+    let cancelado = false;
+    api.getProximoCodigoTurma(Number(novaTurma.cursoId))
+      .then((codigoGerado: string) => {
+        if (!cancelado && codigoGerado) {
+          setNovaTurma((prev) => ({ ...prev, codigo: codigoGerado }));
+        }
+      })
+      .catch(() => {
+        const cursoAlvo = cursos.find((c) => c.id === Number(novaTurma.cursoId));
+        const sigla = (cursoAlvo?.escolaSigla || escolaAtualObj?.sigla || 'TURMA').toUpperCase();
+        const ano = new Date().getFullYear();
+        if (!cancelado) {
+          setNovaTurma((prev) => ({ ...prev, codigo: `${sigla}-01-${ano}` }));
+        }
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [showModalTurma, novaTurma.cursoId, cursos, escolaAtualObj, setNovaTurma]);
 
   // Se não houver escola selecionada, direciona para o Hub
   useEffect(() => {
@@ -269,9 +299,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ? escolas
     : escolas.filter((esc) => permittedSchoolIds.includes(esc.id));
 
-  const cursosDisponiveisParaTurma = isEncarregada && permittedSchoolIds.length > 0
+  const cursosPorPermissao = isEncarregada && permittedSchoolIds.length > 0
     ? cursos.filter((c) => !c.escolaId || permittedSchoolIds.includes(c.escolaId))
     : cursos;
+
+  const cursosDisponiveisParaTurma = escolaSelecionada
+    ? cursosPorPermissao.filter(
+        (c) =>
+          !c.escolaId ||
+          c.escolaId === escolaSelecionada ||
+          c.id === Number(novaTurma.cursoId)
+      )
+    : cursosPorPermissao;
 
   // Mapeamento de Breadcrumb
   const getPageTitle = () => {
@@ -702,7 +741,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Área Principal de Conteúdo */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+        <main className="flex-1 max-w-7xl 2xl:max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-6">
           {children}
         </main>
       </div>
@@ -711,11 +750,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Modal Nova Turma */}
       {showModalTurma && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-[#121214] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-[#27272a] max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-[#121214] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-[#27272a] max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-[#27272a] pb-3">
               <div>
                 <h3 className="font-black text-base text-slate-900 dark:text-white">Abrir Nova Turma / Oferta</h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Defina vagas, datas e restrições etárias</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Defina vagas, calendário de inscrições, suplências e aulas</p>
               </div>
               <button
                 onClick={() => setShowModalTurma(false)}
@@ -732,13 +771,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <select
                   required
                   value={novaTurma.cursoId}
-                  onChange={(e) => setNovaTurma({ ...novaTurma, cursoId: Number(e.target.value) })}
+                  onChange={(e) => setNovaTurma({ ...novaTurma, cursoId: Number(e.target.value), materiasNomes: [] })}
                   className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-semibold"
                 >
                   <option value="">Selecione o curso...</option>
                   {cursosDisponiveisParaTurma.map((c) => (
                     <option key={c.id} value={c.id}>
-                      [{c.escolaSigla}] {c.nome} ({c.cargaHoraria}h)
+                      [{c.escolaSigla}] {c.nome} ({c.modalidade || 'OFICINA'} • {c.cargaHoraria}h)
                     </option>
                   ))}
                 </select>
@@ -746,14 +785,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Código da Turma *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700 dark:text-slate-300">Código Automático</label>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                      Auto-gerado
+                    </span>
+                  </div>
                   <input
                     type="text"
-                    required
-                    placeholder="Ex: ELT-2026-T1"
-                    value={novaTurma.codigo}
-                    onChange={(e) => setNovaTurma({ ...novaTurma, codigo: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                    readOnly
+                    value={novaTurma.codigo || 'Gerando...'}
+                    title="O código da turma é gerado automaticamente com a sigla da escola, número sequencial e ano atual"
+                    className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -769,68 +812,69 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              {/* Matérias / Disciplinas da Turma */}
-              <div className="p-3 bg-violet-50/70 dark:bg-violet-950/30 rounded-2xl space-y-2 border border-violet-200 dark:border-violet-800/60">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-violet-900 dark:text-violet-300 block text-[10px] uppercase tracking-wider">
-                    Matérias da Turma (Grade de Disciplinas)
-                  </span>
-                  <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold font-mono">
-                    {(novaTurma.materiasNomes || []).length} matéria(s)
-                  </span>
-                </div>
-
-                <div className="flex gap-1.5">
-                  <input
-                    type="text"
-                    value={inputMateriaTexto}
-                    onChange={(e) => setInputMateriaTexto(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAdicionarMateria(e);
-                      }
-                    }}
-                    placeholder="Ex: Audiovisual, Artes Cênicas, Design..."
-                    className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-violet-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAdicionarMateria}
-                    className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 active:scale-95 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 shrink-0"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Adicionar</span>
-                  </button>
-                </div>
-
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Digite as matérias individualmente ou separe por vírgula (ex: <i>Audiovisual, Artes Cênicas, Design de Cinema</i>).
-                </p>
-
-                {/* Chips / Tags das Matérias Cadastradas */}
-                {(novaTurma.materiasNomes || []).length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {(novaTurma.materiasNomes || []).map((materia, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 text-violet-900 dark:text-violet-200 border border-violet-200 dark:border-violet-700 rounded-lg text-xs font-semibold shadow-2xs"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
-                        <span>{materia}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoverMateria(idx)}
-                          className="hover:bg-violet-100 dark:hover:bg-violet-900/50 p-0.5 rounded text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition cursor-pointer"
-                          title="Remover matéria"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
+              {/* Matérias / Disciplinas da Turma — EXCLUSIVO PARA FORMAÇÃO */}
+              {cursosDisponiveisParaTurma.find((c) => c.id === Number(novaTurma.cursoId))?.modalidade === 'FORMACAO' && (
+                <div className="p-3 bg-violet-50/70 dark:bg-violet-950/30 rounded-2xl space-y-2 border border-violet-200 dark:border-violet-800/60">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-violet-900 dark:text-violet-300 block text-[10px] uppercase tracking-wider">
+                      Matérias da Turma (Exclusivo Formação)
+                    </span>
+                    <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold font-mono">
+                      {(novaTurma.materiasNomes || []).length} matéria(s)
+                    </span>
                   </div>
-                )}
-              </div>
+
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={inputMateriaTexto}
+                      onChange={(e) => setInputMateriaTexto(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAdicionarMateria(e);
+                        }
+                      }}
+                      placeholder="Ex: Audiovisual, Artes Cênicas, Design..."
+                      className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-violet-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAdicionarMateria}
+                      className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 active:scale-95 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Adicionar</span>
+                    </button>
+                  </div>
+
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Digite as matérias individualmente ou separe por vírgula.
+                  </p>
+
+                  {(novaTurma.materiasNomes || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {(novaTurma.materiasNomes || []).map((materia, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 text-violet-900 dark:text-violet-200 border border-violet-200 dark:border-violet-700 rounded-lg text-xs font-semibold shadow-2xs"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
+                          <span>{materia}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoverMateria(idx)}
+                            className="hover:bg-violet-100 dark:hover:bg-violet-900/50 p-0.5 rounded text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 transition cursor-pointer"
+                            title="Remover matéria"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Faixa Etária */}
               <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl space-y-2 border border-amber-200 dark:border-amber-800/60">
@@ -865,14 +909,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              {/* Período de Matrícula */}
+              {/* 1 & 2. Período de Inscrições */}
               <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl space-y-2 border border-blue-100 dark:border-blue-900/60">
                 <span className="font-bold text-blue-900 dark:text-blue-300 block text-[10px] uppercase tracking-wider">
-                  Período de Matrícula
+                  1. Período das Inscrições
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Abertura *</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Início das Inscrições *</label>
                     <input
                       type="date"
                       required
@@ -882,7 +926,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Fechamento *</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Fim das Inscrições *</label>
                     <input
                       type="date"
                       required
@@ -894,14 +938,43 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              {/* Período de Aulas */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-2 border border-slate-200 dark:border-slate-700">
-                <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">
-                  Aulas & Tolerância de Suplência
+              {/* 3 & 4. Período de Suplências */}
+              <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl space-y-2 border border-emerald-100 dark:border-emerald-900/60">
+                <span className="font-bold text-emerald-900 dark:text-emerald-300 block text-[10px] uppercase tracking-wider">
+                  2. Período das Suplências
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Início *</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Início das Suplências *</label>
+                    <input
+                      type="date"
+                      required
+                      value={novaTurma.dataInicioSuplencia || ''}
+                      onChange={(e) => setNovaTurma({ ...novaTurma, dataInicioSuplencia: e.target.value })}
+                      className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Fim das Suplências *</label>
+                    <input
+                      type="date"
+                      required
+                      value={novaTurma.dataFimSuplencia || ''}
+                      onChange={(e) => setNovaTurma({ ...novaTurma, dataFimSuplencia: e.target.value })}
+                      className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 5 & 6. Período de Aulas */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl space-y-2 border border-slate-200 dark:border-slate-700">
+                <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">
+                  3. Período das Aulas
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Início das Aulas *</label>
                     <input
                       type="date"
                       required
@@ -911,7 +984,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Término *</label>
+                    <label className="block text-[11px] text-slate-600 dark:text-slate-400 mb-0.5">Fim das Aulas *</label>
                     <input
                       type="date"
                       required

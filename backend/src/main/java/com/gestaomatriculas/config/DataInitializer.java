@@ -521,15 +521,18 @@ public class DataInitializer implements CommandLineRunner {
             String defaultPass = resolveInitialPassword();
             String encodedPass = passwordEncoder.encode(defaultPass);
             List<Usuario> usuarios = usuarioRepository.findAll();
+            int atualizados = 0;
             for (Usuario u : usuarios) {
-                u.setSenha(encodedPass);
-                usuarioRepository.save(u);
+                if (u.getSenha() == null || !u.getSenha().startsWith("$2a$")) {
+                    u.setSenha(encodedPass);
+                    usuarioRepository.save(u);
+                    atualizados++;
+                }
             }
-            log.info("================================================================================");
-            log.info("[SENHAS] Senha de todos os {} usuários atualizada com sucesso para: {}", usuarios.size(), defaultPass);
-            log.info("================================================================================");
+            log.info("[DATA INITIALIZER] Verificação de credenciais concluída ({} usuários verificados, {} inicializados).",
+                    usuarios.size(), atualizados);
         } catch (Exception e) {
-            log.error("[SENHAS] Falha ao atualizar senhas dos usuários: {}", e.getMessage(), e);
+            log.error("[SENHAS] Falha ao verificar senhas dos usuários: {}", e.getMessage(), e);
         }
     }
 
@@ -775,6 +778,8 @@ public class DataInitializer implements CommandLineRunner {
                     .codigo(codigo)
                     .dataAberturaMatricula(hoje.minusDays(20))
                     .dataFechamentoMatricula(hoje.plusDays(40))
+                    .dataInicioSuplencia(hoje.plusDays(41))
+                    .dataFimSuplencia(hoje.plusDays(48))
                     .dataInicioAulas(hoje.minusDays(5))
                     .dataFimAulas(hoje.plusDays(320))
                     .vagasTotais(vagas)
@@ -782,6 +787,12 @@ public class DataInitializer implements CommandLineRunner {
                     .status(StatusTurma.ABERTA)
                     .build();
         });
+        if (turma.getDataInicioSuplencia() == null && turma.getDataFechamentoMatricula() != null) {
+            turma.setDataInicioSuplencia(turma.getDataFechamentoMatricula().plusDays(1));
+        }
+        if (turma.getDataFimSuplencia() == null && turma.getDataInicioSuplencia() != null) {
+            turma.setDataFimSuplencia(turma.getDataInicioSuplencia().plusDays(7));
+        }
         turma.setEducadorResponsavel(educador);
         turma.setDiasHorariosLocal(diasHorariosLocal);
         turma.setIdadeMinima(idadeMin);
@@ -790,6 +801,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void garantirMateria(Turma turma, String nomeMateria, String duracao, int ordem) {
+        if (turma.getCurso() != null && turma.getCurso().getModalidade() != ModalidadeCurso.FORMACAO && ordem > 1) {
+            return;
+        }
         boolean existe = turmaMateriaRepository.findByTurmaIdOrderByOrdemAscIdAsc(turma.getId())
                 .stream().anyMatch(m -> m.getNome().equalsIgnoreCase(nomeMateria));
         if (!existe) {

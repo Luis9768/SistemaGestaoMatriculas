@@ -5,22 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { AppLayout } from '@/components/AppLayout';
 import { ModalCadastrarUsuario } from '@/components/ModalCadastrarUsuario';
-import { ModalEditarUsuario } from '@/components/ModalEditarUsuario';
 import { ModalUsuarioDetalhes } from '@/components/ModalUsuarioDetalhes';
 import { UsuarioCard } from '@/components/UsuarioCard';
 import { api, Usuario } from '@/lib/api';
 import {
   Users2,
-  GraduationCap,
   ShieldCheck,
   Plus,
   RefreshCw,
-  Mail,
-  CheckCircle2,
-  XCircle,
-  BookOpen,
-  Edit2,
-  Lock,
 } from 'lucide-react';
 
 export default function UsuariosPage() {
@@ -30,8 +22,6 @@ export default function UsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [filtroRole, setFiltroRole] = useState<'TODOS' | 'ROLE_ADMIN' | 'ROLE_ENCARREGADA'>('TODOS');
   const [modalAberto, setModalAberto] = useState(false);
-  const [modalEditarAberto, setModalEditarAberto] = useState(false);
-  const [usuarioParaEditar, setUsuarioParaEditar] = useState<Usuario | null>(null);
   const [usuarioDetalhes, setUsuarioDetalhes] = useState<Usuario | null>(null);
   const [atualizandoStatusId, setAtualizandoStatusId] = useState<number | null>(null);
 
@@ -57,15 +47,15 @@ export default function UsuariosPage() {
     }
   };
 
-  const handleAlternarStatus = async (id: number, statusAtual?: boolean) => {
+  const handleAlternarStatus = async (id: number) => {
     try {
       setAtualizandoStatusId(id);
       const atualizado = await api.alternarStatusUsuario(id);
+      setUsuarios((prev) => prev.map((u) => (u.id === id ? atualizado : u)));
       mostrarFeedback(
         'sucesso',
         `Acesso de "${atualizado.nome}" ${atualizado.ativo ? 'reativado' : 'desativado'} com sucesso.`
       );
-      // Atualiza o estado do modal se estiver aberto
       if (usuarioDetalhes && usuarioDetalhes.id === id) {
         setUsuarioDetalhes(atualizado);
       }
@@ -222,15 +212,6 @@ export default function UsuariosPage() {
         onAlternarStatus={async (id) => {
           await handleAlternarStatus(id);
         }}
-        onAbrirEdicao={(u) => {
-          if (!u.ativo) {
-            mostrarFeedback('erro', 'Usuário inativo. Reative o acesso do usuário primeiro para poder editar suas informações.');
-            return;
-          }
-          setUsuarioDetalhes(null);
-          setUsuarioParaEditar(u);
-          setModalEditarAberto(true);
-        }}
       />
 
       {/* Modal de Cadastro de Novo Usuário */}
@@ -238,21 +219,6 @@ export default function UsuariosPage() {
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
         onUsuarioCadastrado={() => {
-          carregarUsuarios();
-        }}
-      />
-
-      {/* Modal de Edição de Usuário & Permissões */}
-      <ModalEditarUsuario
-        isOpen={modalEditarAberto}
-        usuario={usuarioParaEditar}
-        escolas={escolas}
-        onClose={() => {
-          setModalEditarAberto(false);
-          setUsuarioParaEditar(null);
-        }}
-        onUsuarioAtualizado={() => {
-          mostrarFeedback('sucesso', 'Dados do usuário e permissões atualizados com sucesso!');
           carregarUsuarios();
         }}
       />

@@ -1,16 +1,20 @@
 package com.gestaomatriculas.service;
 
 import com.gestaomatriculas.dto.*;
+import com.gestaomatriculas.exception.BusinessException;
 import com.gestaomatriculas.exception.ResourceNotFoundException;
 import com.gestaomatriculas.model.*;
+import com.gestaomatriculas.model.enums.ModalidadeCurso;
 import com.gestaomatriculas.model.enums.StatusMatricula;
 import com.gestaomatriculas.model.enums.StatusPresenca;
+import com.gestaomatriculas.model.enums.StatusTurma;
 import com.gestaomatriculas.repository.*;
+import com.gestaomatriculas.security.SecurityService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,11 +25,25 @@ public class DashboardService {
     private final MatriculaRepository matriculaRepository;
     private final TurmaRepository turmaRepository;
     private final CursoRepository cursoRepository;
+    private final EscolaRepository escolaRepository;
     private final RegistroPresencaRepository registroPresencaRepository;
+    private final SecurityService securityService;
 
-    @Cacheable(value = "dashboard_stats", key = "'stats_' + (#escolaId != null ? #escolaId : 'todas')")
+    private String mascararCpf(String cpf) {
+        if (cpf == null || cpf.isBlank()) {
+            return "";
+        }
+        String digitos = cpf.replaceAll("\\D", "");
+        if (digitos.length() != 11) {
+            return "***.***.***-**";
+        }
+        return String.format("***.%s.%s-**", digitos.substring(3, 6), digitos.substring(6, 9));
+    }
+
     @Transactional(readOnly = true)
     public DashboardStatsDTO obterStatsGerais(Long escolaId) {
+        escolaId = securityService.resolverEscolaId(escolaId);
+
         List<Matricula> matriculas = escolaId != null
                 ? matriculaRepository.findByTurmaCursoEscolaId(escolaId)
                 : matriculaRepository.findAll();
@@ -37,6 +55,23 @@ public class DashboardService {
         List<Curso> cursos = escolaId != null
                 ? cursoRepository.findByEscolaId(escolaId)
                 : cursoRepository.findAll();
+
+        if (securityService.isEncarregada() && escolaId == null) {
+            matriculas = matriculas.stream()
+                    .filter(m -> m.getTurma() != null
+                            && m.getTurma().getCurso() != null
+                            && m.getTurma().getCurso().getEscola() != null
+                            && securityService.temAcessoAEscola(m.getTurma().getCurso().getEscola().getId()))
+                    .toList();
+            turmas = turmas.stream()
+                    .filter(t -> t.getCurso() != null
+                            && t.getCurso().getEscola() != null
+                            && securityService.temAcessoAEscola(t.getCurso().getEscola().getId()))
+                    .toList();
+            cursos = cursos.stream()
+                    .filter(c -> c.getEscola() != null && securityService.temAcessoAEscola(c.getEscola().getId()))
+                    .toList();
+        }
 
         long totalMatriculados = matriculas.stream()
                 .filter(m -> m.getStatus() == StatusMatricula.CONFIRMADA)
@@ -54,7 +89,6 @@ public class DashboardService {
                 .filter(m -> m.getStatus() == StatusMatricula.CONCLUIDA)
                 .count();
 
-        // O total geral considera apenas os estados reais de matrículas ativas, evasões, conclusões e cancelamentos
         long totalGeral = totalMatriculados + totalEvasoes + totalCancelados + totalFormados;
 
         double taxaEvasao = totalGeral > 0
@@ -71,7 +105,6 @@ public class DashboardService {
                 ? Math.round((vagasOcupadas * 100.0 / totalVagas) * 10.0) / 10.0
                 : 0.0;
 
-        // Distribuição para o Gráfico de Pizza / Rosca (apenas situações reais de matrícula)
         List<StatusDistribuicaoDTO> distribuicao = new ArrayList<>();
         if (totalGeral > 0) {
             adicionarFatia(distribuicao, "CONFIRMADA", "Matriculados (Ativos)", totalMatriculados, totalGeral, "#10b981");
@@ -80,7 +113,6 @@ public class DashboardService {
             adicionarFatia(distribuicao, "CANCELADA", "Cancelamentos Voluntários", totalCancelados, totalGeral, "#64748b");
         }
 
-        // Estatísticas por Curso para o Gráfico de Barras / Torres
         List<CursoStatsDTO> cursosStats = new ArrayList<>();
         for (Curso curso : cursos) {
             List<Matricula> matsDoCurso = matriculas.stream()
@@ -101,7 +133,7 @@ public class DashboardService {
                     .cursoNome(curso.getNome())
                     .escolaSigla(curso.getEscola() != null ? curso.getEscola().getSigla() : "")
                     .escolaCorTema(curso.getEscola() != null ? curso.getEscola().getCorTema() : "blue")
-                    .modalidade(curso.getModalidade() != null ? curso.getModalidade().name() : "LIVRE")
+                    .modalidade(curso.getModalidade() != null ? curso.getModalidade().name() : "OFICINA")
                     .totalInscricoes(0L)
                     .totalMatriculas(matriculasCurso)
                     .totalEvasoes(evasoesCurso)
@@ -130,7 +162,150 @@ public class DashboardService {
                 .build();
     }
 
-    @Cacheable(value = "dashboard_stats", key = "'turma_' + #turmaId")
+    /**
+     * Relatório Institucional para a Prefeitura de Santo André.
+     * Contabiliza estritamente alunos ATUALMENTE matriculados (StatusMatricula.CONFIRMADA),
+     * excluindo formandos (CONCLUIDA), detalhando por Oficina, Formação e Núcleo, além da Taxa de Desistências.
+     */
+    @Transactional(readOnly = true)
+    public RelatorioPrefeituraDTO obterRelatorioPrefeitura(Long escolaId) {
+        final Long escolaFiltro = securityService.resolverEscolaId(escolaId);
+        List<Escola> todasEscolas = escolaRepository.findAll();
+
+        // Se for Encarregada, restringe às escolas que ela tem acesso
+        if (securityService.isEncarregada()) {
+            todasEscolas = todasEscolas.stream()
+                    .filter(e -> securityService.temAcessoAEscola(e.getId()))
+                    .collect(Collectors.toList());
+        }
+
+        if (escolaFiltro != null) {
+            todasEscolas = todasEscolas.stream()
+                    .filter(e -> e.getId().equals(escolaFiltro))
+                    .collect(Collectors.toList());
+        }
+
+        List<Matricula> todasMatriculas = escolaFiltro != null
+                ? matriculaRepository.findByTurmaCursoEscolaId(escolaFiltro)
+                : matriculaRepository.findAll();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        List<RelatorioPrefeituraDTO.EscolaPrefeituraItemDTO> itensEscola = new ArrayList<>();
+        List<RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO> alunosAtivos = new ArrayList<>();
+
+        long somaRedeFormacao = 0;
+        long somaRedeNucleo = 0;
+        long somaRedeOficina = 0;
+        long somaRedeAtivos = 0;
+        long somaRedeDesistencias = 0;
+
+        for (Escola esc : todasEscolas) {
+            List<Matricula> matsDaEscola = todasMatriculas.stream()
+                    .filter(m -> m.getTurma() != null
+                            && m.getTurma().getStatus() != StatusTurma.CONCLUIDA
+                            && m.getTurma().getCurso() != null
+                            && m.getTurma().getCurso().getEscola() != null
+                            && m.getTurma().getCurso().getEscola().getId().equals(esc.getId()))
+                    .toList();
+
+            // Apenas alunos ATUALMENTE matriculados (CONFIRMADA) — SEM formandos (CONCLUIDA)!
+            List<Matricula> ativas = matsDaEscola.stream()
+                    .filter(m -> m.getStatus() == StatusMatricula.CONFIRMADA)
+                    .toList();
+
+            long matFormacao = ativas.stream()
+                    .filter(m -> m.getTurma().getCurso().getModalidade() == ModalidadeCurso.FORMACAO)
+                    .count();
+
+            long matNucleo = ativas.stream()
+                    .filter(m -> m.getTurma().getCurso().getModalidade() == ModalidadeCurso.NUCLEO)
+                    .count();
+
+            long matOficina = ativas.stream()
+                    .filter(m -> {
+                        ModalidadeCurso mod = m.getTurma().getCurso().getModalidade();
+                        return mod == ModalidadeCurso.OFICINA || mod == null;
+                    })
+                    .count();
+
+            long totalAtivosEscola = ativas.size();
+
+            long evasoesFaltas = matsDaEscola.stream()
+                    .filter(m -> m.getStatus() == StatusMatricula.DESISTENTE_FALTAS)
+                    .count();
+
+            long cancelamentos = matsDaEscola.stream()
+                    .filter(m -> m.getStatus() == StatusMatricula.CANCELADA)
+                    .count();
+
+            long totalDesistenciasEscola = evasoesFaltas + cancelamentos;
+            long universoCicloAtual = totalAtivosEscola + totalDesistenciasEscola;
+
+            double taxaDesistencia = universoCicloAtual > 0
+                    ? Math.round((totalDesistenciasEscola * 100.0 / universoCicloAtual) * 10.0) / 10.0
+                    : 0.0;
+
+            itensEscola.add(RelatorioPrefeituraDTO.EscolaPrefeituraItemDTO.builder()
+                    .escolaId(esc.getId())
+                    .escolaSigla(esc.getSigla())
+                    .escolaNome(esc.getNome())
+                    .matriculadosFormacao(matFormacao)
+                    .matriculadosNucleo(matNucleo)
+                    .matriculadosOficina(matOficina)
+                    .totalMatriculadosAtivos(totalAtivosEscola)
+                    .evasoesFaltas(evasoesFaltas)
+                    .cancelamentosVoluntarios(cancelamentos)
+                    .totalDesistencias(totalDesistenciasEscola)
+                    .taxaDesistencia(taxaDesistencia)
+                    .build());
+
+            somaRedeFormacao += matFormacao;
+            somaRedeNucleo += matNucleo;
+            somaRedeOficina += matOficina;
+            somaRedeAtivos += totalAtivosEscola;
+            somaRedeDesistencias += totalDesistenciasEscola;
+
+            for (Matricula m : ativas) {
+                Aluno a = m.getAluno();
+                Curso c = m.getTurma().getCurso();
+                ModalidadeCurso mod = c.getModalidade() != null ? c.getModalidade() : ModalidadeCurso.OFICINA;
+                alunosAtivos.add(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO.builder()
+                        .matriculaId(m.getId())
+                        .alunoId(a != null ? a.getId() : null)
+                        .alunoNome(a != null ? a.getNome() : "Sem Nome")
+                        .alunoCpf(a != null ? mascararCpf(a.getCpf()) : "")
+                        .escolaId(esc.getId())
+                        .escolaSigla(esc.getSigla())
+                        .escolaNome(esc.getNome())
+                        .cursoNome(c.getNome())
+                        .modalidade(mod.name())
+                        .turmaCodigo(m.getTurma().getCodigo())
+                        .dataMatricula(m.getDataMatricula() != null ? m.getDataMatricula().format(fmt) : "")
+                        .build());
+            }
+        }
+
+        alunosAtivos.sort(Comparator.comparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getEscolaSigla)
+                .thenComparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getModalidade)
+                .thenComparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getAlunoNome));
+
+        long universoRede = somaRedeAtivos + somaRedeDesistencias;
+        double taxaRedeDesistencia = universoRede > 0
+                ? Math.round((somaRedeDesistencias * 100.0 / universoRede) * 10.0) / 10.0
+                : 0.0;
+
+        return RelatorioPrefeituraDTO.builder()
+                .totalRedeFormacao(somaRedeFormacao)
+                .totalRedeNucleo(somaRedeNucleo)
+                .totalRedeOficina(somaRedeOficina)
+                .totalRedeMatriculadosAtivos(somaRedeAtivos)
+                .totalRedeDesistencias(somaRedeDesistencias)
+                .taxaRedeDesistencia(taxaRedeDesistencia)
+                .escolas(itensEscola)
+                .alunosAtivos(alunosAtivos)
+                .build();
+    }
+
     @Transactional(readOnly = true)
     public TurmaDashboardDTO obterDashboardTurma(Long turmaId) {
         Turma turma = turmaRepository.findById(turmaId)
@@ -138,6 +313,10 @@ public class DashboardService {
 
         Curso curso = turma.getCurso();
         Escola escola = curso != null ? curso.getEscola() : null;
+
+        if (securityService.isEncarregada() && escola != null && !securityService.temAcessoAEscola(escola.getId())) {
+            throw new BusinessException("Acesso negado: você não possui permissão para consultar dados desta unidade escolar.");
+        }
 
         List<Matricula> matriculas = matriculaRepository.findByTurmaId(turmaId);
         List<Long> matriculaIds = matriculas.stream().map(Matricula::getId).toList();
@@ -192,7 +371,7 @@ public class DashboardService {
                     .alunoId(aluno != null ? aluno.getId() : null)
                     .matriculaId(m.getId())
                     .alunoNome(aluno != null ? aluno.getNome() : "Sem nome")
-                    .alunoCpf(aluno != null ? aluno.getCpf() : "")
+                    .alunoCpf(aluno != null ? mascararCpf(aluno.getCpf()) : "")
                     .menorDeIdade(aluno != null && aluno.isMenorDeIdade())
                     .statusMatricula(m.getStatus())
                     .totalAulas(totalAulas)
@@ -221,7 +400,7 @@ public class DashboardService {
                 .turmaId(turma.getId())
                 .turmaCodigo(turma.getCodigo())
                 .cursoNome(curso != null ? curso.getNome() : "")
-                .modalidade(curso != null && curso.getModalidade() != null ? curso.getModalidade().name() : "LIVRE")
+                .modalidade(curso != null && curso.getModalidade() != null ? curso.getModalidade().name() : "OFICINA")
                 .escolaNome(escola != null ? escola.getNome() : "")
                 .escolaSigla(escola != null ? escola.getSigla() : "")
                 .escolaCorTema(escola != null ? escola.getCorTema() : "blue")

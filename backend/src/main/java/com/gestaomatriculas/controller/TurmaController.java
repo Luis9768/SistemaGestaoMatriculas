@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/turmas")
@@ -26,6 +27,10 @@ public class TurmaController {
         return ResponseEntity.ok(turmaService.listarTodas(cursoId, escolaId, apenasAbertas));
     }
 
+    @GetMapping("/proximo-codigo")
+    public ResponseEntity<Map<String, String>> gerarProximoCodigo(@RequestParam Long cursoId) {
+        return ResponseEntity.ok(Map.of("codigo", turmaService.gerarProximoCodigo(cursoId)));
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<TurmaDTO> buscarPorId(@PathVariable Long id) {

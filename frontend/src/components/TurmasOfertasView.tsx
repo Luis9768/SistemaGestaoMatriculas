@@ -230,7 +230,10 @@ export function TurmaCard({
   const linhaDecisao = formatarLinhaDecisao(turma, curso);
 
   // Status semântico exclusivo para exceções (sem ruído quando normal)
-  const isEncerrada = !turma.matriculaAberta;
+  const isEncerrada =
+    turma.status === 'FECHADA' ||
+    turma.status === 'CONCLUIDA' ||
+    (turma.matriculaAberta === false && turma.status !== 'ABERTA');
   const isEsgotado = !isEncerrada && (vagasRestantes === 0 || ocupacao >= 100);
   const isPoucasVagas =
     !isEncerrada && !isEsgotado && (vagasRestantes <= 3 || ocupacao >= 80);

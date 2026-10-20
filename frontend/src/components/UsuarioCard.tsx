@@ -127,9 +127,15 @@ export function UsuarioCard({ usuario, onClick }: UsuarioCardProps) {
       {/* ─── RODAPÉ: Status e Ação de Gerenciamento Nítida ─── */}
       <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
         <div>
-          {!isAtivo && (
-            <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
-              Login bloqueado
+          {isAtivo ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Ativo
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              Inativo • Login bloqueado
             </span>
           )}
         </div>
