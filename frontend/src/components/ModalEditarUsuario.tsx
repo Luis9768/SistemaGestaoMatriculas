@@ -138,7 +138,7 @@ export function ModalEditarUsuario({
                 Editar Usuário & Acessos
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Altere dados cadastrais, unidades permitidas e status de login
+                Altere dados cadastrais, função institucional e unidades permitidas
               </p>
             </div>
           </div>
@@ -355,43 +355,6 @@ export function ModalEditarUsuario({
               </div>
             </div>
           )}
-
-          {/* Status Ativo / Inativo */}
-          <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 flex items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-slate-800 dark:text-slate-200">
-                  Status de Acesso ao Sistema
-                </span>
-                {ativo ? (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                    Ativo para Login
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
-                    Bloqueado / Inativo
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {ativo
-                  ? 'O usuário pode entrar no sistema normalmente com suas credenciais.'
-                  : 'O login deste usuário está desativado. Ative para liberar as alterações.'}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setAtivo(!ativo)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
-                ativo
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900'
-                  : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20'
-              }`}
-            >
-              {ativo ? 'Desativar Usuário' : 'Ativar Usuário'}
-            </button>
-          </div>
 
           {/* Redefinição de Senha (Opcional) */}
           <div className="space-y-1">
