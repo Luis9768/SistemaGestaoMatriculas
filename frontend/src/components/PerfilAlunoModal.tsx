@@ -13,7 +13,7 @@ import {
   aplicarMascaraCep,
   formatarCep,
 } from '@/lib/api';
-import { getCorTemaEscola } from '@/lib/escolaUtils';
+import { getCorTemaEscola, getSchoolThemeColors } from '@/lib/escolaUtils';
 import { ModalCertificado } from './ModalCertificado';
 import { ModalDeclaracaoTransporte } from './ModalDeclaracaoTransporte';
 import { ModalDeclaracaoMatricula } from './ModalDeclaracaoMatricula';
@@ -563,7 +563,11 @@ export function PerfilAlunoModal({
                   type="button"
                   onClick={() => handleAbrirDeclaracaoMatricula()}
                   disabled={carregandoDocumento}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition active:scale-95 cursor-pointer"
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl ${
+                    getSchoolThemeColors(
+                      perfil?.cursosAtuais?.[0]?.escolaSigla || perfil?.historicoCursos?.[0]?.escolaSigla
+                    ).solidBtn
+                  } text-xs font-bold shadow-xs hover:shadow-md transition active:scale-95 cursor-pointer`}
                   title="Emitir Declaração Oficial de Matrícula (PDF)"
                 >
                   <FileText className="w-3.5 h-3.5" />
@@ -692,6 +696,7 @@ export function PerfilAlunoModal({
                   const faltasConsecutivas = curso.frequencia?.faltasConsecutivas || 0;
                   const emAlerta = curso.frequencia?.atingiuLimiteFaltas || faltasConsecutivas >= 3;
                   const escolaPill = getEscolaPillStyle(curso.escolaSigla);
+                  const courseTheme = getSchoolThemeColors(curso.escolaSigla || curso.escolaCorTema);
 
                   return (
                     <div
@@ -892,10 +897,10 @@ export function PerfilAlunoModal({
                             type="button"
                             onClick={() => handleAbrirDeclaracaoMatricula(curso.matriculaId)}
                             disabled={carregandoDocumento}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition cursor-pointer shadow-2xs"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${courseTheme.subtleBtn} text-xs font-bold transition cursor-pointer shadow-2xs`}
                             title="Emitir Declaração Oficial de Matrícula"
                           >
-                            <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                            <FileText className="w-3.5 h-3.5" />
                             <span>Declaração de Matrícula</span>
                           </button>
 
@@ -904,10 +909,10 @@ export function PerfilAlunoModal({
                               type="button"
                               onClick={() => handleAbrirDeclaracao(curso.matriculaId)}
                               disabled={carregandoDocumento}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition cursor-pointer shadow-2xs"
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${courseTheme.subtleBtn} text-xs font-bold transition cursor-pointer shadow-2xs`}
                               title="Emitir Declaração de Transporte CPTM / SPTrans"
                             >
-                              <Bus className="w-3.5 h-3.5 text-sky-500" />
+                              <Bus className="w-3.5 h-3.5" />
                               <span>Passe CPTM / SPTrans</span>
                             </button>
                           ) : (
@@ -927,7 +932,7 @@ export function PerfilAlunoModal({
                                 type="button"
                                 onClick={() => handleConcluirMatricula(curso.matriculaId)}
                                 disabled={concluindoMatriculaId === curso.matriculaId}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-xs"
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${courseTheme.solidBtn} text-xs font-bold transition cursor-pointer shadow-xs`}
                               >
                                 <GraduationCap className="w-3.5 h-3.5" />
                                 <span>{concluindoMatriculaId === curso.matriculaId ? 'Homologando...' : 'Homologar Formatura (≥75%)'}</span>
@@ -948,9 +953,9 @@ export function PerfilAlunoModal({
                               type="button"
                               onClick={() => handleAbrirCertificado(curso.matriculaId)}
                               disabled={carregandoDocumento}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-xs font-bold transition cursor-pointer shadow-2xs"
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${courseTheme.subtleBtn} text-xs font-bold transition cursor-pointer shadow-2xs`}
                             >
-                              <Award className="w-3.5 h-3.5 text-amber-500" />
+                              <Award className="w-3.5 h-3.5" />
                               <span>Certificado MEC/LDB</span>
                             </button>
                           )}
@@ -962,7 +967,7 @@ export function PerfilAlunoModal({
                             setMatriculaSelecionadaId(curso.matriculaId);
                             setAbaAtiva('frequencia');
                           }}
-                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer transition sm:ml-auto"
+                          className={`text-xs font-bold ${courseTheme.accentText} hover:underline flex items-center gap-1 cursor-pointer transition sm:ml-auto`}
                         >
                           <span>Ver diário completo</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -1145,9 +1150,11 @@ export function PerfilAlunoModal({
                   <span>Nenhum curso anterior no histórico deste estudante.</span>
                 </div>
               ) : (
-                perfil?.historicoCursos.map((curso) => (
-                  <div
-                    key={curso.matriculaId}
+                perfil?.historicoCursos.map((curso) => {
+                  const courseTheme = getSchoolThemeColors(curso.escolaSigla || curso.escolaCorTema);
+                  return (
+                    <div
+                      key={curso.matriculaId}
                     className="bg-white dark:bg-[#18181b] rounded-2xl border border-slate-200/90 dark:border-slate-800/90 p-5 sm:p-6 shadow-xs space-y-4"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1200,9 +1207,9 @@ export function PerfilAlunoModal({
                             type="button"
                             onClick={() => handleAbrirCertificado(curso.matriculaId)}
                             disabled={carregandoDocumento}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-xs font-bold transition cursor-pointer shadow-2xs"
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl ${courseTheme.subtleBtn} text-xs font-bold transition cursor-pointer shadow-2xs`}
                           >
-                            <Award className="w-4 h-4 text-amber-500" />
+                            <Award className="w-4 h-4" />
                             <span>Emitir Certificado de Conclusão</span>
                           </button>
                         ) : (
@@ -1215,9 +1222,9 @@ export function PerfilAlunoModal({
                           type="button"
                           onClick={() => handleAbrirDeclaracaoMatricula(curso.matriculaId)}
                           disabled={carregandoDocumento}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition cursor-pointer shadow-2xs"
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl ${courseTheme.subtleBtn} text-xs font-bold transition cursor-pointer shadow-2xs`}
                         >
-                          <FileText className="w-4 h-4 text-indigo-500" />
+                          <FileText className="w-3.5 h-3.5" />
                           <span>Declaração de Matrícula</span>
                         </button>
                       </div>
@@ -1227,14 +1234,15 @@ export function PerfilAlunoModal({
                           setMatriculaSelecionadaId(curso.matriculaId);
                           setAbaAtiva('frequencia');
                         }}
-                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                        className={`text-xs font-bold ${courseTheme.accentText} hover:underline flex items-center gap-1 cursor-pointer`}
                       >
                         <span>Ver diário do curso</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
-                ))
+                );
+              })
               )}
             </div>
           )}

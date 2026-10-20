@@ -11,6 +11,7 @@ export default function MatriculasPage() {
   const {
     matriculas,
     escolaSelecionada,
+    escolaAtualObj,
     carregarMatriculas,
     handleCancelarMatricula,
     abrirModalPerfil,
@@ -25,6 +26,7 @@ export default function MatriculasPage() {
       <MatriculasView
         matriculas={matriculas}
         escolaSelecionada={escolaSelecionada}
+        escolaAtual={escolaAtualObj}
         onNovaMatricula={() => router.push('/inscricao')}
         onCancelarMatricula={handleCancelarMatricula}
         onOpenPerfilAluno={(id) => abrirModalPerfil(id)}

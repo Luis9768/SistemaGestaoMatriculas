@@ -12,7 +12,8 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { Matricula } from '@/lib/api';
+import { Matricula, Escola } from '@/lib/api';
+import { getSchoolThemeColors } from '@/lib/escolaUtils';
 import {
   Select,
   SelectContent,
@@ -68,6 +69,7 @@ const getDotColorPorEscola = (sigla?: string, codigoTurma?: string) => {
 interface MatriculasViewProps {
   matriculas: Matricula[];
   escolaSelecionada: number | null;
+  escolaAtual?: Escola | null;
   onNovaMatricula: () => void;
   onCancelarMatricula: (matriculaId: number) => Promise<void>;
   onOpenPerfilAluno: (alunoId: number) => void;
@@ -76,6 +78,7 @@ interface MatriculasViewProps {
 export function MatriculasView({
   matriculas,
   escolaSelecionada,
+  escolaAtual,
   onNovaMatricula,
   onCancelarMatricula,
   onOpenPerfilAluno,
@@ -87,6 +90,8 @@ export function MatriculasView({
   const [cpfsRevelados, setCpfsRevelados] = useState<Record<number, boolean>>({});
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(25);
+
+  const schoolTheme = getSchoolThemeColors(escolaAtual?.sigla || filtroEscolaSigla);
 
   // Identificar quantidade de turmas por participante para remover estranhamento de linhas do mesmo aluno
   const matriculasPorAluno = useMemo(() => {
@@ -212,7 +217,7 @@ export function MatriculasView({
 
         <button
           onClick={onNovaMatricula}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer self-start sm:self-auto active:scale-98"
+          className={`inline-flex items-center gap-2 px-4 py-2.5 ${schoolTheme.solidBtn} rounded-xl text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer self-start sm:self-auto active:scale-98`}
         >
           <Plus className="w-4 h-4" />
           <span>Nova Matrícula</span>
@@ -228,7 +233,7 @@ export function MatriculasView({
             placeholder="Buscar por nome do aluno, CPF, turma ou curso..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#09090b] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition"
+            className={`w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#09090b] focus:outline-none focus:ring-2 ${schoolTheme.ringFocus} transition`}
           />
           {busca && (
             <button

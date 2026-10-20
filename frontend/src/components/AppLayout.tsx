@@ -29,6 +29,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import { getSchoolThemeColors } from '@/lib/escolaUtils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PerfilAlunoModal } from '@/components/PerfilAlunoModal';
 import { NotificacoesPopover } from '@/components/NotificacoesPopover';
@@ -932,7 +933,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                  className={`px-5 py-2 ${
+                    getSchoolThemeColors(
+                      cursosDisponiveisParaTurma.find((c) => c.id === novaTurma.cursoId)?.escolaSigla ||
+                        escolaAtualObj?.sigla
+                    ).solidBtn
+                  } font-bold rounded-xl shadow-xs cursor-pointer`}
                 >
                   Salvar Turma
                 </button>

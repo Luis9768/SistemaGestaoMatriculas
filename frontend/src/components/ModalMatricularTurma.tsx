@@ -30,6 +30,7 @@ import {
   aplicarMascaraTelefone,
   aplicarMascaraCep,
 } from '@/lib/api';
+import { getSchoolThemeColors } from '@/lib/escolaUtils';
 
 interface ModalMatricularTurmaProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export function ModalMatricularTurma({
 }: ModalMatricularTurmaProps) {
   const router = useRouter();
   const searchInputId = useId();
+  const schoolTheme = getSchoolThemeColors(turma?.escolaSigla || turma?.codigo);
 
   // Abas: 'existente' | 'novo'
   const [abaAtiva, setAbaAtiva] = useState<'existente' | 'novo'>('existente');
@@ -354,7 +356,7 @@ export function ModalMatricularTurma({
             }}
             className={`pb-3 px-3 text-xs font-semibold border-b-2 flex items-center gap-2 transition cursor-pointer ${
               abaAtiva === 'existente'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                ? schoolTheme.activeTab
                 : 'border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
             }`}
           >
@@ -370,7 +372,7 @@ export function ModalMatricularTurma({
             }}
             className={`pb-3 px-3 text-xs font-semibold border-b-2 flex items-center gap-2 transition cursor-pointer ${
               abaAtiva === 'novo'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                ? schoolTheme.activeTab
                 : 'border-transparent text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
             }`}
           >
@@ -435,9 +437,9 @@ export function ModalMatricularTurma({
 
               {/* CARTÃO DO ALUNO SELECIONADO */}
               {alunoSelecionado && (
-                <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-between gap-3">
+                <div className="p-3.5 rounded-xl bg-stone-50/80 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800/80 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    <div className={`w-9 h-9 rounded-full ${schoolTheme.solidBtn} font-bold text-xs flex items-center justify-center shrink-0`}>
                       {alunoSelecionado.nome.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -512,7 +514,7 @@ export function ModalMatricularTurma({
                 <button
                   type="submit"
                   disabled={carregando || !alunoSelecionado}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs active:scale-98"
+                  className={`px-5 py-2.5 rounded-xl ${schoolTheme.solidBtn} disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition flex items-center gap-2 cursor-pointer active:scale-98`}
                 >
                   {carregando ? (
                     <>
@@ -775,7 +777,7 @@ export function ModalMatricularTurma({
                 <button
                   type="submit"
                   disabled={carregando}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs active:scale-98"
+                  className={`px-5 py-2.5 rounded-xl ${schoolTheme.solidBtn} disabled:opacity-50 text-xs font-bold transition flex items-center gap-2 cursor-pointer active:scale-98`}
                 >
                   {carregando ? (
                     <>

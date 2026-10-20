@@ -11,6 +11,7 @@ import {
   formatarCpfMascara,
   LoginResponse,
 } from '@/lib/api';
+import { getSchoolThemeColors, getSchoolHexColor } from '@/lib/escolaUtils';
 import { useApp } from '@/context/AppContext';
 import {
   Users,
@@ -114,6 +115,7 @@ function MetricKpiCard({
   iconBg,
   iconColor,
   progressBar,
+  progressColor,
 }: {
   index: number;
   title: string;
@@ -125,6 +127,7 @@ function MetricKpiCard({
   iconBg: string;
   iconColor: string;
   progressBar?: number;
+  progressColor?: string;
 }) {
   const getBadgeClasses = () => {
     switch (badgeType) {
@@ -174,7 +177,7 @@ function MetricKpiCard({
         {typeof progressBar === 'number' && (
           <div className="mt-2 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
             <div
-              className="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full transition-all duration-500"
+              className={`${progressColor || 'bg-indigo-600 dark:bg-indigo-500'} h-full rounded-full transition-all duration-500`}
               style={{ width: `${Math.min(100, Math.max(0, progressBar))}%` }}
             />
           </div>
@@ -193,6 +196,7 @@ export function DashboardAnalytics({
 }: DashboardAnalyticsProps) {
   const router = useRouter();
   const { escolaAtualObj, cursos, abrirModalNovaTurma } = useApp();
+  const activeSchoolTheme = getSchoolThemeColors(escolaAtualObj?.sigla);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -292,6 +296,7 @@ export function DashboardAnalytics({
     stats?.cursosStats?.map((c) => ({
       name: c.escolaSigla,
       fullName: `${c.escolaSigla} — ${c.cursoNome}`,
+      escolaSigla: c.escolaSigla,
       Matrículas: c.totalMatriculas,
       Evasões: c.totalEvasoes,
     })) || [];
@@ -383,8 +388,8 @@ export function DashboardAnalytics({
             badgeType="positive"
             subtitle={`em ${stats.totalTurmas} turmas abertas na unidade`}
             icon={GraduationCap}
-            iconBg="bg-emerald-500/10 dark:bg-emerald-950/40"
-            iconColor="text-emerald-600 dark:text-emerald-400"
+            iconBg={activeSchoolTheme.subtleBtn}
+            iconColor={activeSchoolTheme.accentText}
           />
 
           {/* Card 2: Assiduidade Global */}
@@ -411,9 +416,10 @@ export function DashboardAnalytics({
             badgeType="neutral"
             subtitle={`${stats.vagasOcupadas} ocupadas de ${stats.totalVagas} totais`}
             icon={Layers}
-            iconBg="bg-violet-500/10 dark:bg-violet-950/40"
-            iconColor="text-violet-600 dark:text-violet-400"
+            iconBg={activeSchoolTheme.subtleBtn}
+            iconColor={activeSchoolTheme.accentText}
             progressBar={stats.taxaOcupacaoVagas}
+            progressColor={activeSchoolTheme.progressBar}
           />
 
           {/* Card 4: Alunos em Atenção / Busca Ativa */}
@@ -527,10 +533,15 @@ export function DashboardAnalytics({
                         />
                         <Bar
                           dataKey="Matrículas"
-                          fill="#10b981"
+                          fill={activeSchoolTheme.primaryHex}
                           radius={[6, 6, 0, 0]}
                           animationDuration={300}
-                        />
+                        >
+                          {barData.map((entry, index) => {
+                            const barTheme = getSchoolThemeColors(entry.escolaSigla || escolaAtualObj?.sigla);
+                            return <Cell key={`cell-mat-${index}`} fill={barTheme.primaryHex} />;
+                          })}
+                        </Bar>
                         <Bar
                           dataKey="Evasões"
                           fill="#f43f5e"
@@ -559,32 +570,35 @@ export function DashboardAnalytics({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                        {stats.cursosStats.map((c) => (
-                          <tr key={c.cursoId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                            <td className="py-2.5 px-3">
-                              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                {c.cursoNome}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-2 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                              {c.totalMatriculas}
-                            </td>
-                            <td className="py-2.5 px-2 text-center font-mono font-bold text-rose-600 dark:text-rose-400">
-                              {c.totalEvasoes}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-mono">
-                              <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                  c.taxaEvasao > 0
-                                    ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
-                                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                }`}
-                              >
-                                {c.taxaEvasao}%
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                        {stats.cursosStats.map((c) => {
+                          const rowTheme = getSchoolThemeColors(c.escolaSigla || escolaAtualObj?.sigla);
+                          return (
+                            <tr key={c.cursoId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                              <td className="py-2.5 px-3">
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {c.cursoNome}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-900 dark:text-white">
+                                {c.totalMatriculas}
+                              </td>
+                              <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-900 dark:text-white">
+                                {c.totalEvasoes}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-mono">
+                                <span
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    c.taxaEvasao > 0
+                                      ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
+                                      : 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
+                                  }`}
+                                >
+                                  {c.taxaEvasao}%
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -814,7 +828,7 @@ export function DashboardAnalytics({
                 </div>
                 <Link
                   href="/turmas"
-                  className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 shrink-0"
+                  className="text-xs font-bold text-slate-900 dark:text-white hover:text-slate-700 dark:hover:text-zinc-200 hover:underline flex items-center gap-1 shrink-0 transition-colors"
                 >
                   <span>Ver todas</span>
                   <ArrowRight className="w-3 h-3" />
@@ -846,6 +860,7 @@ export function DashboardAnalytics({
                       turmasFiltradas.slice(0, 6).map((turma) => {
                         const ocupadas = turma.vagasOcupadas || 0;
                         const pct = Math.round((ocupadas / (turma.vagasTotais || 1)) * 100);
+                        const turmaTheme = getSchoolThemeColors(turma.escolaSigla || turma.codigo || escolaAtualObj?.sigla);
 
                         return (
                           <tr key={turma.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/30 transition-colors">
@@ -871,12 +886,12 @@ export function DashboardAnalytics({
                                 </div>
                                 <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full rounded-full ${
+                                    className={`h-full rounded-full transition-all duration-300 ${
                                       pct >= 100
                                         ? 'bg-rose-500'
                                         : pct >= 80
                                         ? 'bg-amber-500'
-                                        : 'bg-emerald-500'
+                                        : turmaTheme.progressBar
                                     }`}
                                     style={{ width: `${Math.min(100, pct)}%` }}
                                   />
@@ -887,7 +902,7 @@ export function DashboardAnalytics({
                               <button
                                 type="button"
                                 onClick={() => router.push(`/turmas?turmaId=${turma.id}`)}
-                                className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-[#27272a] hover:bg-slate-100 dark:hover:bg-[#18181b] text-slate-700 dark:text-zinc-200 transition cursor-pointer"
+                                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-[#27272a] hover:bg-slate-100 dark:hover:bg-[#18181b] ${turmaTheme.accentText} transition cursor-pointer`}
                               >
                                 Ver Turma
                               </button>

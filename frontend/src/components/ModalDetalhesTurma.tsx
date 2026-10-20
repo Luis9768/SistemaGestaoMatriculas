@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Turma } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { getSchoolThemeColors } from '@/lib/escolaUtils';
 
 interface ModalDetalhesTurmaProps {
   isOpen: boolean;

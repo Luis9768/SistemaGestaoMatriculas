@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Search, Plus, X, ArrowRight, Layers, BookOpen, User, Clock, Info } from 'lucide-react';
 import { Turma, Curso, Escola } from '@/lib/api';
+import { getSchoolThemeColors } from '@/lib/escolaUtils';
 import { ModalGerenciarMaterias } from '@/components/ModalGerenciarMaterias';
 import { ModalMatricularTurma } from '@/components/ModalMatricularTurma';
 import { useApp } from '@/context/AppContext';
@@ -498,6 +499,8 @@ export function TurmasOfertasView({
 
   const abertasCount = turmasDaEscola.filter((t) => t.matriculaAberta).length;
   const fechadasCount = turmasDaEscola.filter((t) => !t.matriculaAberta).length;
+  const escolaAtiva = escolas.find((e) => e.id === escolaSelecionada);
+  const activeSchoolTheme = getSchoolThemeColors(escolaAtiva?.sigla);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -514,7 +517,7 @@ export function TurmasOfertasView({
 
         <button
           onClick={onAbrirModalTurma}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer self-start sm:self-auto active:scale-98"
+          className={`inline-flex items-center gap-2 px-4 py-2.5 ${activeSchoolTheme.solidBtn} rounded-xl text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer self-start sm:self-auto active:scale-98`}
         >
           <Plus className="w-4 h-4" />
           <span>Abrir Nova Turma</span>
@@ -531,7 +534,7 @@ export function TurmasOfertasView({
             placeholder="Buscar por código, curso ou escola..."
             value={buscaCodigo}
             onChange={(e) => setBuscaCodigo(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#09090b] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition"
+            className={`w-full pl-10 pr-9 py-2 bg-slate-50 dark:bg-[#09090b] border border-slate-200 dark:border-[#27272a] rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:bg-white dark:focus:bg-[#09090b] focus:outline-none focus:ring-2 ${activeSchoolTheme.ringFocus} transition`}
           />
           {buscaCodigo && (
             <button
