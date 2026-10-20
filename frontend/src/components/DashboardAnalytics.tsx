@@ -87,10 +87,13 @@ function CustomTooltipPie({ active, payload }: any) {
 }
 
 function CustomTooltipBar({ active, payload, label }: any) {
-  if (!active || !payload) return null;
+  if (!active || !payload || !payload.length) return null;
+  const firstItem = payload[0]?.payload;
+  const titulo = firstItem?.fullName || label;
+
   return (
-    <div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-[#27272a] rounded-xl px-4 py-3 shadow-xl text-xs space-y-1.5">
-      <p className="font-bold text-slate-900 dark:text-white">{label}</p>
+    <div className="bg-white dark:bg-[#18181b] border border-slate-200 dark:border-[#27272a] rounded-xl px-4 py-3 shadow-xl text-xs space-y-1.5 min-w-[160px]">
+      <p className="font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-zinc-800 pb-1.5 mb-1.5">{titulo}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center justify-between gap-4 text-slate-600 dark:text-zinc-400 font-mono">
           <div className="flex items-center gap-1.5 font-sans">
@@ -196,7 +199,7 @@ export function DashboardAnalytics({
   onOpenLogin,
 }: DashboardAnalyticsProps) {
   const router = useRouter();
-  const { escolaAtualObj, cursos, abrirModalNovaTurma } = useApp();
+  const { escolaAtualObj, escolas, cursos, abrirModalNovaTurma } = useApp();
   const activeSchoolTheme = getSchoolThemeColors(escolaAtualObj?.sigla);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -402,14 +405,49 @@ export function DashboardAnalytics({
 
   // Recharts data
   const pieData = stats?.distribuicaoStatus || [];
-  const barData =
-    stats?.cursosStats?.map((c) => ({
-      name: c.escolaSigla,
-      fullName: `${c.escolaSigla} — ${c.cursoNome}`,
-      escolaSigla: c.escolaSigla,
-      Matrículas: c.totalMatriculas,
-      Evasões: c.totalEvasoes,
-    })) || [];
+  const barData = useMemo(() => {
+    if (!stats?.cursosStats || stats.cursosStats.length === 0) return [];
+
+    // Se estiver filtrado por uma escola específica, compara os cursos individuais dessa unidade
+    if (escolaAtualObj) {
+      return stats.cursosStats.map((c) => ({
+        id: c.cursoId,
+        name: c.cursoNome.length > 20 ? c.cursoNome.slice(0, 18) + '…' : c.cursoNome,
+        fullName: c.cursoNome,
+        escolaSigla: c.escolaSigla,
+        Matrículas: c.totalMatriculas,
+        Evasões: c.totalEvasoes,
+      }));
+    }
+
+    // Na visão geral da Rede (sem escola selecionada), consolida por unidade escolar (ELT, ELD, ELCV, EMIA)
+    // para exibir uma barra única por escola, com contagem real e sem duplicação de categorias
+    const porEscola = new Map<string, {
+      name: string;
+      fullName: string;
+      escolaSigla: string;
+      Matrículas: number;
+      Evasões: number;
+    }>();
+
+    stats.cursosStats.forEach((c) => {
+      const sigla = (c.escolaSigla || 'OUTROS').toUpperCase();
+      const escObj = escolas.find((e) => e.sigla === sigla);
+      const escolaNome = escObj?.nome || sigla;
+      const atual = porEscola.get(sigla) || {
+        name: sigla,
+        fullName: `${sigla} — ${escolaNome}`,
+        escolaSigla: sigla,
+        Matrículas: 0,
+        Evasões: 0,
+      };
+      atual.Matrículas += c.totalMatriculas;
+      atual.Evasões += c.totalEvasoes;
+      porEscola.set(sigla, atual);
+    });
+
+    return Array.from(porEscola.values());
+  }, [stats?.cursosStats, escolaAtualObj, escolas]);
 
   // Skeleton de carregamento inicial
   if (loadingStats && !stats) {
@@ -683,9 +721,16 @@ export function DashboardAnalytics({
                         {stats.cursosStats.map((c) => (
                           <tr key={c.cursoId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                             <td className="py-2.5 px-3">
-                              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                {c.cursoNome}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                {!escolaAtualObj && c.escolaSigla && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-[#18181b] text-slate-600 dark:text-zinc-400 border border-slate-200/60 dark:border-zinc-800">
+                                    {c.escolaSigla}
+                                  </span>
+                                )}
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {c.cursoNome}
+                                </span>
+                              </div>
                             </td>
                             <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-900 dark:text-white">
                               {c.totalMatriculas}
