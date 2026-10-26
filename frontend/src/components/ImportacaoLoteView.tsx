@@ -54,11 +54,8 @@ export function ImportacaoLoteView({ onUploadPlanilha }: ImportacaoLoteViewProps
       {/* Header com contraste pleno em modo claro e escuro */}
       <div>
         <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-          Automação de Importação em Lote
+          Importação em Lote
         </h2>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 mt-1 max-w-2xl leading-relaxed">
-          Substitua digitação manual. Envie planilhas Excel (.xlsx) ou CSV com as colunas padronizadas para alimentar o sistema automaticamente com deduplicação por CPF.
-        </p>
       </div>
 
       {/* Card principal com tema adaptativo */}

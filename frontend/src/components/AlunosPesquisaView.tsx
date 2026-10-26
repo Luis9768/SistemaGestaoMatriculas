@@ -74,9 +74,6 @@ export function AlunosPesquisaView({
           <h2 className="text-xl font-black text-slate-900 dark:text-white">
             Cadastro Central de Alunos {escolaAtualObj ? `(${escolaAtualObj.sigla})` : '(4 Escolas)'}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-            Pesquisa rápida com paginação no servidor por Nome, E-mail ou CPF com proteção LGPD.
-          </p>
         </div>
         <button
           onClick={onCadastrarNovoAluno}

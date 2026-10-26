@@ -221,18 +221,12 @@ export default function AuditoriaPage() {
                 <h1 className="text-2xl font-bold tracking-tight text-white font-serif">
                   Histórico de Ações & Auditoria
                 </h1>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Rastreabilidade e prestação de contas de todas as mutações no sistema municipal
-                </p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-900/60 dark:bg-[#141416] border border-stone-800 text-slate-300">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Somente Administradores</span>
-            </span>
+
 
             <button
               onClick={() => carregarLogs(paginaAtual)}

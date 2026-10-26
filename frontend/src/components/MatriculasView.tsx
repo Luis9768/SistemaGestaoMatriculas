@@ -187,9 +187,6 @@ export function MatriculasView({
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Secretaria de Matrículas
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 mt-1">
-            Histórico consolidado de estudantes matriculados, turmas e acompanhamento acadêmico.
-          </p>
         </div>
 
         <button

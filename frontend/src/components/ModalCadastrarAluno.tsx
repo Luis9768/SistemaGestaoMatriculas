@@ -190,9 +190,6 @@ export function ModalCadastrarAluno({
             </div>
             <div>
               <h2 className="text-lg font-black tracking-tight">Cadastrar Novo Aluno</h2>
-              <p className="text-xs text-slate-400">
-                Cadastro centralizado no SIGMA das Escolas Livres de Santo André
-              </p>
             </div>
           </div>
           <button
@@ -487,9 +484,7 @@ export function ModalCadastrarAluno({
                     <Baby className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                     <span>Dados do Responsável Legal (Obrigatório para Menores - Art. 14 LGPD)</span>
                   </div>
-                  <p className="text-[11px] text-amber-800 dark:text-amber-300/90 leading-relaxed">
-                    Conforme o Art. 14 da Lei Geral de Proteção de Dados (LGPD) e o ECA, o cadastro de crianças e adolescentes exige identificação e consentimento expresso por pelo menos um dos pais ou responsável legal.
-                  </p>
+
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                     <div>

@@ -488,9 +488,6 @@ export function DashboardAnalytics({
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
             Dashboard Escolar — {nomeUnidade}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-zinc-400">
-            Acompanhe matrículas, assiduidade de alunos, turmas ativas e o relatório oficial para a Prefeitura.
-          </p>
         </div>
 
         {/* Botões de Ação Rápida */}
@@ -600,9 +597,6 @@ export function DashboardAnalytics({
                   <Activity className="w-4.5 h-4.5 text-indigo-500" />
                   <span>Desempenho Acadêmico & Frequência</span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                  Análise comparativa entre cursos, matrículas ativas e presenças
-                </p>
               </div>
 
               {/* Seletor de Abas Estilo Shadcn */}
@@ -962,9 +956,6 @@ export function DashboardAnalytics({
                   <GraduationCap className="w-4.5 h-4.5 text-indigo-500" />
                   <span>Turmas Ativas da Unidade</span>
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400">
-                  Capacidade, educador responsável e horários das aulas
-                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1124,9 +1115,6 @@ export function DashboardAnalytics({
                   <ShieldAlert className="w-4 h-4 text-amber-500" />
                   <span>Alerta de Busca Ativa</span>
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                  Prevenção de abandono e cancelamento
-                </p>
               </div>
             </div>
 
@@ -1185,10 +1173,6 @@ export function DashboardAnalytics({
                 {stats?.totalMatriculados || 0} alunos
               </span>
             </div>
-
-            <p className="text-xs text-slate-500 dark:text-zinc-400">
-              Gestão de estudantes matriculados, declarações oficiais e prontuários escolares.
-            </p>
 
             <Link
               href="/matriculas"

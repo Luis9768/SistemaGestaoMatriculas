@@ -100,9 +100,6 @@ export default function UsuariosPage() {
                 {usuarios.length} cadastrado(s)
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Gerencie os administradores da Coordenação Geral e as encarregadas das secretarias escolares
-            </p>
           </div>
 
           {usuarioLogado?.role === 'ROLE_ADMIN' && (
@@ -183,11 +180,8 @@ export default function UsuariosPage() {
           <div className="py-16 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#0B0F19] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs space-y-3">
             <Users2 className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
             <div className="font-medium text-slate-700 dark:text-slate-300">
-              Nenhum usuário encontrado com os filtros atuais.
+              Nenhum usuário encontrado.
             </div>
-            <p className="text-[11px] max-w-sm mx-auto text-slate-400">
-              Utilize o botão acima para cadastrar novos administradores ou encarregadas das Escolas Livres.
-            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">

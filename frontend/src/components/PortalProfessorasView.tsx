@@ -214,13 +214,10 @@ export function PortalProfessorasView({
       <div className="bg-gradient-to-r from-[#1E1B4B] via-[#2E1065] to-[#0F172A] rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-violet-900/50 relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
+          <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
               Catálogo de Cursos & Matriz Curricular
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Estruturação dos cursos das Escolas Livres de Santo André (ELT, ELD, ELCV e EMIA). Acompanhe disciplinas, cargas horárias e organize a grade pedagógica das turmas.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -276,9 +273,6 @@ export function PortalProfessorasView({
                   </span>
                   <span>Identidade do Curso</span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Defina o nome da formação, unidade escolar e modalidade
-                </p>
               </div>
             </div>
 
@@ -402,9 +396,6 @@ export function PortalProfessorasView({
                   </span>
                   <span>Disciplinas e Cargas Horárias (Exclusivo Formação)</span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Adicione as disciplinas que compõem a matriz deste curso de Formação
-                </p>
               </div>
 
               {/* Medidor Totalizador de Carga Horária em Tempo Real */}
@@ -496,7 +487,7 @@ export function PortalProfessorasView({
 
               {disciplinas.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-xs">
-                  Nenhuma disciplina adicionada ainda. Utilize os campos acima para estruturar a grade deste curso.
+                  Nenhuma disciplina adicionada.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2.5">

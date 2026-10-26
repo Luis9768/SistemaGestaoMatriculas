@@ -1589,10 +1589,7 @@ export function DiarioChamadasView({
             <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
               Nenhuma chamada ainda. Registrar a primeira aula
             </p>
-            <p className="text-xs text-stone-500 dark:text-stone-400 max-w-sm mx-auto">
-              Comece registrando a frequência dos estudantes na matéria{' '}
-              {materiaAtual?.nome || 'selecionada'}.
-            </p>
+
             {turmaAtual && materiaAtual && (
               <button
                 type="button"

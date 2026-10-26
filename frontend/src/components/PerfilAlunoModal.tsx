@@ -1267,9 +1267,6 @@ export function PerfilAlunoModal({
                       <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
                         Editar Ficha Cadastral do Estudante
                       </h3>
-                      <p className="text-xs text-slate-500">
-                        Atualize dados de contato, endereço residencial e informações de inclusão
-                      </p>
                     </div>
                   </div>
 

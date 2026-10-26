@@ -513,9 +513,6 @@ export function TurmasOfertasView({
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Turmas & Ofertas Letivas
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 mt-1">
-            Acompanhe turmas abertas, carga horária e taxa de ocupação de vagas por turma.
-          </p>
         </div>
 
         <button

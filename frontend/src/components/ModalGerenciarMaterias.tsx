@@ -344,11 +344,9 @@ export function ModalGerenciarMaterias({
             <div className="py-10 text-center text-slate-400 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-xs space-y-1">
               <BookOpen className="w-6 h-6 mx-auto text-slate-300 dark:text-slate-600 mb-1" />
               <div className="font-medium text-slate-600 dark:text-slate-400">
-                Nenhuma matéria cadastrada nesta turma ainda.
+                Nenhuma matéria cadastrada nesta turma.
               </div>
-              <div className="text-[11px] text-slate-400">
-                Utilize os campos acima para cadastrar matérias, cargas horárias e professores.
-              </div>
+
             </div>
           ) : (
             materias.map((m, idx) => {

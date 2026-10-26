@@ -148,9 +148,6 @@ export function ModalCadastrarUsuario({
               <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
                 Cadastrar Novo Usuário
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Defina o perfil institucional (Administrador ou Encarregada)
-              </p>
             </div>
           </div>
           <button
@@ -180,41 +177,31 @@ export function ModalCadastrarUsuario({
               <button
                 type="button"
                 onClick={() => setRole('ROLE_ENCARREGADA')}
-                className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
+                className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
                   role === 'ROLE_ENCARREGADA'
                     ? 'border-sky-500 bg-sky-50/60 dark:bg-sky-950/30 ring-1 ring-sky-500/50'
                     : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className={`font-bold text-xs ${role === 'ROLE_ENCARREGADA' ? 'text-sky-900 dark:text-sky-300' : 'text-slate-800 dark:text-slate-200'}`}>
-                    Encarregada
-                  </span>
-                  <Users2 className={`w-4 h-4 ${role === 'ROLE_ENCARREGADA' ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400'}`} />
-                </div>
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Secretaria de escola livre específica
-                </p>
+                <span className={`font-bold text-xs ${role === 'ROLE_ENCARREGADA' ? 'text-sky-900 dark:text-sky-300' : 'text-slate-800 dark:text-slate-200'}`}>
+                  Encarregada
+                </span>
+                <Users2 className={`w-4 h-4 ${role === 'ROLE_ENCARREGADA' ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400'}`} />
               </button>
 
               <button
                 type="button"
                 onClick={() => setRole('ROLE_ADMIN')}
-                className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
+                className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
                   role === 'ROLE_ADMIN'
                     ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 ring-1 ring-amber-500/50'
                     : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className={`font-bold text-xs ${role === 'ROLE_ADMIN' ? 'text-amber-900 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'}`}>
-                    Administrador
-                  </span>
-                  <ShieldCheck className={`w-4 h-4 ${role === 'ROLE_ADMIN' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                </div>
-                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Coordenação Geral (Acesso Global)
-                </p>
+                <span className={`font-bold text-xs ${role === 'ROLE_ADMIN' ? 'text-amber-900 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'}`}>
+                  Administrador
+                </span>
+                <ShieldCheck className={`w-4 h-4 ${role === 'ROLE_ADMIN' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
               </button>
             </div>
           </div>
@@ -325,18 +312,8 @@ export function ModalCadastrarUsuario({
                   );
                 })}
               </div>
-              <span className="text-[10px] text-slate-400 block">
-                {escolasIds.length === 0 ? 'Nenhuma escola marcada.' : `${escolasIds.length} unidade(s) selecionada(s).`}
-              </span>
             </div>
-          ) : (
-            <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/60 flex items-start gap-2.5">
-              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div className="text-[11px] text-amber-900 dark:text-amber-200 leading-tight">
-                <strong>Acesso Global / Coordenação:</strong> Usuários com perfil Administrador têm acesso unificado a todas as 4 escolas (ELT, ELD, ELCV e EMIA) e controle total de turmas e matrículas.
-              </div>
-            </div>
-          )}
+          ) : null}
 
           {/* Botões de Ação */}
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-2">

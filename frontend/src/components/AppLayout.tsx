@@ -754,7 +754,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-[#27272a] pb-3">
               <div>
                 <h3 className="font-black text-base text-slate-900 dark:text-white">Abrir Nova Turma / Oferta</h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Defina vagas, calendário de inscrições, suplências e aulas</p>
               </div>
               <button
                 onClick={() => setShowModalTurma(false)}
@@ -848,9 +847,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     </button>
                   </div>
 
-                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
-                    Digite as matérias individualmente ou separe por vírgula.
-                  </p>
+
 
                   {(novaTurma.materiasNomes || []).length > 0 && (
                     <div className="flex flex-wrap gap-1.5 pt-1">
