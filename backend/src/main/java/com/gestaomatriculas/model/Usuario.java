@@ -65,6 +65,9 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean ativo = true;
 
+    @Column(name = "foto_url", columnDefinition = "TEXT")
+    private String fotoUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

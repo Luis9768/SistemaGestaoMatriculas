@@ -36,4 +36,9 @@ public class AtualizarUsuarioDTO {
      * Define se o usuário está ativo ou inativo para login
      */
     private Boolean ativo;
+
+    /**
+     * Foto de perfil do usuário (URL ou imagem em Base64 Data URI)
+     */
+    private String fotoUrl;
 }

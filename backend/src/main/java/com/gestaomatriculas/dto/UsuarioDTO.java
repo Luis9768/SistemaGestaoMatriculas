@@ -19,4 +19,5 @@ public class UsuarioDTO {
     private java.util.List<Long> escolasIds;
     private java.util.List<EscolaResumoDTO> escolas;
     private Boolean ativo;
+    private String fotoUrl;
 }

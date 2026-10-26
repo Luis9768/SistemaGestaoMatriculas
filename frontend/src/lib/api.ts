@@ -20,6 +20,7 @@ export interface Usuario {
   escolasIds?: number[];
   escolas?: Escola[];
   ativo?: boolean;
+  fotoUrl?: string;
 }
 
 export interface CadastrarUsuarioPayload {
@@ -29,6 +30,7 @@ export interface CadastrarUsuarioPayload {
   role: 'ROLE_ADMIN' | 'ROLE_ENCARREGADA';
   escolaId?: number;
   escolasIds?: number[];
+  fotoUrl?: string;
 }
 
 export interface AtualizarUsuarioPayload {
@@ -38,6 +40,7 @@ export interface AtualizarUsuarioPayload {
   escolasIds?: number[];
   senha?: string;
   ativo?: boolean;
+  fotoUrl?: string;
 }
 
 export interface AtualizarContatoPayload {
@@ -60,6 +63,7 @@ export interface LoginResponse {
   escolaSigla?: string;
   escolasIds?: number[];
   escolas?: Escola[];
+  fotoUrl?: string;
 }
 
 export interface RecuperacaoResposta {

@@ -101,6 +101,7 @@ public class AuthService {
                 .escolaSigla(primSigla)
                 .escolasIds(escolasIds)
                 .escolas(escolasDTO)
+                .fotoUrl(usuario.getFotoUrl())
                 .build();
     }
 
@@ -118,6 +119,7 @@ public class AuthService {
                 .escolaNome(usuario.getEscola() != null ? usuario.getEscola().getNome() : "Todas as Escolas")
                 .escolaSigla(usuario.getEscola() != null ? usuario.getEscola().getSigla() : "ADMIN")
                 .ativo(usuario.getAtivo())
+                .fotoUrl(usuario.getFotoUrl())
                 .build();
     }
 

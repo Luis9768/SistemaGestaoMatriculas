@@ -11,13 +11,12 @@ import {
   EyeOff,
   Building2,
   Check,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
   Loader2,
   ShieldCheck,
   GraduationCap,
 } from 'lucide-react';
+import { FotoPerfilUploader } from '@/components/FotoPerfilUploader';
 
 interface ModalEditarUsuarioProps {
   isOpen: boolean;
@@ -41,6 +40,7 @@ export function ModalEditarUsuario({
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [ativo, setAtivo] = useState(true);
+  const [fotoUrl, setFotoUrl] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -51,6 +51,7 @@ export function ModalEditarUsuario({
       setEmail(usuario.email || '');
       setRole(usuario.role || 'ROLE_ENCARREGADA');
       setAtivo(usuario.ativo ?? true);
+      setFotoUrl(usuario.fotoUrl || '');
       setSenha('');
       setErro(null);
 
@@ -108,6 +109,7 @@ export function ModalEditarUsuario({
         escolasIds: role === 'ROLE_ENCARREGADA' ? escolasSelecionadasIds : [],
         senha: senha.trim() ? senha.trim() : undefined,
         ativo,
+        fotoUrl: fotoUrl.trim() || undefined,
       };
 
       const atualizado = await api.atualizarUsuario(usuario.id, payload);
@@ -138,7 +140,7 @@ export function ModalEditarUsuario({
                 Editar Usuário & Acessos
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Altere dados cadastrais, função institucional e unidades permitidas
+                Altere dados cadastrais, foto de perfil, função institucional e unidades permitidas
               </p>
             </div>
           </div>
@@ -167,13 +169,21 @@ export function ModalEditarUsuario({
               <div className="space-y-0.5">
                 <p className="font-bold text-xs">Edição Bloqueada (Usuário Inativo)</p>
                 <p className="text-[11px] text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
-                  Só é permitido alterar dados cadastrais (nome, e-mail, função ou escolas) caso o usuário esteja ativo. Clique em <strong>&ldquo;Ativar Usuário&rdquo;</strong> na seção de status abaixo para liberar a edição.
+                  Só é permitido alterar dados cadastrais (nome, foto, e-mail, função ou escolas) caso o usuário esteja ativo. Reative o login na ficha de detalhes para liberar a edição.
                 </p>
               </div>
             </div>
           )}
 
-          {/* Nome e E-mail */}
+          {/* 1. Foto de Perfil */}
+          <FotoPerfilUploader
+            fotoUrl={fotoUrl}
+            onChangeFotoUrl={setFotoUrl}
+            nomeUsuario={nome}
+            disabled={!ativo || loading}
+          />
+
+          {/* 2. Nome e E-mail */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
@@ -207,7 +217,7 @@ export function ModalEditarUsuario({
             </div>
           </div>
 
-          {/* Papel / Função */}
+          {/* 3. Papel / Função */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               Função Institucional *
@@ -257,7 +267,7 @@ export function ModalEditarUsuario({
             </div>
           </div>
 
-          {/* Escolas com Acesso (se for Encarregada) */}
+          {/* 4. Escolas com Acesso (se for Encarregada) */}
           {role === 'ROLE_ENCARREGADA' && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -356,7 +366,7 @@ export function ModalEditarUsuario({
             </div>
           )}
 
-          {/* Redefinição de Senha (Opcional) */}
+          {/* 5. Redefinição de Senha (Opcional) */}
           <div className="space-y-1">
             <label className="block font-bold text-slate-700 dark:text-slate-300">
               Redefinir Senha de Acesso (Opcional)

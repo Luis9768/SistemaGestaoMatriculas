@@ -95,10 +95,18 @@ export function ModalUsuarioDetalhes({
           </button>
 
           <div className="flex items-start gap-4">
-            {/* Avatar Neutro (sem ponto verde sobreposto) */}
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base border bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700/80 shrink-0">
-              {usuario.nome.charAt(0).toUpperCase()}
-            </div>
+            {/* Foto de Perfil ou Avatar Neutro */}
+            {usuario.fotoUrl ? (
+              <img
+                src={usuario.fotoUrl}
+                alt={usuario.nome}
+                className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700/80 shrink-0 shadow-2xs"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base border bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700/80 shrink-0">
+                {usuario.nome.charAt(0).toUpperCase()}
+              </div>
+            )}
 
             <div className="min-w-0 pr-8">
               <div className="flex items-center gap-2 flex-wrap">

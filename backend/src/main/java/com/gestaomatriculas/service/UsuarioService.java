@@ -85,6 +85,7 @@ public class UsuarioService {
                 .escola(escolaPrimaria)
                 .escolas(escolasEncontradas)
                 .ativo(true)
+                .fotoUrl(dto.getFotoUrl() != null && !dto.getFotoUrl().trim().isEmpty() ? dto.getFotoUrl().trim() : null)
                 .build();
 
         Usuario salvo = usuarioRepository.save(novo);
@@ -123,6 +124,10 @@ public class UsuarioService {
 
         if (dto.getAtivo() != null) {
             u.setAtivo(dto.getAtivo());
+        }
+
+        if (dto.getFotoUrl() != null) {
+            u.setFotoUrl(dto.getFotoUrl().trim().isEmpty() ? null : dto.getFotoUrl().trim());
         }
 
         if (dto.getSenha() != null && !dto.getSenha().trim().isEmpty()) {
@@ -222,7 +227,7 @@ public class UsuarioService {
                 .escolasIds(ids)
                 .escolas(escolasDTO)
                 .ativo(u.getAtivo())
+                .fotoUrl(u.getFotoUrl())
                 .build();
     }
 }
-

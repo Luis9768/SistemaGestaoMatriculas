@@ -37,4 +37,9 @@ public class CadastrarUsuarioDTO {
      * Lista de escolas às quais a encarregada terá acesso
      */
     private List<Long> escolasIds;
+
+    /**
+     * Foto de perfil do usuário (URL ou imagem em Base64 Data URI)
+     */
+    private String fotoUrl;
 }

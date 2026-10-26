@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api, Escola, CadastrarUsuarioPayload } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
 import { X, ShieldCheck, AlertCircle, Building2, Mail, Lock, User, Users2, Sparkles } from 'lucide-react';
+import { FotoPerfilUploader } from './FotoPerfilUploader';
 
 interface ModalCadastrarUsuarioProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export function ModalCadastrarUsuario({
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [fotoUrl, setFotoUrl] = useState('');
   const [role, setRole] = useState<'ROLE_ADMIN' | 'ROLE_ENCARREGADA'>('ROLE_ENCARREGADA');
   const [escolaId, setEscolaId] = useState<number | ''>('');
 
@@ -40,6 +42,7 @@ export function ModalCadastrarUsuario({
     setNome('');
     setEmail('');
     setSenha('');
+    setFotoUrl('');
     setRole('ROLE_ENCARREGADA');
     setEscolaId('');
     setEscolasIds([]);
@@ -93,6 +96,7 @@ export function ModalCadastrarUsuario({
         email: email.trim().toLowerCase(),
         senha: senha.trim(),
         role: role,
+        fotoUrl: fotoUrl.trim() || undefined,
         escolaId: role === 'ROLE_ENCARREGADA' && escolasIds.length > 0 ? escolasIds[0] : undefined,
         escolasIds: role === 'ROLE_ENCARREGADA' ? escolasIds : [],
       };
@@ -214,6 +218,14 @@ export function ModalCadastrarUsuario({
               </button>
             </div>
           </div>
+
+          {/* Foto de Perfil */}
+          <FotoPerfilUploader
+            fotoUrl={fotoUrl}
+            onChangeFotoUrl={setFotoUrl}
+            nomeUsuario={nome}
+            disabled={salvando}
+          />
 
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">

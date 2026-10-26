@@ -20,4 +20,5 @@ public class LoginResponseDTO {
     private String escolaSigla;
     private java.util.List<Long> escolasIds;
     private java.util.List<EscolaResumoDTO> escolas;
+    private String fotoUrl;
 }
