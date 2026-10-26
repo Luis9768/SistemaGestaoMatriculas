@@ -5,22 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { AppLayout } from '@/components/AppLayout';
 import { ModalCadastrarUsuario } from '@/components/ModalCadastrarUsuario';
-import { ModalEditarUsuario } from '@/components/ModalEditarUsuario';
-import { ModalUsuarioDetalhes } from '@/components/ModalUsuarioDetalhes';
+import { ModalGerenciarUsuario } from '@/components/ModalGerenciarUsuario';
 import { UsuarioCard } from '@/components/UsuarioCard';
 import { api, Usuario } from '@/lib/api';
 import {
   Users2,
-  GraduationCap,
   ShieldCheck,
   Plus,
   RefreshCw,
-  Mail,
-  CheckCircle2,
-  XCircle,
-  BookOpen,
-  Edit2,
-  Lock,
 } from 'lucide-react';
 
 export default function UsuariosPage() {
@@ -29,10 +21,8 @@ export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroRole, setFiltroRole] = useState<'TODOS' | 'ROLE_ADMIN' | 'ROLE_ENCARREGADA'>('TODOS');
-  const [modalAberto, setModalAberto] = useState(false);
-  const [modalEditarAberto, setModalEditarAberto] = useState(false);
-  const [usuarioParaEditar, setUsuarioParaEditar] = useState<Usuario | null>(null);
-  const [usuarioDetalhes, setUsuarioDetalhes] = useState<Usuario | null>(null);
+  const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false);
+  const [usuarioGerenciar, setUsuarioGerenciar] = useState<Usuario | null>(null);
   const [atualizandoStatusId, setAtualizandoStatusId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -63,11 +53,11 @@ export default function UsuariosPage() {
       const atualizado = await api.alternarStatusUsuario(id);
       mostrarFeedback(
         'sucesso',
-        `Acesso de "${atualizado.nome}" ${atualizado.ativo ? 'reativado' : 'desativado'} com sucesso.`
+        `Acesso de "${atualizado.nome}" ${atualizado.ativo ? 'reativado' : 'bloqueado'} com sucesso.`
       );
-      // Atualiza o estado do modal se estiver aberto
-      if (usuarioDetalhes && usuarioDetalhes.id === id) {
-        setUsuarioDetalhes(atualizado);
+      // Atualiza o estado no modal se estiver aberto
+      if (usuarioGerenciar && usuarioGerenciar.id === id) {
+        setUsuarioGerenciar(atualizado);
       }
       await carregarUsuarios();
     } catch (err: any) {
@@ -117,7 +107,7 @@ export default function UsuariosPage() {
 
           {usuarioLogado?.role === 'ROLE_ADMIN' && (
             <button
-              onClick={() => setModalAberto(true)}
+              onClick={() => setModalCadastrarAberto(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-semibold text-xs transition cursor-pointer shadow-xs"
             >
               <Plus className="w-4 h-4" />
@@ -205,7 +195,7 @@ export default function UsuariosPage() {
               <UsuarioCard
                 key={u.id}
                 usuario={u}
-                onClick={(usr) => setUsuarioDetalhes(usr)}
+                onClick={(usr) => setUsuarioGerenciar(usr)}
               />
             ))}
           </div>
@@ -213,46 +203,27 @@ export default function UsuariosPage() {
 
       </div>
 
-      {/* Modal de Detalhes do Usuário (com Ativar/Inativar dinâmico) */}
-      <ModalUsuarioDetalhes
-        isOpen={Boolean(usuarioDetalhes)}
-        usuario={usuarioDetalhes}
+      {/* ─── MODAL UNIFICADO: GERENCIAR USUÁRIO & ACESSOS (/minimalist-ui) ─── */}
+      <ModalGerenciarUsuario
+        isOpen={Boolean(usuarioGerenciar)}
+        usuario={usuarioGerenciar}
         escolas={escolas}
-        onClose={() => setUsuarioDetalhes(null)}
+        onClose={() => setUsuarioGerenciar(null)}
         onAlternarStatus={async (id) => {
           await handleAlternarStatus(id);
         }}
-        onAbrirEdicao={(u) => {
-          if (!u.ativo) {
-            mostrarFeedback('erro', 'Usuário inativo. Reative o acesso do usuário primeiro para poder editar suas informações.');
-            return;
-          }
-          setUsuarioDetalhes(null);
-          setUsuarioParaEditar(u);
-          setModalEditarAberto(true);
-        }}
-      />
-
-      {/* Modal de Cadastro de Novo Usuário */}
-      <ModalCadastrarUsuario
-        isOpen={modalAberto}
-        onClose={() => setModalAberto(false)}
-        onUsuarioCadastrado={() => {
-          carregarUsuarios();
-        }}
-      />
-
-      {/* Modal de Edição de Usuário & Permissões */}
-      <ModalEditarUsuario
-        isOpen={modalEditarAberto}
-        usuario={usuarioParaEditar}
-        escolas={escolas}
-        onClose={() => {
-          setModalEditarAberto(false);
-          setUsuarioParaEditar(null);
-        }}
         onUsuarioAtualizado={() => {
           mostrarFeedback('sucesso', 'Dados do usuário e permissões atualizados com sucesso!');
+          carregarUsuarios();
+          setUsuarioGerenciar(null);
+        }}
+      />
+
+      {/* ─── MODAL DE CADASTRO DE NOVO USUÁRIO ─── */}
+      <ModalCadastrarUsuario
+        isOpen={modalCadastrarAberto}
+        onClose={() => setModalCadastrarAberto(false)}
+        onUsuarioCadastrado={() => {
           carregarUsuarios();
         }}
       />
