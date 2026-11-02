@@ -101,7 +101,7 @@ export function AlunosPesquisaView({
       {/* Tabela de Alunos com Ritmo e Densidade Equilibrados */}
       <div className="bg-white dark:bg-[#121214] rounded-2xl border border-slate-200/90 dark:border-[#27272a] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[800px]">
             <thead className="bg-slate-50/90 dark:bg-[#09090b]/80 text-slate-400 dark:text-zinc-500 font-semibold border-b border-slate-200/80 dark:border-[#27272a]/80 text-[10px] uppercase tracking-wider">
               <tr>
                 <th className="px-5 py-3.5">Nome do Participante</th>

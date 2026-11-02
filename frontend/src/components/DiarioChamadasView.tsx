@@ -162,6 +162,15 @@ function parseDataFolhinha(isoDate: string) {
   };
 }
 
+function formatarDataBr(isoDate?: string | null): string {
+  if (!isoDate) return '';
+  const partes = isoDate.split('-');
+  if (partes.length === 3) {
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+  return isoDate;
+}
+
 /* ─── Sparkline Component ─── */
 function SparklineFrequencia({ historico }: { historico: ChamadaResumo[] }) {
   // Ordenar cronologicamente para a curva de evolução
@@ -710,6 +719,10 @@ function ChamadaDrawer({
   }, []);
 
   const dataInvalidaFutura = Boolean(dataAula && dataAula > hojeLocal);
+  const dataInvalidaAntesDoInicio = Boolean(
+    turma?.dataInicioAulas && dataAula && dataAula < turma.dataInicioAulas
+  );
+  const dataBloqueada = dataInvalidaFutura || dataInvalidaAntesDoInicio;
 
   // Atalhos de teclado (P presente, F falta, J ausência justificada, setas para navegar)
   useEffect(() => {
@@ -831,22 +844,30 @@ function ChamadaDrawer({
                           <AlertCircle className="w-3 h-3" /> Data futura bloqueada
                         </span>
                       )}
+                      {dataInvalidaAntesDoInicio && (
+                        <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> Início das aulas em {formatarDataBr(turma?.dataInicioAulas)}
+                        </span>
+                      )}
                     </div>
                     <input
                       id="drawer-data-aula"
                       type="date"
                       disabled={modo === 'detalhes'}
                       value={dataAula}
+                      min={turma?.dataInicioAulas || undefined}
                       max={hojeLocal}
                       onChange={(e) => onDataAulaChange(e.target.value)}
                       className={`w-full px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-[#121110] border text-stone-900 dark:text-stone-100 disabled:opacity-75 focus:outline-none focus:ring-1 ${
-                        dataInvalidaFutura
+                        dataBloqueada
                           ? 'border-rose-500 focus:ring-rose-500'
                           : 'border-stone-200 dark:border-[#262422] focus:ring-stone-400'
                       }`}
                     />
                     <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1">
-                      Permitido apenas até a data de hoje ({hojeLocal.split('-').reverse().join('/')}).
+                      {turma?.dataInicioAulas
+                        ? `Permitido a partir de ${formatarDataBr(turma.dataInicioAulas)} até hoje (${hojeLocal.split('-').reverse().join('/')}).`
+                        : `Permitido apenas até a data de hoje (${hojeLocal.split('-').reverse().join('/')}).`}
                     </p>
                   </div>
 
@@ -1101,8 +1122,14 @@ function ChamadaDrawer({
                   <button
                     type="button"
                     onClick={onSalvar}
-                    disabled={salvando || itens.length === 0 || dataInvalidaFutura}
-                    title={dataInvalidaFutura ? 'Não é permitido registrar chamada para datas futuras' : undefined}
+                    disabled={salvando || itens.length === 0 || dataBloqueada}
+                    title={
+                      dataInvalidaFutura
+                        ? 'Não é permitido registrar chamada para datas futuras'
+                        : dataInvalidaAntesDoInicio
+                        ? `Não é permitido registrar chamada antes do início das aulas (${formatarDataBr(turma?.dataInicioAulas)})`
+                        : undefined
+                    }
                     className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${schoolTheme.primaryBg}`}
                   >
                     {salvando ? (
@@ -1305,6 +1332,14 @@ export function DiarioChamadasView({
       return;
     }
 
+    if (turmaAtual?.dataInicioAulas && novaData < turmaAtual.dataInicioAulas) {
+      setToastMsg({
+        tipo: 'erro',
+        texto: `Não é permitido registrar chamada antes do início das aulas (${formatarDataBr(turmaAtual.dataInicioAulas)}).`,
+      });
+      return;
+    }
+
     if (drawerModo === 'novo' && turmaSelecionadaId && materiaSelecionadaId) {
       setLoadingItensDrawer(true);
       try {
@@ -1329,6 +1364,15 @@ export function DiarioChamadasView({
   const handleNovaChamada = async () => {
     if (!turmaSelecionadaId || !materiaSelecionadaId) return;
     const hoje = getHojeLocalIso();
+
+    if (turmaAtual?.dataInicioAulas && hoje < turmaAtual.dataInicioAulas) {
+      setToastMsg({
+        tipo: 'erro',
+        texto: `Não é possível realizar chamadas antes do início das aulas (${formatarDataBr(turmaAtual.dataInicioAulas)}).`,
+      });
+      return;
+    }
+
     setDataAulaDrawer(hoje);
     setResponsavelDrawer(
       materiaAtual?.professorResponsavel || usuarioLogado?.nome || ''
@@ -1444,6 +1488,14 @@ export function DiarioChamadasView({
       return;
     }
 
+    if (turmaAtual?.dataInicioAulas && dataAulaDrawer < turmaAtual.dataInicioAulas) {
+      setToastMsg({
+        tipo: 'erro',
+        texto: `Não é permitido registrar chamada antes do início das aulas (${formatarDataBr(turmaAtual.dataInicioAulas)}).`,
+      });
+      return;
+    }
+
     if (!responsavelDrawer.trim()) {
       setToastMsg({ tipo: 'erro', texto: 'Informe o nome do responsável.' });
       return;
@@ -1498,6 +1550,11 @@ export function DiarioChamadasView({
       </main>
     );
   }
+
+  const hojeIso = getHojeLocalIso();
+  const aulasNaoIniciadas = Boolean(
+    turmaAtual?.dataInicioAulas && hojeIso < turmaAtual.dataInicioAulas
+  );
 
   return (
     <div className="space-y-6">
@@ -1554,7 +1611,13 @@ export function DiarioChamadasView({
             <button
               type="button"
               onClick={handleNovaChamada}
-              className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-medium text-xs shadow-xs transition-all cursor-pointer ${schoolTheme.primaryBg}`}
+              disabled={aulasNaoIniciadas}
+              title={
+                aulasNaoIniciadas
+                  ? `As aulas iniciam apenas em ${formatarDataBr(turmaAtual.dataInicioAulas)}. Chamada bloqueada.`
+                  : undefined
+              }
+              className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-medium text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${schoolTheme.primaryBg}`}
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nova chamada</span>
@@ -1587,18 +1650,26 @@ export function DiarioChamadasView({
           <div className="p-10 sm:p-14 text-center rounded-xl border border-dashed border-stone-200 dark:border-[#262422] bg-stone-50/50 dark:bg-[#121110] space-y-3">
             <BookOpen className="w-6 h-6 mx-auto text-stone-400" />
             <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
-              Nenhuma chamada ainda. Registrar a primeira aula
+              {aulasNaoIniciadas
+                ? `As aulas desta turma iniciam apenas em ${formatarDataBr(turmaAtual?.dataInicioAulas)}.`
+                : 'Nenhuma chamada ainda. Registrar a primeira aula'}
             </p>
 
             {turmaAtual && materiaAtual && (
-              <button
-                type="button"
-                onClick={handleNovaChamada}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${schoolTheme.primaryBg}`}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Registrar primeira aula</span>
-              </button>
+              aulasNaoIniciadas ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400 max-w-md mx-auto">
+                  A realização de chamadas e controle de presença estarão liberados a partir de {formatarDataBr(turmaAtual.dataInicioAulas)}.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNovaChamada}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${schoolTheme.primaryBg}`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Registrar primeira aula</span>
+                </button>
+              )
             )}
           </div>
         ) : (

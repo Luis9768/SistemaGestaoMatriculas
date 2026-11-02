@@ -199,7 +199,7 @@ export function DashboardAnalytics({
   onOpenLogin,
 }: DashboardAnalyticsProps) {
   const router = useRouter();
-  const { escolaAtualObj, escolas, cursos, abrirModalNovaTurma } = useApp();
+  const { escolaAtualObj, escolas, cursos, abrirModalNovaTurma, abrirModalDetalhesTurma } = useApp();
   const activeSchoolTheme = getSchoolThemeColors(escolaAtualObj?.sigla);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -541,10 +541,12 @@ export function DashboardAnalytics({
           <MetricKpiCard
             index={1}
             title="Assiduidade Global"
-            value={turmaDashboard ? `${turmaDashboard.taxaAssiduidadeTurma}%` : '92.4%'}
+            value={turmaDashboard && turmaDashboard.taxaAssiduidadeTurma > 0 ? `${turmaDashboard.taxaAssiduidadeTurma}%` : '—'}
             badgeText="Meta ≥ 75%"
             badgeType={
-              (turmaDashboard?.taxaAssiduidadeTurma || 92) >= 75 ? 'positive' : 'danger'
+              turmaDashboard && turmaDashboard.taxaAssiduidadeTurma > 0
+                ? (turmaDashboard.taxaAssiduidadeTurma >= 75 ? 'positive' : 'danger')
+                : 'neutral'
             }
             subtitle="Presença apurada nas chamadas escolares"
             icon={Activity}
@@ -1076,34 +1078,47 @@ export function DashboardAnalytics({
             </div>
 
             <div className="space-y-3">
-              {turmas.slice(0, 4).map((turma, idx) => (
-                <div
-                  key={turma.id || idx}
-                  className="p-3 rounded-xl border border-slate-100 dark:border-[#27272a]/80 bg-slate-50/50 dark:bg-[#18181b]/50 hover:border-slate-200 dark:hover:border-zinc-700 transition space-y-1.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-white dark:bg-[#18181b] text-slate-700 dark:text-zinc-300 border border-slate-200/60 dark:border-[#27272a]">
-                      {turma.codigo}
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                      {turma.status === 'ABERTA' ? 'Matrículas Abertas' : 'Em Andamento'}
-                    </span>
-                  </div>
+              {turmas.length === 0 ? (
+                <p className="text-xs text-slate-400 dark:text-zinc-500 italic text-center py-4">
+                  Nenhuma turma cadastrada.
+                </p>
+              ) : (
+                turmas.slice(0, 4).map((turma, idx) => (
+                  <div
+                    key={turma.id || idx}
+                    onClick={() => abrirModalDetalhesTurma?.(turma)}
+                    className="p-3.5 rounded-xl border border-slate-100 dark:border-[#27272a]/80 bg-slate-50/50 dark:bg-[#18181b]/50 hover:border-slate-200 dark:hover:border-zinc-700 hover:bg-slate-100/60 dark:hover:bg-[#18181b] transition-all cursor-pointer space-y-2 group"
+                    title="Clique para ver os detalhes da turma"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-white dark:bg-[#18181b] text-slate-700 dark:text-zinc-300 border border-slate-200/60 dark:border-[#27272a] shadow-2xs">
+                        {turma.codigo}
+                      </span>
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {turma.status === 'ABERTA' || turma.matriculaAberta ? 'Matrículas Abertas' : 'Em Andamento'}
+                      </span>
+                    </div>
 
-                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                    {turma.cursoNome}
-                  </p>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      {turma.cursoNome}
+                    </p>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400 pt-0.5">
-                    <span className="truncate max-w-[150px]">
-                      {turma.educadorResponsavel || 'Educador atribuído'}
-                    </span>
-                    <span className="font-mono text-[10px]">
-                      {turma.diasHorariosLocal?.split('-')[0] || '19h - 22h'}
-                    </span>
+                    <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800/60 text-xs text-slate-600 dark:text-zinc-300">
+                      <div className="w-5 h-5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                        <Clock className="w-3 h-3" />
+                      </div>
+                      <span className="font-medium text-[11px] leading-tight truncate">
+                        {turma.diasHorariosLocal || (
+                          <span className="italic text-slate-400 dark:text-zinc-500 font-normal">
+                            Horário a definir
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

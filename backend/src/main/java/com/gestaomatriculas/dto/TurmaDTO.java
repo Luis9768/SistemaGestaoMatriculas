@@ -49,7 +49,10 @@ public class TurmaDTO {
     private String escolaNome;
     private String escolaSigla;
 
+    @Min(value = 0, message = "A idade mínima não pode ser um número negativo")
     private Integer idadeMinima;
+
+    @Min(value = 0, message = "A idade máxima não pode ser um número negativo")
     private Integer idadeMaxima;
 
     private Integer vagasOcupadas;

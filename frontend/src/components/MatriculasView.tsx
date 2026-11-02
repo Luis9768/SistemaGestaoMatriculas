@@ -338,13 +338,13 @@ export function MatriculasView({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[920px]">
             <colgroup>
-              <col className="w-[26%]" />
-              <col className="w-[26%]" />
-              <col className="w-[28%]" />
-              <col className="w-[10%]" />
-              <col className="w-[10%]" />
+              <col className="w-[24%] min-w-[210px]" />
+              <col className="w-[24%] min-w-[200px]" />
+              <col className="w-[26%] min-w-[220px]" />
+              <col className="w-[12%] min-w-[120px]" />
+              <col className="w-[14%] min-w-[170px]" />
             </colgroup>
             <thead className="bg-slate-50/95 dark:bg-[#18181b]/95 backdrop-blur-xs text-[#8b8b95] font-semibold sticky top-0 z-10 border-b border-slate-200/80 dark:border-zinc-800 text-[11px] uppercase tracking-[0.06em]">
               <tr>
@@ -436,17 +436,44 @@ export function MatriculasView({
                         >
                           {m.cursoNome}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${getDotColorPorEscola(
-                              m.escolaSigla,
-                              m.turmaCodigo
-                            )}`}
-                            title={m.escolaSigla || 'Núcleo'}
-                          />
-                          <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">
-                            {m.turmaCodigo}
-                          </span>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full shrink-0 ${getDotColorPorEscola(
+                                m.escolaSigla,
+                                m.turmaCodigo
+                              )}`}
+                              title={m.escolaSigla || 'Núcleo'}
+                            />
+                            <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">
+                              {m.turmaCodigo}
+                            </span>
+                          </div>
+                          {m.canalOrigem && (
+                            <span
+                              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
+                                m.canalOrigem === 'CULTURA_AZ'
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                                  : m.canalOrigem === 'SITE'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                                  : m.canalOrigem === 'FORMS'
+                                  ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+                                  : m.canalOrigem === 'PLANILHA'
+                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700'
+                              }`}
+                            >
+                              {m.canalOrigem === 'CULTURA_AZ'
+                                ? 'Cultura AZ'
+                                : m.canalOrigem === 'SITE'
+                                ? 'Portal Web'
+                                : m.canalOrigem === 'FORMS'
+                                ? 'Formulário'
+                                : m.canalOrigem === 'PLANILHA'
+                                ? 'Planilha'
+                                : 'Presencial'}
+                            </span>
+                          )}
                         </div>
                       </td>
 

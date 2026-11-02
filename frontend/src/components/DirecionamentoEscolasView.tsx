@@ -219,7 +219,7 @@ export function DirecionamentoEscolasView({
               (t) => t.escolaId === escola.id || t.escolaSigla?.toUpperCase() === siglaUpper
             );
             const turmasCount = turmasDaEscola.length;
-            const vagasCount = turmasDaEscola.reduce((acc, t) => acc + (t.vagasTotais || 0), 0) || 60;
+            const vagasCount = turmasDaEscola.reduce((acc, t) => acc + (t.vagasTotais || 0), 0);
 
             const isPermitido = !isEncarregada || permittedIds.includes(escola.id);
 
@@ -326,7 +326,7 @@ export function DirecionamentoEscolasView({
                     </div>
 
                     <div className="text-xs font-mono opacity-70 mt-1">
-                      {turmasCount || 4} turmas <span className="opacity-40">·</span> {cursosCount || 2} cursos ativos
+                      {turmasCount} {turmasCount === 1 ? 'turma' : 'turmas'} <span className="opacity-40">·</span> {cursosCount} {cursosCount === 1 ? 'curso ativo' : 'cursos ativos'}
                     </div>
                   </div>
 

@@ -213,6 +213,7 @@ interface TurmaCardProps {
   curso?: Curso;
   theme: EscolaTheme;
   onDetalhes: (turma: Turma) => void;
+  onGerenciarMaterias?: (turma: Turma) => void;
   onMatricular: (turmaId: number) => void;
 }
 
@@ -222,6 +223,7 @@ export function TurmaCard({
   curso,
   theme,
   onDetalhes,
+  onGerenciarMaterias,
   onMatricular,
 }: TurmaCardProps) {
   const ocupacao =
@@ -349,16 +351,33 @@ export function TurmaCard({
 
         {/* Rodapé de Ações: Detalhes com stretched-feel e Botão com Wipe */}
         <div className="mt-4 flex items-center justify-between gap-2.5">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDetalhes(turma);
-            }}
-            className="text-xs font-medium text-stone-500 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-stone-200 underline-offset-4 hover:underline transition-colors flex items-center gap-1 cursor-pointer py-1"
-          >
-            <span>Ver detalhes</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDetalhes(turma);
+              }}
+              className="text-xs font-medium text-stone-500 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-stone-200 underline-offset-4 hover:underline transition-colors flex items-center gap-1 cursor-pointer py-1"
+            >
+              <span>Ver detalhes</span>
+            </button>
+
+            {turma.cursoModalidade === 'FORMACAO' && onGerenciarMaterias && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onGerenciarMaterias(turma);
+                }}
+                className="text-xs font-medium text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 transition-colors flex items-center gap-1 cursor-pointer py-1"
+                title="Gerenciar matérias e grade da turma"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Matérias</span>
+              </button>
+            )}
+          </div>
 
           {isEncerrada ? (
             <span className="h-8.5 px-3.5 rounded-lg inline-flex items-center justify-center text-xs font-medium text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-900/60 border border-stone-200/70 dark:border-stone-800/60 cursor-not-allowed">
@@ -596,6 +615,7 @@ export function TurmasOfertasView({
                 curso={curso}
                 theme={theme}
                 onDetalhes={abrirModalDetalhesTurma}
+                onGerenciarMaterias={(turma) => setTurmaGerenciarMaterias(turma)}
                 onMatricular={(turmaId) => {
                   const targetTurma = turmasFiltradas.find((item) => item.id === turmaId) || t;
                   setTurmaParaMatricular(targetTurma);

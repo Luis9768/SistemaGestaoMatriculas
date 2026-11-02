@@ -116,6 +116,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     idadeMinima: undefined,
     idadeMaxima: undefined,
     materiasNomes: [],
+    diasHorariosLocal: '',
   });
 
   // Modal Perfil & LGPD
@@ -393,12 +394,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ? activeUser.escolasIds
         : (activeUser?.escolas?.map((e) => e.id) || (activeUser?.escolaId ? [activeUser.escolaId] : []));
       if (cursoData.escolaId && !permittedIds.includes(cursoData.escolaId)) {
-        mostrarFeedback('erro', 'Você não possui permissão para cadastrar cursos nesta escola.');
+        mostrarFeedback('erro', 'Você não possui permissão para cadastrar ou editar cursos nesta escola.');
         return;
       }
     }
-    const salvo = await api.createCurso(cursoData);
-    mostrarFeedback('sucesso', `Curso "${salvo.nome}" cadastrado com sucesso!`);
+    if (cursoData.id) {
+      const atualizado = await api.updateCurso(cursoData.id, cursoData);
+      mostrarFeedback('sucesso', `Curso "${atualizado.nome}" atualizado com sucesso!`);
+    } else {
+      const salvo = await api.createCurso(cursoData);
+      mostrarFeedback('sucesso', `Curso "${salvo.nome}" cadastrado com sucesso!`);
+    }
     await carregarDadosEscola();
   };
 
@@ -415,6 +421,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           mostrarFeedback('erro', 'Você não possui permissão para abrir turmas nesta escola.');
           return;
         }
+      }
+
+      if (!novaTurma.vagasTotais || novaTurma.vagasTotais <= 0) {
+        mostrarFeedback('erro', 'O número de vagas totais deve ser no mínimo 1.');
+        return;
+      }
+
+      if (novaTurma.idadeMinima !== undefined && novaTurma.idadeMinima < 0) {
+        mostrarFeedback('erro', 'A idade mínima não pode ser um número negativo.');
+        return;
+      }
+
+      if (novaTurma.idadeMaxima !== undefined && novaTurma.idadeMaxima < 0) {
+        mostrarFeedback('erro', 'A idade máxima não pode ser um número negativo.');
+        return;
+      }
+
+      if (
+        novaTurma.idadeMinima !== undefined &&
+        novaTurma.idadeMaxima !== undefined &&
+        novaTurma.idadeMaxima < novaTurma.idadeMinima
+      ) {
+        mostrarFeedback('erro', 'A idade máxima não pode ser inferior à idade mínima.');
+        return;
       }
 
       const turmaCriada = await api.createTurma({
@@ -436,6 +466,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         idadeMinima: undefined,
         idadeMaxima: undefined,
         materiasNomes: [],
+        diasHorariosLocal: '',
       });
       mostrarFeedback('sucesso', `Turma ${turmaCriada.codigo || novaTurma.codigo} aberta com sucesso!`);
       await carregarDadosEscola();
@@ -488,11 +519,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       targetCursoId = cursosPermitidos[0]?.id || 0;
     }
 
+    const cursoAlvo = cursos.find((c) => c.id === targetCursoId);
+    const materiasIniciais = cursoAlvo?.disciplinas?.map((d) => d.nome) || [];
+
     setTurmaCursoPreSelecionadoId(targetCursoId || null);
     setNovaTurma((prev) => ({
       ...prev,
       cursoId: targetCursoId || 0,
       codigo: '',
+      materiasNomes: materiasIniciais,
     }));
     setShowModalTurma(true);
   };

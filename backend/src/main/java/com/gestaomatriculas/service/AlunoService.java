@@ -331,7 +331,21 @@ public class AlunoService {
                 .termoPapelEntregue(dto.getTermoPapelEntregue() != null ? dto.getTermoPapelEntregue() : true)
                 .build();
 
-        return toDTO(alunoRepository.save(aluno));
+        Aluno salvo = alunoRepository.save(aluno);
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.CADASTRO_ALUNO,
+                "Aluno",
+                salvo.getId().toString(),
+                String.format("Cadastro do aluno '%s' (CPF: %s, Email: %s)",
+                        salvo.getNome(),
+                        salvo.getCpf() != null ? salvo.getCpf() : "N/I",
+                        salvo.getEmail() != null ? salvo.getEmail() : "N/D"),
+                null,
+                null
+        );
+
+        return toDTO(salvo);
     }
 
     @Transactional
@@ -380,7 +394,21 @@ public class AlunoService {
             }
         }
 
-        return toDTO(alunoRepository.save(aluno));
+        Aluno salvo = alunoRepository.save(aluno);
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.ATUALIZACAO_ALUNO,
+                "Aluno",
+                salvo.getId().toString(),
+                String.format("Atualização cadastral do aluno '%s' (CPF: %s, Email: %s)",
+                        salvo.getNome(),
+                        salvo.getCpf() != null ? salvo.getCpf() : "N/I",
+                        salvo.getEmail() != null ? salvo.getEmail() : "N/D"),
+                null,
+                null
+        );
+
+        return toDTO(salvo);
     }
 
     @Transactional

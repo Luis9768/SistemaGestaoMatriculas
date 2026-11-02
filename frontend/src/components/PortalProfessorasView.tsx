@@ -11,6 +11,8 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Pencil,
+  ArrowLeft,
 } from 'lucide-react';
 import { Curso, Disciplina, Escola } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
@@ -33,6 +35,7 @@ export function PortalProfessorasView({
   const { usuarioLogado, turmas, abrirModalDetalhesTurma } = useApp();
   const [modoAba, setModoAba] = useState<'catalogo' | 'novo'>('catalogo');
   const [cursoExpandidoId, setCursoExpandidoId] = useState<number | null>(null);
+  const [cursoEmEdicaoId, setCursoEmEdicaoId] = useState<number | null>(null);
 
   const isEncarregada = usuarioLogado?.role === 'ROLE_ENCARREGADA';
   const permittedSchoolIds: number[] = usuarioLogado?.escolasIds?.length
@@ -53,7 +56,7 @@ export function PortalProfessorasView({
     return escolaSelecionada || (escolas[0]?.id || 1);
   };
 
-  // Formulário do Novo Curso
+  // Formulário do Novo Curso / Edição
   const [nomeCurso, setNomeCurso] = useState('');
   const [escolaId, setEscolaId] = useState<number>(resolveInitialEscolaId);
 
@@ -68,12 +71,13 @@ export function PortalProfessorasView({
       setEscolaId(escolaSelecionada);
     }
   }, [escolaSelecionada, usuarioLogado, escolas]);
+
   const [modalidade, setModalidade] = useState<'FORMACAO' | 'NUCLEO' | 'OFICINA'>('FORMACAO');
   const [cargaHorariaCurso, setCargaHorariaCurso] = useState<number | string>('');
   const [duracaoTexto, setDuracaoTexto] = useState('');
   const [descricao, setDescricao] = useState('');
 
-  // Disciplinas em composição (inicialmente limpo, sem professores fictícios)
+  // Disciplinas em composição
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
 
   // Inputs temporários para adicionar nova disciplina
@@ -85,6 +89,41 @@ export function PortalProfessorasView({
   const [salvando, setSalvando] = useState(false);
   const [erroMsg, setErroMsg] = useState<string | null>(null);
   const [sucessoMsg, setSucessoMsg] = useState<string | null>(null);
+
+  const handleIniciarNovoCurso = () => {
+    setCursoEmEdicaoId(null);
+    setNomeCurso('');
+    setEscolaId(resolveInitialEscolaId());
+    setModalidade('FORMACAO');
+    setCargaHorariaCurso('');
+    setDuracaoTexto('');
+    setDescricao('');
+    setDisciplinas([]);
+    setNovaDiscNome('');
+    setNovaDiscCarga('');
+    setNovaDiscProf('');
+    setNovaDiscEmenta('');
+    setErroMsg(null);
+    setModoAba('novo');
+  };
+
+  const handleIniciarEdicao = (curso: Curso) => {
+    setCursoEmEdicaoId(curso.id || null);
+    setNomeCurso(curso.nome || '');
+    setEscolaId(curso.escolaId || resolveInitialEscolaId());
+    const mod = (curso.modalidade || (curso.tipo === 'REGULAR' ? 'FORMACAO' : 'OFICINA')) as 'FORMACAO' | 'NUCLEO' | 'OFICINA';
+    setModalidade(mod);
+    setCargaHorariaCurso(curso.cargaHoraria || '');
+    setDuracaoTexto(curso.duracaoEstimada || '');
+    setDescricao(curso.descricao || '');
+    setDisciplinas(curso.disciplinas ? curso.disciplinas.map((d) => ({ ...d })) : []);
+    setNovaDiscNome('');
+    setNovaDiscCarga('');
+    setNovaDiscProf('');
+    setNovaDiscEmenta('');
+    setErroMsg(null);
+    setModoAba('novo');
+  };
 
   // Cálculo dinâmico da carga horária somada
   const cargaHorariaTotal = disciplinas.reduce((acc, d) => acc + (d.cargaHoraria || 0), 0);
@@ -145,6 +184,7 @@ export function PortalProfessorasView({
       setSalvando(true);
       setErroMsg(null);
       await onSalvarCurso({
+        id: cursoEmEdicaoId || undefined,
         nome: nomeCurso.trim(),
         descricao: descricao.trim(),
         escolaId: Number(escolaId),
@@ -157,11 +197,13 @@ export function PortalProfessorasView({
         disciplinas: modalidade === 'FORMACAO' ? disciplinas : [],
       });
 
+      const acao = cursoEmEdicaoId ? 'atualizado' : 'salvo';
       setSucessoMsg(
         modalidade === 'FORMACAO'
-          ? `Curso "${nomeCurso}" (${cargaFinal}h de conteúdo) e suas ${disciplinas.length} disciplinas foram salvos com sucesso!`
-          : `Curso "${nomeCurso}" (${cargaFinal}h de conteúdo) foi salvo com sucesso!`
+          ? `Curso "${nomeCurso}" (${cargaFinal}h de conteúdo) e suas ${disciplinas.length} disciplinas foram ${acao}s com sucesso!`
+          : `Curso "${nomeCurso}" (${cargaFinal}h de conteúdo) foi ${acao} com sucesso!`
       );
+      setCursoEmEdicaoId(null);
       setNomeCurso('');
       setDescricao('');
       setCargaHorariaCurso('');
@@ -222,7 +264,10 @@ export function PortalProfessorasView({
 
           <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={() => setModoAba('catalogo')}
+              onClick={() => {
+                setCursoEmEdicaoId(null);
+                setModoAba('catalogo');
+              }}
               className={`px-4 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center space-x-2 ${
                 modoAba === 'catalogo'
                   ? 'bg-white text-slate-900 shadow-md'
@@ -233,9 +278,9 @@ export function PortalProfessorasView({
               <span>Grade de Cursos ({cursosFiltrados.length})</span>
             </button>
             <button
-              onClick={() => setModoAba('novo')}
+              onClick={handleIniciarNovoCurso}
               className={`px-4 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center space-x-2 ${
-                modoAba === 'novo'
+                modoAba === 'novo' && !cursoEmEdicaoId
                   ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-900/40'
                   : 'bg-amber-600/80 hover:bg-amber-500 text-white'
               }`}
@@ -254,12 +299,48 @@ export function PortalProfessorasView({
         </div>
       )}
 
-      {/* TELA A: FORMULÁRIO COMPLETO DE CRIAÇÃO (CURSO + DISCIPLINAS + CARGA HORÁRIA) */}
+      {/* TELA A: FORMULÁRIO COMPLETO DE CRIAÇÃO / EDIÇÃO */}
       {modoAba === 'novo' ? (
         <form onSubmit={handleSubmeterCurso} className="space-y-8">
           {erroMsg && (
             <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs rounded-2xl">
               {erroMsg}
+            </div>
+          )}
+
+          {cursoEmEdicaoId && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCursoEmEdicaoId(null);
+                    setModoAba('catalogo');
+                  }}
+                  className="p-2 rounded-xl border border-amber-500/30 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 transition cursor-pointer"
+                  title="Voltar à grade de cursos"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                    Modo de Edição de Matriz
+                  </div>
+                  <div className="text-sm font-black text-slate-900 dark:text-white">
+                    Editando Curso: {nomeCurso || 'Carregando...'}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCursoEmEdicaoId(null);
+                  setModoAba('catalogo');
+                }}
+                className="text-xs font-bold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white underline cursor-pointer self-end sm:self-auto"
+              >
+                Cancelar Edição
+              </button>
             </div>
           )}
 
@@ -342,7 +423,12 @@ export function PortalProfessorasView({
                     required
                     placeholder="Ex: 500"
                     value={cargaHorariaCurso}
-                    onChange={(e) => setCargaHorariaCurso(e.target.value === '' ? '' : Number(e.target.value))}
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === 'e' || e.key === '+') e.preventDefault();
+                    }}
+                    onChange={(e) =>
+                      setCargaHorariaCurso(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1))
+                    }
                     className="w-full pl-4 pr-9 py-3 bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-semibold focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-600 transition"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold font-mono text-slate-400">
@@ -439,7 +525,12 @@ export function PortalProfessorasView({
                     min={1}
                     placeholder="Ex: 40"
                     value={novaDiscCarga}
-                    onChange={(e) => setNovaDiscCarga(e.target.value === '' ? '' : Number(e.target.value))}
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === 'e' || e.key === '+') e.preventDefault();
+                    }}
+                    onChange={(e) =>
+                      setNovaDiscCarga(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1))
+                    }
                     className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
@@ -542,7 +633,10 @@ export function PortalProfessorasView({
           <div className="flex items-center justify-end space-x-4 pt-4">
             <button
               type="button"
-              onClick={() => setModoAba('catalogo')}
+              onClick={() => {
+                setCursoEmEdicaoId(null);
+                setModoAba('catalogo');
+              }}
               className="px-6 py-3 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Cancelar
@@ -553,7 +647,13 @@ export function PortalProfessorasView({
               className="px-8 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs rounded-xl shadow-lg shadow-amber-950/20 transition cursor-pointer flex items-center space-x-2"
             >
               <CheckCircle2 className="w-4 h-4 text-white" />
-              <span>{salvando ? 'Salvando Matriz Curricular...' : 'Salvar Curso & Disciplinas'}</span>
+              <span>
+                {salvando
+                  ? 'Salvando Matriz Curricular...'
+                  : cursoEmEdicaoId
+                  ? 'Salvar Alterações do Curso'
+                  : 'Salvar Curso & Disciplinas'}
+              </span>
             </button>
           </div>
         </form>
@@ -570,7 +670,7 @@ export function PortalProfessorasView({
               </p>
             </div>
             <button
-              onClick={() => setModoAba('novo')}
+              onClick={handleIniciarNovoCurso}
               className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow-xs cursor-pointer"
             >
               <PlusCircle className="w-4 h-4 text-amber-500 dark:text-amber-600" />
@@ -621,34 +721,53 @@ export function PortalProfessorasView({
                         <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">{curso.descricao}</p>
                       </div>
 
-                      <div className="flex items-center space-x-3 shrink-0">
-                        <div className="text-right">
-                          <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium">Carga Horária</div>
-                          <div className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1.5 justify-end font-mono">
-                            <Clock className="w-4 h-4 text-slate-800 dark:text-white" />
-                            <span>{curso.cargaHoraria}h</span>
+                      <div className="flex flex-col items-end justify-between gap-3 shrink-0 self-start sm:self-center">
+                        {/* Horas em cima + Botão de expandir matérias ao lado das horas */}
+                        <div className="flex items-center gap-2.5 justify-end">
+                          <div className="text-right">
+                            <span className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400 block leading-tight">
+                              Carga Horária
+                            </span>
+                            <div className="text-base font-black text-slate-900 dark:text-white flex items-center gap-1.5 justify-end font-mono leading-tight">
+                              <Clock className="w-3.5 h-3.5 text-slate-700 dark:text-zinc-300" />
+                              <span>{curso.cargaHoraria}h</span>
+                            </div>
                           </div>
+
+                          {curso.modalidade === 'FORMACAO' && (
+                            <button
+                              onClick={() => setCursoExpandidoId(isExpandido ? null : curso.id!)}
+                              className="p-1.5 border border-slate-300 dark:border-[#27272a] hover:bg-slate-100 dark:hover:bg-[#18181b] rounded-xl text-slate-700 dark:text-zinc-300 cursor-pointer transition flex items-center"
+                              title={isExpandido ? 'Recolher matérias da formação' : 'Ver matérias da formação'}
+                            >
+                              {isExpandido ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                          )}
                         </div>
 
-                        {(!isEncarregada || !curso.escolaId || permittedSchoolIds.includes(curso.escolaId)) && (
-                          <button
-                            onClick={() => onAbrirNovaTurma(curso.id!)}
-                            className="px-3.5 py-2 bg-slate-950 dark:bg-black hover:bg-slate-800 dark:hover:bg-zinc-900 text-white border border-slate-800 dark:border-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs transition cursor-pointer active:scale-95"
-                          >
-                            <Calendar className="w-3.5 h-3.5 text-white" />
-                            <span>Abrir Turma</span>
-                          </button>
-                        )}
+                        {/* Botões embaixo (Editar e Abrir Turma) */}
+                        <div className="flex items-center gap-2">
+                          {(!isEncarregada || !curso.escolaId || permittedSchoolIds.includes(curso.escolaId)) && (
+                            <button
+                              onClick={() => handleIniciarEdicao(curso)}
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5 shadow-2xs transition cursor-pointer active:scale-95"
+                              title="Editar curso e disciplinas"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                              <span>Editar</span>
+                            </button>
+                          )}
 
-                        {curso.modalidade === 'FORMACAO' && (
-                          <button
-                            onClick={() => setCursoExpandidoId(isExpandido ? null : curso.id!)}
-                            className="p-2 border border-slate-300 dark:border-[#27272a] hover:bg-slate-100 dark:hover:bg-[#18181b] rounded-xl text-slate-700 dark:text-zinc-300 cursor-pointer transition"
-                            title="Ver Disciplinas da Formação"
-                          >
-                            {isExpandido ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          </button>
-                        )}
+                          {(!isEncarregada || !curso.escolaId || permittedSchoolIds.includes(curso.escolaId)) && (
+                            <button
+                              onClick={() => onAbrirNovaTurma(curso.id!)}
+                              className="px-3.5 py-1.5 bg-slate-950 dark:bg-white hover:bg-slate-800 dark:hover:bg-zinc-200 text-white dark:text-slate-950 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs transition cursor-pointer active:scale-95"
+                            >
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>Abrir Turma</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 

@@ -148,6 +148,7 @@ public class CursoService {
             curso.setModalidade(dto.getModalidade());
         }
         curso.setDuracaoMeses(dto.getDuracaoMeses());
+        curso.setDuracaoEstimada(dto.getDuracaoEstimada() != null && !dto.getDuracaoEstimada().isBlank() ? dto.getDuracaoEstimada().trim() : null);
 
         if (dto.getAtivo() != null) {
             curso.setAtivo(dto.getAtivo());

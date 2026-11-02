@@ -376,6 +376,19 @@ public class TurmaService {
     }
 
     private void validarDatas(TurmaDTO dto) {
+        if (dto.getVagasTotais() == null || dto.getVagasTotais() <= 0) {
+            throw new BusinessException("O número de vagas totais deve ser maior que zero.");
+        }
+        if (dto.getIdadeMinima() != null && dto.getIdadeMinima() < 0) {
+            throw new BusinessException("A idade mínima não pode ser um número negativo.");
+        }
+        if (dto.getIdadeMaxima() != null && dto.getIdadeMaxima() < 0) {
+            throw new BusinessException("A idade máxima não pode ser um número negativo.");
+        }
+        if (dto.getIdadeMinima() != null && dto.getIdadeMaxima() != null && dto.getIdadeMaxima() < dto.getIdadeMinima()) {
+            throw new BusinessException("A idade máxima não pode ser inferior à idade mínima.");
+        }
+
         if (dto.getDataAberturaMatricula().isAfter(dto.getDataFechamentoMatricula())) {
             throw new BusinessException("A data de início das inscrições deve ser anterior ou igual ao fim das inscrições.");
         }
@@ -514,6 +527,22 @@ public class TurmaService {
         }
 
         TurmaMateria atualizada = turmaMateriaRepository.save(materia);
+
+        String siglaEscolaMat = (turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getSigla() : null;
+        Long idEscolaMat = (turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.ATUALIZACAO_TURMA,
+                "Disciplina",
+                String.valueOf(atualizada.getId()),
+                String.format("Disciplina '%s' atualizada na turma %s [%s]",
+                        atualizada.getNome(), turma != null ? turma.getCodigo() : "N/I", siglaEscolaMat != null ? siglaEscolaMat : "REDE"),
+                idEscolaMat,
+                siglaEscolaMat
+        );
+
         return toMateriaDTO(atualizada, turmaId);
     }
 
@@ -538,10 +567,25 @@ public class TurmaService {
             throw new BusinessException("Esta matéria já possui " + totalPresencas + " registro(s) de chamada realizada no Diário de Classe e não pode ser excluída para preservar o histórico pedagógico dos alunos.");
         }
 
+        String siglaEscolaRem = (turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getSigla() : null;
+        Long idEscolaRem = (turma != null && turma.getCurso() != null && turma.getCurso().getEscola() != null)
+                ? turma.getCurso().getEscola().getId() : null;
+
         if (turma != null && turma.getMaterias() != null) {
             turma.getMaterias().remove(materia);
         }
         turmaMateriaRepository.delete(materia);
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.ATUALIZACAO_TURMA,
+                "Disciplina",
+                String.valueOf(materiaId),
+                String.format("Disciplina '%s' removida da turma %s [%s]",
+                        materia.getNome(), turma != null ? turma.getCodigo() : "N/I", siglaEscolaRem != null ? siglaEscolaRem : "REDE"),
+                idEscolaRem,
+                siglaEscolaRem
+        );
     }
 
     public TurmaDTO toDTO(Turma turma) {

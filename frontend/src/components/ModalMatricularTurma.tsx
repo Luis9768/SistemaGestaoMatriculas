@@ -58,8 +58,8 @@ export function ModalMatricularTurma({
   const [buscandoAlunos, setBuscandoAlunos] = useState(false);
   const [alunoSelecionado, setAlunoSelecionado] = useState<Aluno | null>(null);
   const [canalOrigemExistente, setCanalOrigemExistente] = useState<
-    'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ'
-  >('PRESENCIAL');
+    'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ' | 'PLANILHA' | ''
+  >('');
   const [observacoesExistente, setObservacoesExistente] = useState('');
 
   // --- ABA 2: NOVO ALUNO ---
@@ -69,8 +69,8 @@ export function ModalMatricularTurma({
   const [telefone, setTelefone] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [canalOrigemNovo, setCanalOrigemNovo] = useState<
-    'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ'
-  >('PRESENCIAL');
+    'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ' | 'PLANILHA' | ''
+  >('');
   const [observacoesNovo, setObservacoesNovo] = useState('');
 
   // Endereço
@@ -136,12 +136,15 @@ export function ModalMatricularTurma({
     setBuscaAluno('');
     setAlunosEncontrados([]);
     setAlunoSelecionado(null);
+    setCanalOrigemExistente('');
     setObservacoesExistente('');
     setNome('');
     setCpf('');
     setEmail('');
     setTelefone('');
     setDataNascimento('');
+    setCanalOrigemNovo('');
+    setObservacoesNovo('');
     setCep('');
     setEndereco('');
     setBairro('');
@@ -182,12 +185,17 @@ export function ModalMatricularTurma({
       return;
     }
 
+    if (!canalOrigemExistente) {
+      setErro('Campo obrigatório: Selecione de onde veio a matrícula (Cultura AZ, Portal Web, Formulário, Presencial ou Planilha).');
+      return;
+    }
+
     setCarregando(true);
     try {
       await api.matricular({
         alunoId: alunoSelecionado.id,
         turmaId: turma.id!,
-        canalOrigem: canalOrigemExistente,
+        canalOrigem: canalOrigemExistente as any,
         observacoes: observacoesExistente.trim() || undefined,
       });
 
@@ -208,6 +216,11 @@ export function ModalMatricularTurma({
   const handleSubmitNovo = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
+
+    if (!canalOrigemNovo) {
+      setErro('Campo obrigatório: Selecione de onde veio a matrícula (Cultura AZ, Portal Web, Formulário, Presencial ou Planilha).');
+      return;
+    }
 
     if (!nome.trim() || !cpf.trim()) {
       setErro('Preencha os campos obrigatórios: Nome Completo e CPF.');
@@ -233,7 +246,7 @@ export function ModalMatricularTurma({
         email: email.trim(),
         telefone: telefone.trim(),
         dataNascimento: dataNascimento || undefined,
-        canalOrigem: canalOrigemNovo,
+        canalOrigem: canalOrigemNovo as any,
         observacoes: observacoesNovo.trim() || undefined,
         cep: cep.trim() || undefined,
         endereco: endereco.trim() || undefined,
@@ -385,7 +398,7 @@ export function ModalMatricularTurma({
         <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
           {/* ABA 1: MATRICULAR ALUNO EXISTENTE */}
           {abaAtiva === 'existente' && (
-            <form onSubmit={handleSubmitExistente} className="space-y-4">
+            <form id="form-matricular-existente" onSubmit={handleSubmitExistente} className="space-y-4">
               <div>
                 <label htmlFor={searchInputId} className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
                   Buscar Aluno no Sistema
@@ -465,30 +478,33 @@ export function ModalMatricularTurma({
                 </div>
               )}
 
-              {/* CANAL DE ATENDIMENTO & OBSERVAÇÕES */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              {/* CANAL DE INSCRIÇÃO & OBSERVAÇÕES */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
-                    Canal de Inscrição / Atendimento
+                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Origem / Canal da Matrícula <span className="text-rose-500">*</span>
                   </label>
                   <select
+                    required
                     value={canalOrigemExistente}
                     onChange={(e) =>
                       setCanalOrigemExistente(
-                        e.target.value as 'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ'
+                        e.target.value as any
                       )
                     }
                     className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   >
-                    <option value="PRESENCIAL">Presencial na Secretaria</option>
-                    <option value="FORMS">Formulário Oficial</option>
-                    <option value="SITE">Portal Online</option>
+                    <option value="">Selecione de onde veio a matrícula...</option>
                     <option value="CULTURA_AZ">Plataforma Cultura AZ</option>
+                    <option value="SITE">Portal Web / Site Oficial</option>
+                    <option value="FORMS">Formulários Externos</option>
+                    <option value="PRESENCIAL">Secretaria Presencial</option>
+                    <option value="PLANILHA">Importação via Planilha</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                     Observações (Opcional)
                   </label>
                   <input
@@ -500,41 +516,12 @@ export function ModalMatricularTurma({
                   />
                 </div>
               </div>
-
-              {/* BOTÃO DE CONFIRMAÇÃO */}
-              <div className="pt-4 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={carregando || !alunoSelecionado}
-                  className={`px-5 py-2.5 rounded-xl ${schoolTheme.solidBtn} disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition flex items-center gap-2 cursor-pointer active:scale-98`}
-                >
-                  {carregando ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Processando Matrícula...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Confirmar Matrícula</span>
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </>
-                  )}
-                </button>
-              </div>
             </form>
           )}
 
           {/* ABA 2: NOVO ALUNO (FICHA CADASTRAL COMPLETA) */}
           {abaAtiva === 'novo' && (
-            <form onSubmit={handleSubmitNovo} className="space-y-4">
+            <form id="form-matricular-novo" onSubmit={handleSubmitNovo} className="space-y-4">
               {/* DADOS PESSOAIS */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-stone-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
@@ -554,6 +541,42 @@ export function ModalMatricularTurma({
                       onChange={(e) => setNome(e.target.value)}
                       placeholder="Nome civil ou social do participante..."
                       className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Origem / Canal da Matrícula <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      required
+                      value={canalOrigemNovo}
+                      onChange={(e) =>
+                        setCanalOrigemNovo(
+                          e.target.value as any
+                        )
+                      }
+                      className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl text-xs text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    >
+                      <option value="">Selecione de onde veio a matrícula...</option>
+                      <option value="CULTURA_AZ">Plataforma Cultura AZ</option>
+                      <option value="SITE">Portal Web / Site Oficial</option>
+                      <option value="FORMS">Formulários Externos</option>
+                      <option value="PRESENCIAL">Secretaria Presencial</option>
+                      <option value="PLANILHA">Importação via Planilha</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Observações (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={observacoesNovo}
+                      onChange={(e) => setObservacoesNovo(e.target.value)}
+                      placeholder="Ex: Protocolo Cultura AZ, formulário..."
+                      className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl text-xs text-stone-900 dark:text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
 
@@ -763,36 +786,58 @@ export function ModalMatricularTurma({
                   </span>
                 </label>
               </div>
-
-              {/* BOTÕES DE AÇÃO */}
-              <div className="pt-4 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={carregando}
-                  className={`px-5 py-2.5 rounded-xl ${schoolTheme.solidBtn} disabled:opacity-50 text-xs font-bold transition flex items-center gap-2 cursor-pointer active:scale-98`}
-                >
-                  {carregando ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Cadastrando & Matriculando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Cadastrar & Matricular Aluno</span>
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </>
-                  )}
-                </button>
-              </div>
             </form>
+          )}
+        </div>
+
+        {/* RODAPÉ FIXO DE AÇÕES (SEMPRE ANCORADO NA BASE DO MODAL) */}
+        <div className="px-5 sm:px-6 py-4 border-t border-stone-200/80 dark:border-stone-800/80 bg-stone-50/70 dark:bg-[#161514] flex items-center justify-end gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
+          >
+            Cancelar
+          </button>
+
+          {abaAtiva === 'existente' ? (
+            <button
+              type="submit"
+              form="form-matricular-existente"
+              disabled={carregando || !alunoSelecionado}
+              className={`px-5 py-2.5 rounded-xl ${schoolTheme.solidBtn} disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition flex items-center gap-2 cursor-pointer active:scale-98`}
+            >
+              {carregando ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Processando Matrícula...</span>
+                </>
+              ) : (
+                <>
+                  <span>Confirmar Matrícula</span>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              type="submit"
+              form="form-matricular-novo"
+              disabled={carregando}
+              className={`px-5 py-2.5 rounded-xl ${schoolTheme.solidBtn} disabled:opacity-50 text-xs font-bold transition flex items-center gap-2 cursor-pointer active:scale-98`}
+            >
+              {carregando ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Cadastrando & Matriculando...</span>
+                </>
+              ) : (
+                <>
+                  <span>Cadastrar & Matricular Aluno</span>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
           )}
         </div>
       </div>

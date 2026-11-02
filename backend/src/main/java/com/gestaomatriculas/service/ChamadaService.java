@@ -78,6 +78,14 @@ public class ChamadaService {
                 ));
             }
 
+            if (turma.getDataInicioAulas() != null && dataAula.isBefore(turma.getDataInicioAulas())) {
+                throw new BusinessException(String.format(
+                        "Não é permitido realizar ou consultar chamadas antes do início das aulas (%s). As aulas desta turma iniciam apenas em %s.",
+                        dataAula.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                        turma.getDataInicioAulas().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                ));
+            }
+
             List<RegistroPresenca> existentes = registroPresencaRepository.findByMateriaIdAndDataAula(materiaId, dataAula);
             for (RegistroPresenca r : existentes) {
                 mapaPresencasExistentes.put(r.getMatricula().getId(), r);
@@ -248,6 +256,14 @@ public class ChamadaService {
                     "Não é permitido adicionar ou registrar chamada para datas futuras (%s). O diário de classe só pode ser preenchido até a data de hoje (%s) ou retroativo.",
                     dto.getDataAula().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                     hoje.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            ));
+        }
+
+        if (turma.getDataInicioAulas() != null && dto.getDataAula().isBefore(turma.getDataInicioAulas())) {
+            throw new BusinessException(String.format(
+                    "Não é permitido registrar chamada antes do início das aulas (%s). As aulas desta turma iniciam apenas em %s.",
+                    dto.getDataAula().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    turma.getDataInicioAulas().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
             ));
         }
 

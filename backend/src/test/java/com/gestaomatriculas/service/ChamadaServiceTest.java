@@ -106,4 +106,47 @@ class ChamadaServiceTest {
 
         assertTrue(ex.getMessage().contains("Não é permitido abrir chamada para datas futuras"));
     }
+
+    @Test
+    @DisplayName("Deve impedir salvar chamada com data anterior ao início das aulas da turma")
+    void deveImpedirSalvarChamadaAntesDoInicioDasAulas() {
+        LocalDate inicioAulas = LocalDate.of(2026, 11, 3);
+        LocalDate dataAntes = LocalDate.of(2026, 11, 2);
+        turma.setDataInicioAulas(inicioAulas);
+
+        when(turmaRepository.findById(1L)).thenReturn(Optional.of(turma));
+        when(turmaMateriaRepository.findById(10L)).thenReturn(Optional.of(materia));
+
+        SalvarChamadaDTO dto = SalvarChamadaDTO.builder()
+                .turmaId(1L)
+                .materiaId(10L)
+                .dataAula(dataAntes)
+                .responsavelRegistro("Prof. José")
+                .itens(List.of(
+                        ChamadaItemDTO.builder().matriculaId(100L).alunoId(200L).build()
+                ))
+                .build();
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> chamadaService.salvarChamada(dto));
+        assertTrue(ex.getMessage().contains("Não é permitido registrar chamada antes do início das aulas"));
+
+        verify(registroPresencaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve impedir abrir chamada para data anterior ao início das aulas da turma")
+    void deveImpedirAbrirChamadaAntesDoInicioDasAulas() {
+        LocalDate inicioAulas = LocalDate.of(2026, 11, 3);
+        LocalDate dataAntes = LocalDate.of(2026, 11, 2);
+        turma.setDataInicioAulas(inicioAulas);
+
+        when(turmaRepository.findById(1L)).thenReturn(Optional.of(turma));
+        when(turmaMateriaRepository.findById(10L)).thenReturn(Optional.of(materia));
+
+        BusinessException ex = assertThrows(BusinessException.class, () ->
+                chamadaService.obterAlunosParaChamada(1L, 10L, dataAntes)
+        );
+
+        assertTrue(ex.getMessage().contains("Não é permitido realizar ou consultar chamadas antes do início das aulas"));
+    }
 }

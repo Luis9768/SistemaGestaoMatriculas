@@ -58,7 +58,9 @@ export function InscricaoPublicaView({
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
-  const [canalOrigem, setCanalOrigem] = useState<'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ'>('SITE');
+  const [canalOrigem, setCanalOrigem] = useState<
+    'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ' | 'PLANILHA' | ''
+  >('');
   const [observacoes, setObservacoes] = useState('');
 
   // Endereço Residencial
@@ -97,6 +99,11 @@ export function InscricaoPublicaView({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canalOrigem) {
+      setErro('Campo obrigatório: Selecione de onde veio a matrícula (Cultura AZ, Portal Web, Formulário, Presencial ou Planilha).');
+      return;
+    }
+
     if (!aceiteLgpdGeral || !aceiteLgpdAluno) {
       setErro('É obrigatório assinalar os termos de proteção de dados (LGPD) para prosseguir.');
       return;
@@ -344,16 +351,21 @@ export function InscricaoPublicaView({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Canal de Origem</label>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Origem / Canal da Matrícula <span className="text-rose-500">*</span>
+              </label>
               <select
+                required
                 value={canalOrigem}
                 onChange={(e) => setCanalOrigem(e.target.value as any)}
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition"
               >
-                <option value="SITE">Site Oficial das Escolas Livres</option>
+                <option value="">Selecione de onde veio a matrícula...</option>
                 <option value="CULTURA_AZ">Plataforma Cultura AZ</option>
+                <option value="SITE">Portal Web / Site Oficial</option>
+                <option value="FORMS">Formulários Externos (Google Forms, etc.)</option>
                 <option value="PRESENCIAL">Secretaria Presencial</option>
-                <option value="FORMS">Formulários Externos</option>
+                <option value="PLANILHA">Importação via Planilha</option>
               </select>
             </div>
           </div>

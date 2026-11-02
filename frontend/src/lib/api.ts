@@ -818,6 +818,30 @@ export const api = {
     return res.json();
   },
 
+  async updateCurso(id: number, data: Curso): Promise<Curso> {
+    const res = await fetch(`${API_BASE}/cursos/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao atualizar curso' }));
+      throw new Error(err.message || 'Erro ao atualizar curso');
+    }
+    return res.json();
+  },
+
+  async deleteCurso(id: number): Promise<void> {
+    const res = await fetch(`${API_BASE}/cursos/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao excluir curso' }));
+      throw new Error(err.message || 'Erro ao excluir curso');
+    }
+  },
+
   async addDisciplina(cursoId: number, data: Disciplina): Promise<Disciplina> {
     const res = await fetch(`${API_BASE}/cursos/${cursoId}/disciplinas`, {
       method: 'POST',
@@ -887,6 +911,19 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Erro ao criar turma' }));
       throw new Error(err.message || 'Erro ao criar turma');
+    }
+    return res.json();
+  },
+
+  async updateTurma(id: number, data: Partial<Turma>): Promise<Turma> {
+    const res = await fetch(`${API_BASE}/turmas/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Erro ao atualizar turma' }));
+      throw new Error(err.message || 'Erro ao atualizar turma');
     }
     return res.json();
   },
@@ -1020,7 +1057,7 @@ export const api = {
   async matricular(payload: {
     alunoId: number;
     turmaId: number;
-    canalOrigem?: 'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ';
+    canalOrigem?: 'PRESENCIAL' | 'FORMS' | 'SITE' | 'CULTURA_AZ' | 'PLANILHA';
     observacoes?: string;
   }): Promise<Matricula> {
     const res = await fetch(`${API_BASE}/matriculas`, {
@@ -1402,6 +1439,7 @@ export type TipoAcaoAuditoria =
   | 'CRIACAO_MATERIA'
   | 'CADASTRO_USUARIO'
   | 'ATUALIZACAO_USUARIO'
+  | 'CADASTRO_ALUNO'
   | 'ATUALIZACAO_ALUNO'
   | 'IMPORTACAO_LOTE';
 

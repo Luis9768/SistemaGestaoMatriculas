@@ -25,6 +25,7 @@ public class ImportacaoService {
     private final MatriculaService matriculaService;
     private final TurmaRepository turmaRepository;
     private final com.gestaomatriculas.security.SecurityService securityService;
+    private final AuditoriaService auditoriaService;
 
     public ImportacaoResultadoDTO importarArquivo(MultipartFile file) {
         String filename = file.getOriginalFilename();
@@ -32,13 +33,26 @@ public class ImportacaoService {
             throw new BusinessException("Arquivo inválido.");
         }
 
+        ImportacaoResultadoDTO resultado;
         if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
-            return processarExcel(file);
+            resultado = processarExcel(file);
         } else if (filename.endsWith(".csv")) {
-            return processarCsv(file);
+            resultado = processarCsv(file);
         } else {
             throw new BusinessException("Formato não suportado. Utilize arquivos .xlsx, .xls ou .csv");
         }
+
+        auditoriaService.registrarAcao(
+                com.gestaomatriculas.model.enums.TipoAcaoAuditoria.IMPORTACAO_LOTE,
+                "Importação",
+                filename,
+                String.format("Importação em lote de '%s' finalizada (%d linhas: %d criadas, %d ignoradas, %d falhas)",
+                        filename, resultado.getTotalLinhas(), resultado.getSucesso(), resultado.getIgnoradas(), resultado.getFalhas()),
+                null,
+                null
+        );
+
+        return resultado;
     }
 
     private ImportacaoResultadoDTO processarExcel(MultipartFile file) {

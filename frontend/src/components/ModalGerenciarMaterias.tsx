@@ -15,7 +15,6 @@ import {
   Sparkles,
   Layers,
   User,
-  ShieldCheck,
   Info,
 } from 'lucide-react';
 
@@ -218,34 +217,23 @@ export function ModalGerenciarMaterias({
         </div>
 
         {/* Notificações / Alertas */}
-        <div className="px-5 pt-4 space-y-2">
-          {erro && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{erro}</span>
-            </div>
-          )}
+        {(erro || sucesso) && (
+          <div className="px-5 pt-4 space-y-2">
+            {erro && (
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{erro}</span>
+              </div>
+            )}
 
-          {sucesso && (
-            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
-              <Sparkles className="w-4 h-4 shrink-0" />
-              <span>{sucesso}</span>
-            </div>
-          )}
-
-          {/* Aviso sobre imutabilidade histórica do diário */}
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-slate-700 dark:text-slate-300 text-[11px] flex items-start gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <strong className="text-amber-800 dark:text-amber-300 font-bold block mb-0.5">
-                Alocação Docente & Auditoria Histórica
-              </strong>
-              <span>
-                O professor associado à matéria é o responsável pedagógico atual. Caso ocorra substituição, você pode editá-lo a qualquer momento. O histórico de presenças passadas manterá permanentemente gravado o nome exato de quem realizou a chamada naquele dia.
-              </span>
-            </div>
+            {sucesso && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>{sucesso}</span>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Formulário de Adicionar Nova Matéria */}
         <form

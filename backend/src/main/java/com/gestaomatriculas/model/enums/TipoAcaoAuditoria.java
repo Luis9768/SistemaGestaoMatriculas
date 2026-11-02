@@ -13,6 +13,7 @@ public enum TipoAcaoAuditoria {
     CRIACAO_MATERIA("Criação de Disciplina"),
     CADASTRO_USUARIO("Cadastro de Usuário"),
     ATUALIZACAO_USUARIO("Atualização de Usuário"),
+    CADASTRO_ALUNO("Cadastro de Aluno"),
     ATUALIZACAO_ALUNO("Atualização de Aluno"),
     IMPORTACAO_LOTE("Importação em Lote");
 
