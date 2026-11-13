@@ -36,7 +36,7 @@ const PRESET_GRADIENTS: Record<GradientPreset, { bg: string; glow: string }> = {
 
 export function GradientHoverButton({
   loading = false,
-  loadingText = 'Carregando...',
+  loadingText = 'Carregando…',
   preset = 'aurora',
   direction = 'right-to-left',
   children,
@@ -55,7 +55,7 @@ export function GradientHoverButton({
       {/* 1. Efeito Aura / Glow Difuso Externo */}
       {!isDisabled && (
         <div
-          className={`absolute -inset-0.5 rounded-xl bg-gradient-to-r ${gradient.glow} opacity-0 group-hover:opacity-75 blur-md transition-opacity duration-500 pointer-events-none`}
+          className={`absolute -inset-0.5 rounded-xl bg-gradient-to-r ${gradient.glow} opacity-0 group-hover:opacity-75 blur-md transition-opacity duration-300 pointer-events-none motion-reduce:hidden`}
           aria-hidden="true"
         />
       )}
@@ -63,13 +63,13 @@ export function GradientHoverButton({
       {/* 2. Botão Principal com Base Preta Sólida */}
       <button
         disabled={isDisabled}
-        className={`relative w-full py-3 rounded-xl font-bold text-xs sm:text-sm text-white shadow-xs transition-all duration-300 active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2 overflow-hidden bg-[#18181B] disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+        className={`relative w-full min-h-[44px] sm:min-h-[48px] py-3 rounded-xl font-bold text-xs sm:text-sm text-white shadow-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#18181B] focus-visible:ring-offset-2 active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2 overflow-hidden bg-[#18181B] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation ${className}`}
         {...props}
       >
         {/* 3. Camada do Degradê que Desliza Suavemente da Direita para a Esquerda */}
         {!isDisabled && (
           <div
-            className={`absolute -inset-1 w-[calc(100%+8px)] h-[calc(100%+8px)] bg-gradient-to-r ${gradient.bg} ${initialTranslate} group-hover:translate-x-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none`}
+            className={`absolute -inset-1 w-[calc(100%+8px)] h-[calc(100%+8px)] bg-gradient-to-r ${gradient.bg} ${initialTranslate} group-hover:translate-x-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none motion-reduce:hidden`}
             aria-hidden="true"
           />
         )}
@@ -78,7 +78,7 @@ export function GradientHoverButton({
         <div className="relative z-10 flex items-center justify-center space-x-2 pointer-events-none">
           {loading ? (
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin motion-reduce:animate-pulse" />
               <span>{loadingText}</span>
             </div>
           ) : (
