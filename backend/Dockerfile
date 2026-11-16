@@ -15,6 +15,9 @@ RUN ./mvnw clean package -DskipTests -B
 FROM eclipse-temurin:21-jre-alpine AS runner
 WORKDIR /app
 
+# Instala curl para HealthCheck confiável (evita erros de flags GNU no BusyBox wget)
+RUN apk add --no-cache curl
+
 # Criação de usuário seguro não-root (UID/GID 1001)
 RUN addgroup -g 1001 -S spring && adduser -u 1001 -S spring -G spring
 USER spring:spring
@@ -28,8 +31,8 @@ ENV SERVER_PORT=8080
 
 EXPOSE 8080
 
-# Monitoramento de Saúde Nativo para Easypanel / Traefik / Docker
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
+# Monitoramento de Saúde Nativo para Easypanel / Traefik / Docker Swarm
+HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=5 \
+  CMD curl -fsS http://127.0.0.1:${SERVER_PORT:-8080}/api/health > /dev/null || exit 1
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

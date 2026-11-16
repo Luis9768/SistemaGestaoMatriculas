@@ -42,8 +42,8 @@ USER nextjs
 
 EXPOSE 3000
 
-# Healthcheck nativo para Easypanel / Traefik / Docker
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+# Healthcheck nativo em Node 20 (sem dependência de BusyBox wget / IPv6 localhost)
+HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=5 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/').then(r => process.exit(r.status < 500 ? 0 : 1)).catch(() => process.exit(1))"]
 
 CMD ["node", "server.js"]
