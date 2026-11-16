@@ -5,3 +5,6 @@ out
 .idea
 .vscode
 *.log
+.env*.local
+coverage
+.DS_Store

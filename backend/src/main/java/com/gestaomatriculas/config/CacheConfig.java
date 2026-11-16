@@ -127,6 +127,7 @@ public class CacheConfig implements CachingConfigurer {
      * RedisTemplate genérico com serialização JSON para operações avançadas se necessário.
      */
     @Bean
+    @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);

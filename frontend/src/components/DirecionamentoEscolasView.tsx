@@ -169,48 +169,44 @@ export function DirecionamentoEscolasView({
   const primeiroNome = usuarioLogado?.nome ? usuarioLogado.nome.trim().split(/\s+/)[0] : 'Coordenação';
 
   return (
-    <div className="direcionamento-original-scale min-h-screen bg-[#F1F5F9] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 flex flex-col font-sans transition-colors duration-200 relative overflow-hidden">
+    <div className="direcionamento-original-scale min-h-screen md:h-screen md:max-h-screen bg-[#F1F5F9] dark:bg-[#000000] text-slate-900 dark:text-zinc-100 flex flex-col justify-between font-sans transition-colors duration-200 relative overflow-x-hidden overflow-y-auto md:overflow-hidden">
       {/* Top Header Institucional Integrado */}
       <GraffitiBannerHeader onLogout={onLogout} />
 
-      {/* Conteúdo Principal (Ocupa a Altura Útil) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col justify-between relative z-10">
-        {/* ─── CABEÇALHO EDITORIAL ─── */}
-        <section className="mb-8 sm:mb-12">
-          <div className="pb-6 border-b border-slate-200/90 dark:border-slate-800/90">
+      {/* Conteúdo Principal (Ajustado dinamicamente para caber 100% na tela de qualquer laptop sem rolagem) */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 lg:px-6 py-1.5 sm:py-2 lg:py-2.5 flex flex-col justify-between min-h-0 relative z-10">
+        {/* ─── CABEÇALHO EDITORIAL COMPACTO ─── */}
+        <section className="mb-1 sm:mb-1.5 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between pb-1 sm:pb-1.5 border-b border-slate-200/90 dark:border-slate-800/90 gap-1 sm:gap-3">
             <div>
               <motion.h1
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
-                className="font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-none text-slate-900 dark:text-white"
+                transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
+                className="font-sans text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-black tracking-tight leading-tight text-slate-900 dark:text-white"
               >
                 Rede de Escolas Livres
               </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] }}
-                className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mt-3 font-medium"
-              >
-                Olá, <span className="text-slate-900 dark:text-white font-semibold">{primeiroNome}</span>. Por onde começamos?
-              </motion.p>
             </div>
+            <motion.p
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.05, ease: [0.2, 0.8, 0.2, 1] }}
+              className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium"
+            >
+              Olá, <span className="text-slate-900 dark:text-white font-semibold">{primeiroNome}</span>. Por onde começamos?
+            </motion.p>
           </div>
         </section>
 
-        {/* ─── CORTINAS TEATRAIS: OS 4 PAINÉIS EXPANSÍVEIS (FLEX ACCORDION) ─── */}
+        {/* ─── OS 4 PAINÉIS DE TAMANHO PADRONIZADO E RESPONSIVO (GRID 4 COLUNAS EM TABLETS E DESKTOPS) ─── */}
         <section
           aria-label="Unidades das Escolas Livres"
-          className="flex flex-col lg:flex-row gap-3.5 sm:gap-4 flex-1 min-h-[540px] sm:min-h-[580px] w-full"
-          onMouseLeave={() => setHoveredSigla(null)}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 xl:gap-4 w-full flex-1 min-h-0 items-stretch"
         >
           {escolasRender.map((escola, index) => {
             const siglaUpper = escola.sigla.toUpperCase();
             const config = THEATRICAL_CONFIG[siglaUpper] || THEATRICAL_CONFIG.ELT;
-
-            const isExpanded = hoveredSigla === siglaUpper;
-            const hasAnyHover = hoveredSigla !== null;
 
             const cursosCount = cursos.filter(
               (c) => c.escolaId === escola.id || c.escolaSigla?.toUpperCase() === siglaUpper
@@ -226,58 +222,50 @@ export function DirecionamentoEscolasView({
             return (
               <motion.article
                 key={escola.id}
-                initial={{ opacity: 0, y: 35 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
-                  duration: 0.55,
-                  delay: 0.15 + index * 0.08,
+                  duration: 0.35,
+                  delay: 0.06 + index * 0.04,
                   ease: [0.2, 0.8, 0.2, 1],
                 }}
-                onMouseEnter={() => setHoveredSigla(siglaUpper)}
-                onFocus={() => setHoveredSigla(siglaUpper)}
                 onClick={() => isPermitido && onSelecionarEscola(escola.id)}
                 tabIndex={isPermitido ? 0 : -1}
                 aria-label={`Unidade ${config.nome}`}
-                className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between overflow-hidden border transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] select-none ${
+                className={`group relative rounded-2xl lg:rounded-3xl p-3 sm:p-3.5 xl:p-4.5 flex flex-col justify-between overflow-hidden border transition-all duration-300 ease-out select-none h-full ${
                   config.panelClass
                 } ${config.borderClass} ${
-                  isExpanded
-                    ? 'lg:flex-[2.8] shadow-2xl'
-                    : hasAnyHover
-                    ? 'lg:flex-[0.8] opacity-80'
-                    : 'lg:flex-[1] shadow-xs'
-                } ${
                   isPermitido
-                    ? 'cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-current outline-none'
+                    ? 'cursor-pointer hover:-translate-y-1 hover:shadow-2xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-current outline-none'
                     : 'opacity-50 saturate-50 cursor-not-allowed'
                 }`}
               >
-                {/* ─── SIGLA GIGANTE EM OUTLINE RECORTE EDITORIAL ─── */}
+                {/* ─── SIGLA GIGANTE EM MARCA D'ÁGUA DE FUNDO ─── */}
                 <span
                   aria-hidden="true"
-                  className={`absolute -right-3 sm:-right-4 -bottom-6 sm:-bottom-8 font-sans text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter leading-none pointer-events-none select-none transition-transform duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+                  className={`absolute -right-2 sm:-right-3 -bottom-4 sm:-bottom-5 font-sans text-6xl sm:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tighter leading-none pointer-events-none select-none transition-transform duration-500 ease-out ${
                     config.monogramColor
-                  } ${isExpanded ? 'translate-x-0 scale-105' : 'translate-x-3 scale-95'}`}
+                  } group-hover:scale-105 group-hover:opacity-30`}
                 >
                   {config.sigla}
                 </span>
 
                 {/* ─── TOPO DO PAINEL: SIGLA, STATUS E TÍTULO ─── */}
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <span className="font-sans text-2xl sm:text-3xl font-black tracking-tight">
+                <div className="relative z-10 flex flex-col">
+                  <div className="flex items-center justify-between gap-2 mb-0.5 sm:mb-1">
+                    <span className="font-sans text-lg sm:text-xl font-black tracking-tight">
                       {config.sigla}
                     </span>
 
                     {isEncarregada && (
                       <div>
                         {isPermitido ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             <CheckCircle2 className="w-2.5 h-2.5" />
                             Autorizada
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-white/70 border border-white/15">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-white/70 border border-white/15">
                             <Lock className="w-2.5 h-2.5" />
                             Restrito
                           </span>
@@ -286,56 +274,47 @@ export function DirecionamentoEscolasView({
                     )}
                   </div>
 
-                  <h2 className="font-sans text-xl sm:text-2xl font-black tracking-tight leading-snug">
+                  <h2 className="font-sans text-sm sm:text-base xl:text-lg font-black tracking-tight leading-snug line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] flex items-center">
                     {config.nome}
                   </h2>
-                  <p className="text-xs font-semibold tracking-wide opacity-75 mt-0.5">
+                  <p className="text-[11px] sm:text-xs font-semibold tracking-wide opacity-80 mt-0.5 line-clamp-1">
                     {config.subtitulo}
                   </p>
 
-                  {/* Descrição Completa (Revelada suavemente quando expandido no desktop ou no mobile) */}
-                  <div
-                    className={`mt-4 text-xs sm:text-sm leading-relaxed opacity-90 transition-all duration-500 ${
-                      isExpanded
-                        ? 'max-h-48 opacity-100'
-                        : 'lg:max-h-0 lg:opacity-0 lg:overflow-hidden'
-                    }`}
-                  >
-                    <p>{config.descricao}</p>
+                  {/* Descrição legível e calibrada para as encarregadas */}
+                  <p className="mt-1 sm:mt-1.5 text-xs sm:text-[13px] leading-relaxed opacity-90 line-clamp-2 sm:line-clamp-3">
+                    {config.descricao}
+                  </p>
 
-                    <div className="flex items-center gap-1.5 text-xs opacity-80 mt-3 pt-3 border-t border-current/15">
-                      <MapPin className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{config.sede}</span>
-                    </div>
+                  {/* Sede com ícone */}
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-xs opacity-80 mt-1 sm:mt-1.5 pt-1 sm:pt-1.5 border-t border-current/15">
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{config.sede}</span>
                   </div>
                 </div>
 
                 {/* ─── BASE DO PAINEL: NÚMEROS COM HIERARQUIA & CTA ─── */}
-                <div className="relative z-10 pt-6 mt-auto">
-                  {/* Destaque Principal: VAGAS GIGANTES */}
-                  <div className="mb-4">
-                    <div className="flex items-baseline gap-2">
+                <div className="relative z-10 pt-1.5 sm:pt-2 mt-auto">
+                  {/* Destaque Principal: VAGAS + TURMAS EM LINHA COMPACTA */}
+                  <div className="flex items-baseline justify-between gap-1 mb-1.5 sm:mb-2">
+                    <div className="flex items-baseline gap-1.5 shrink-0">
                       <span
-                        className={`font-mono text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-none ${config.vagasColor}`}
+                        className={`font-mono text-xl sm:text-2xl font-black tracking-tight leading-none ${config.vagasColor}`}
                       >
                         {vagasCount}
                       </span>
-                      <span className="text-xs sm:text-sm font-semibold opacity-80">
-                        vagas ofertadas
+                      <span className="text-xs sm:text-sm font-semibold opacity-85">
+                        vagas
                       </span>
                     </div>
 
-                    <div className="text-xs font-mono opacity-70 mt-1">
-                      {turmasCount} {turmasCount === 1 ? 'turma' : 'turmas'} <span className="opacity-40">·</span> {cursosCount} {cursosCount === 1 ? 'curso ativo' : 'cursos ativos'}
+                    <div className="text-[10px] sm:text-xs font-mono opacity-75 text-right whitespace-nowrap">
+                      {turmasCount} {turmasCount === 1 ? 'turma' : 'turmas'} · {cursosCount} {cursosCount === 1 ? 'curso' : 'cursos'}
                     </div>
                   </div>
 
                   {/* Botão de Entrada Tátil */}
-                  <div
-                    className={`transition-all duration-300 ${
-                      isExpanded ? 'opacity-100 translate-y-0' : 'lg:opacity-90'
-                    }`}
-                  >
+                  <div>
                     <button
                       type="button"
                       disabled={!isPermitido}
@@ -343,12 +322,12 @@ export function DirecionamentoEscolasView({
                         e.stopPropagation();
                         if (isPermitido) onSelecionarEscola(escola.id);
                       }}
-                      className={`w-full py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 flex items-center justify-between shadow-sm active:scale-98 cursor-pointer ${
+                      className={`w-full py-2 sm:py-2.5 px-2.5 sm:px-3 xl:px-3.5 rounded-xl text-xs xl:text-sm font-bold transition-all duration-200 flex items-center justify-between shadow-xs active:scale-98 cursor-pointer ${
                         config.btnClass
                       }`}
                     >
-                      <span>Entrar no Palco {config.sigla}</span>
-                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1.5" />
+                      <span className="truncate">Entrar no Palco {config.sigla}</span>
+                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-transform duration-200 group-hover:translate-x-1" />
                     </button>
                   </div>
                 </div>
@@ -358,27 +337,27 @@ export function DirecionamentoEscolasView({
         </section>
 
         {/* ─── RODAPÉ INSTITUCIONAL DISCRETO ─── */}
-        <footer className="mt-8 pt-6 border-t border-slate-200/90 dark:border-slate-800/90 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-3">
+        <footer className="mt-1 sm:mt-1.5 pt-1 sm:pt-1.5 border-t border-slate-200/90 dark:border-slate-800/90 flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 shrink-0">
+          <div className="flex items-center gap-2">
             <Image
               src="/logo_santo_andre.png"
               alt="Brasão Oficial do Município de Santo André"
-              width={32}
-              height={44}
-              className="h-8 w-auto object-contain drop-shadow-xs dark:brightness-110"
+              width={20}
+              height={28}
+              className="h-5 sm:h-5.5 w-auto object-contain drop-shadow-xs dark:brightness-110"
             />
-            <span>
+            <span className="text-[10px] sm:text-xs">
               Prefeitura de Santo André • Secretaria de Cultura • SIGMA
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5 text-[10px] sm:text-xs">
             <button
               onClick={() => setModalLgpdAberto(true)}
               type="button"
               className="hover:underline cursor-pointer flex items-center gap-1"
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
+              <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>Privacidade & LGPD</span>
             </button>
             <span className="opacity-40">·</span>
@@ -394,5 +373,4 @@ export function DirecionamentoEscolasView({
         abaInicial="geral"
       />
     </div>
-  );
-}
+  );}

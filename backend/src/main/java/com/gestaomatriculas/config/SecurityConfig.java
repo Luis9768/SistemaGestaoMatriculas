@@ -30,6 +30,9 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
+    private String allowedOriginsConfig;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -43,7 +46,22 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000"));
+        
+        // Suporte a múltiplas origens ou wildcard no Easypanel/Nuvem
+        if (allowedOriginsConfig != null && !allowedOriginsConfig.trim().isEmpty()) {
+            if ("*".equals(allowedOriginsConfig.trim())) {
+                config.setAllowedOriginPatterns(List.of("*"));
+            } else {
+                List<String> origins = java.util.Arrays.stream(allowedOriginsConfig.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList();
+                config.setAllowedOriginPatterns(origins);
+            }
+        } else {
+            config.setAllowedOriginPatterns(List.of("*"));
+        }
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -60,7 +78,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Endpoints Públicos Estritos (Apenas autenticação institucional e endpoint público de inscrição externa)
+                        // 1. Endpoints Públicos Estritos (Autenticação, Health check para nuvem/Docker e inscrição pública)
+                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/matriculas/inscrever").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/importacao/modelo-csv").permitAll()

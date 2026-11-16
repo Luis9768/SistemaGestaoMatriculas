@@ -18,6 +18,8 @@ public class DataInitializer implements CommandLineRunner {
 
     private final EscolaRepository escolaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final com.gestaomatriculas.repository.MatriculaRepository matriculaRepository;
+    private final com.gestaomatriculas.service.MatriculaSeederService matriculaSeederService;
     private final PasswordEncoder passwordEncoder;
     private final org.springframework.cache.CacheManager cacheManager;
 
@@ -83,7 +85,13 @@ public class DataInitializer implements CommandLineRunner {
             log.info("[SEGURANÇA] Usuário administrador luis@email.com inicializado com sucesso.");
         }
 
-        // 3. Limpa todos os caches
+        // 3. Inicializa cenários de matrículas se o banco estiver vazio
+        if (matriculaRepository.count() == 0) {
+            log.info("[DATA INITIALIZER] Nenhuma matrícula encontrada. Semeando cenários contextuais...");
+            matriculaSeederService.resetAndSeed();
+        }
+
+        // 4. Limpa todos os caches
         try {
             if (cacheManager != null) {
                 cacheManager.getCacheNames().forEach(name -> {

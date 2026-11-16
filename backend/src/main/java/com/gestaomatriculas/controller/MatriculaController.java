@@ -19,6 +19,13 @@ import java.util.List;
 public class MatriculaController {
 
     private final MatriculaService matriculaService;
+    private final com.gestaomatriculas.service.MatriculaSeederService matriculaSeederService;
+
+    @PostMapping("/reset-seed")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<java.util.Map<String, Object>> resetSeed() {
+        return ResponseEntity.ok(matriculaSeederService.resetAndSeed());
+    }
 
     @GetMapping
     public ResponseEntity<List<MatriculaDTO>> listar(
