@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  FileSpreadsheet,
+  Download,
 } from 'lucide-react';
 import { Matricula, Escola } from '@/lib/api';
 import { getSchoolThemeColors } from '@/lib/escolaUtils';
@@ -179,6 +181,60 @@ export function MatriculasView({
     }
   };
 
+  const handleExportarExcel = (apenasAtivos = true) => {
+    const baseLista = apenasAtivos
+      ? matriculasFiltradas.filter((m) => m.status === 'CONFIRMADA')
+      : matriculasFiltradas;
+
+    const headers = [
+      'Codigo de Matricula',
+      'Nome do Aluno',
+      'Curso Matriculado',
+      'Codigo da Turma',
+      'Escola Sigla',
+      'Escola Nome',
+      'CPF',
+      'E-mail',
+      'Telefone',
+      'Data da Matricula',
+      'Origem da Matricula',
+      'Situacao / Status',
+    ];
+
+    const rows = baseLista.map((m) => {
+      const codMatricula = `MAT-${String(m.id).padStart(5, '0')}`;
+      let situacao = 'Confirmada (Ativa)';
+      if (m.status === 'CANCELADA') situacao = 'Cancelada';
+      else if (m.status === 'DESISTENTE_FALTAS') situacao = 'Desistente (Faltas)';
+      else if (m.status === 'CONCLUIDA') situacao = 'Concluída';
+
+      return [
+        `"${codMatricula}"`,
+        `"${m.alunoNome || ''}"`,
+        `"${m.cursoNome || ''}"`,
+        `"${m.turmaCodigo || ''}"`,
+        `"${m.escolaSigla || ''}"`,
+        `"${m.escolaNome || ''}"`,
+        `"${m.alunoCpf ? formatarCpfCompleto(m.alunoCpf) : ''}"`,
+        `"${m.alunoEmail || ''}"`,
+        `"${m.alunoTelefone || ''}"`,
+        `"${m.dataMatricula ? new Date(m.dataMatricula).toLocaleDateString('pt-BR') : ''}"`,
+        `"${m.canalOrigem || 'PRESENCIAL'}"`,
+        `"${situacao}"`,
+      ];
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const sufixo = apenasAtivos ? 'matriculados-ativos' : 'matriculas-com-evasoes';
+    a.download = `relatorio-${sufixo}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Cabeçalho da Seção */}
@@ -189,13 +245,35 @@ export function MatriculasView({
           </h2>
         </div>
 
-        <button
-          onClick={onNovaMatricula}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 ${schoolTheme.solidBtn} rounded-xl text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer self-start sm:self-auto active:scale-98`}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nova Matrícula</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleExportarExcel(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer"
+            title="Exportar alunos com matrícula confirmada ativa em formato Excel/CSV"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Exportar Excel (Ativos)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleExportarExcel(false)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1f1f23] dark:hover:bg-[#27272a] text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-[#27272a] rounded-xl text-xs font-semibold transition-all cursor-pointer"
+            title="Exportar todas as matrículas incluindo evasões e desistentes"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Com Evasões</span>
+          </button>
+
+          <button
+            onClick={onNovaMatricula}
+            className={`inline-flex items-center gap-2 px-4 py-2 ${schoolTheme.solidBtn} rounded-xl text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer active:scale-98`}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Matrícula</span>
+          </button>
+        </div>
       </div>
 
       {/* Barra de Filtros e Busca */}
@@ -391,6 +469,9 @@ export function MatriculasView({
                               Menor
                             </span>
                           )}
+                        </div>
+                        <div className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5 tracking-tight font-medium">
+                          MAT-{String(m.id).padStart(5, '0')}
                         </div>
                       </td>
 

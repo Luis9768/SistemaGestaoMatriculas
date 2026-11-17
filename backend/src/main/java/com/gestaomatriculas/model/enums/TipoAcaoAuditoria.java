@@ -11,6 +11,8 @@ public enum TipoAcaoAuditoria {
     CRIACAO_TURMA("Criação de Turma"),
     ATUALIZACAO_TURMA("Edição de Turma"),
     CRIACAO_MATERIA("Criação de Disciplina"),
+    CRIACAO_CURSO("Criação de Curso"),
+    ATUALIZACAO_CURSO("Edição de Curso"),
     CADASTRO_USUARIO("Cadastro de Usuário"),
     ATUALIZACAO_USUARIO("Atualização de Usuário"),
     CADASTRO_ALUNO("Cadastro de Aluno"),

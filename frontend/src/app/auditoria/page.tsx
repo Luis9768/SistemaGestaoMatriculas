@@ -34,6 +34,7 @@ import {
   AlertCircle,
   Tag,
   ArrowRight,
+  BookOpen,
 } from 'lucide-react';
 
 const TIPOS_ACAO_CONFIG: Record<
@@ -89,6 +90,16 @@ const TIPOS_ACAO_CONFIG: Record<
     label: 'Criação de Disciplina',
     corBadge: 'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300 border-fuchsia-500/30',
     icon: Tag,
+  },
+  CRIACAO_CURSO: {
+    label: 'Criação de Curso',
+    corBadge: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30',
+    icon: BookOpen,
+  },
+  ATUALIZACAO_CURSO: {
+    label: 'Edição de Curso',
+    corBadge: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
+    icon: BookOpen,
   },
   CADASTRO_USUARIO: {
     label: 'Cadastro de Usuário',
@@ -398,12 +409,6 @@ export default function AuditoriaPage() {
                             </span>
                           )}
 
-                          {log.entidade && (
-                            <span className="text-[10px] text-stone-400 dark:text-slate-400 font-mono">
-                              [{log.entidade}
-                              {log.entidadeId ? ` #${log.entidadeId}` : ''}]
-                            </span>
-                          )}
                         </div>
 
                         <p className="text-xs text-stone-800 dark:text-slate-200 leading-relaxed break-words font-medium">
@@ -411,30 +416,14 @@ export default function AuditoriaPage() {
                         </p>
 
                         {/* Identificação do Usuário Executor */}
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-stone-500 dark:text-slate-400 pt-0.5">
-                          <span className="inline-flex items-center gap-1 font-semibold text-stone-700 dark:text-slate-300">
-                            <User className="w-3 h-3 text-stone-400 dark:text-slate-500" />
-                            <span>{log.usuarioNome}</span>
-                          </span>
-
-                          {log.usuarioRole && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-slate-400 border border-stone-200 dark:border-white/10">
-                              {log.usuarioRole === 'ROLE_ADMIN'
-                                ? 'Admin'
-                                : log.usuarioRole === 'ROLE_ENCARREGADA'
-                                ? 'Encarregada'
-                                : log.usuarioRole === 'ROLE_PROFESSOR'
-                                ? 'Professor'
-                                : log.usuarioRole}
+                        {(log.usuarioEmail || log.usuarioNome) && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-stone-500 dark:text-slate-400 pt-0.5">
+                            <User className="w-3 h-3 text-stone-400 dark:text-slate-500 shrink-0" />
+                            <span className="font-medium text-stone-600 dark:text-slate-300">
+                              {log.usuarioEmail || log.usuarioNome}
                             </span>
-                          )}
-
-                          {log.usuarioEmail && (
-                            <span className="text-stone-400 dark:text-slate-400 hidden sm:inline">
-                              ({log.usuarioEmail})
-                            </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

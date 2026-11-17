@@ -25,6 +25,9 @@ public class RelatorioPrefeituraDTO {
     @Builder.Default
     private List<AlunoAtivoPrefeituraDTO> alunosAtivos = new ArrayList<>();
 
+    @Builder.Default
+    private List<AlunoAtivoPrefeituraDTO> alunosEvasoes = new ArrayList<>();
+
     @Getter
     @Setter
     @NoArgsConstructor
@@ -51,9 +54,12 @@ public class RelatorioPrefeituraDTO {
     @Builder
     public static class AlunoAtivoPrefeituraDTO {
         private Long matriculaId;
+        private String codigoMatricula;
         private Long alunoId;
         private String alunoNome;
         private String alunoCpf;
+        private String alunoEmail;
+        private String alunoTelefone;
         private Long escolaId;
         private String escolaSigla;
         private String escolaNome;
@@ -61,5 +67,8 @@ public class RelatorioPrefeituraDTO {
         private String modalidade;
         private String turmaCodigo;
         private String dataMatricula;
+        private String canalOrigem;
+        private String statusMatricula;
+        private String statusDescricao;
     }
 }

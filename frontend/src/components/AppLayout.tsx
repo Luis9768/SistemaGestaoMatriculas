@@ -12,6 +12,7 @@ import {
   BookOpen,
   Search,
   FileSpreadsheet,
+  FileBarChart,
   ShieldCheck,
   History,
   ArrowLeft,
@@ -77,6 +78,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/usuarios', label: 'Equipe da Secretaria', icon: ShieldCheck, adminOnly: true },
       { href: '/auditoria', label: 'Histórico & Auditoria', icon: History, adminOnly: true },
       { href: '/importacao', label: 'Importação em Lote', icon: FileSpreadsheet },
+      { href: '/relatorios', label: 'Relatórios de Alunos', icon: FileBarChart },
     ],
   },
 ];
@@ -336,6 +338,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         return 'Equipe da Secretaria';
       case '/importacao':
         return 'Importação em Lote';
+      case '/relatorios':
+        return 'Relatórios de Alunos';
       default:
         return 'Visão Geral';
     }

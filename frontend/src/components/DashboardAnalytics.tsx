@@ -10,7 +10,6 @@ import {
   Turma,
   formatarCpfMascara,
   LoginResponse,
-  RelatorioPrefeituraData,
 } from '@/lib/api';
 import { getSchoolThemeColors } from '@/lib/escolaUtils';
 import { useApp } from '@/context/AppContext';
@@ -203,14 +202,8 @@ export function DashboardAnalytics({
   const activeSchoolTheme = getSchoolThemeColors(escolaAtualObj?.sigla);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [relatorioPrefeitura, setRelatorioPrefeitura] = useState<RelatorioPrefeituraData | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-
-  // Controles do Relatório da Prefeitura
-  const [mostrarListaNominalPrefeitura, setMostrarListaNominalPrefeitura] = useState(false);
-  const [filtroModalidadePrefeitura, setFiltroModalidadePrefeitura] = useState<'TODAS' | 'FORMACAO' | 'NUCLEO' | 'OFICINA'>('TODAS');
-  const [buscaAlunoPrefeitura, setBuscaAlunoPrefeitura] = useState('');
 
   // Tabs de análise: cursos | status | frequencia
   const [abaAnalise, setAbaAnalise] = useState<'cursos' | 'status' | 'turma'>('cursos');
@@ -229,14 +222,8 @@ export function DashboardAnalytics({
     setLoadingStats(true);
     setErro(null);
     try {
-      const [data, relPref] = await Promise.all([
-        api.getDashboardStats(escolaId || undefined),
-        api.getRelatorioPrefeitura(escolaId || undefined).catch(() => null),
-      ]);
+      const data = await api.getDashboardStats(escolaId || undefined);
       setStats(data);
-      if (relPref) {
-        setRelatorioPrefeitura(relPref);
-      }
     } catch (err: any) {
       setErro(err.message || 'Erro ao carregar dados analíticos');
     } finally {
@@ -272,102 +259,7 @@ export function DashboardAnalytics({
     carregarDashboardTurma(idTurma);
   };
 
-  // Alunos ativos filtrados no Relatório da Prefeitura
-  const alunosPrefeituraFiltrados = useMemo(() => {
-    if (!relatorioPrefeitura?.alunosAtivos) return [];
-    return relatorioPrefeitura.alunosAtivos.filter((a) => {
-      if (filtroModalidadePrefeitura !== 'TODAS' && a.modalidade !== filtroModalidadePrefeitura) {
-        return false;
-      }
-      if (buscaAlunoPrefeitura.trim()) {
-        const q = buscaAlunoPrefeitura.toLowerCase();
-        const matchNome = a.alunoNome.toLowerCase().includes(q);
-        const matchCurso = a.cursoNome.toLowerCase().includes(q);
-        const matchTurma = a.turmaCodigo.toLowerCase().includes(q);
-        const matchEscola = a.escolaSigla.toLowerCase().includes(q);
-        if (!matchNome && !matchCurso && !matchTurma && !matchEscola) return false;
-      }
-      return true;
-    });
-  }, [relatorioPrefeitura, filtroModalidadePrefeitura, buscaAlunoPrefeitura]);
 
-  // Exportar CSV do Quadro Numérico por Escola (Prefeitura)
-  const handleExportarTabelaPrefeituraCSV = () => {
-    if (!relatorioPrefeitura) return;
-    const headers = [
-      'Sigla',
-      'Escola Livre',
-      'Matriculados em Formacao (Ativos)',
-      'Matriculados em Nucleo (Ativos)',
-      'Matriculados em Oficina (Ativos)',
-      'Total Matriculados Ativos (Sem Formandos)',
-      'Total Desistencias',
-      'Taxa de Desistencia (%)',
-    ];
-    const rows = relatorioPrefeitura.escolas.map((e) => [
-      e.escolaSigla,
-      `"${e.escolaNome}"`,
-      e.matriculadosFormacao,
-      e.matriculadosNucleo,
-      e.matriculadosOficina,
-      e.totalMatriculadosAtivos,
-      e.totalDesistencias,
-      `${e.taxaDesistencia}%`,
-    ]);
-    rows.push([
-      'TOTAL GERAL',
-      '"CONSOLIDADO"',
-      relatorioPrefeitura.totalRedeFormacao,
-      relatorioPrefeitura.totalRedeNucleo,
-      relatorioPrefeitura.totalRedeOficina,
-      relatorioPrefeitura.totalRedeMatriculadosAtivos,
-      relatorioPrefeitura.totalRedeDesistencias,
-      `${relatorioPrefeitura.taxaRedeDesistencia}%`,
-    ]);
-
-    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `relatorio-prefeitura-escolas-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Exportar CSV da Relação Nominal de Alunos Ativos (Sem Formandos)
-  const handleExportarNominalPrefeituraCSV = () => {
-    if (!relatorioPrefeitura) return;
-    const headers = [
-      'Escola Sigla',
-      'Escola Nome',
-      'Modalidade',
-      'Curso',
-      'Codigo da Turma',
-      'Nome do Aluno (Matriculado Ativo)',
-      'CPF',
-      'Data da Matricula',
-    ];
-    const rows = alunosPrefeituraFiltrados.map((a) => [
-      a.escolaSigla,
-      `"${a.escolaNome}"`,
-      a.modalidade === 'FORMACAO' ? 'Formação' : a.modalidade === 'NUCLEO' ? 'Núcleo' : 'Oficina',
-      `"${a.cursoNome}"`,
-      a.turmaCodigo,
-      `"${a.alunoNome}"`,
-      formatarCpfMascara(a.alunoCpf),
-      a.dataMatricula || '-',
-    ]);
-
-    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `relatorio-prefeitura-alunos-ativos-sem-formandos-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   // Alunos filtrados dentro da turma em foco
   const alunosFiltrados = useMemo(() => {
@@ -1199,256 +1091,6 @@ export function DashboardAnalytics({
           </div>
         </div>
       </div>
-
-      {/* ─── 4. RELATÓRIO PARA A PREFEITURA (QUADRO NUMÉRICO NO FINAL DO DASHBOARD — MINIMALIST UI) ─── */}
-      {relatorioPrefeitura && (
-        <div
-          id="relatorio-prefeitura"
-          className="bg-white dark:bg-[#121214] rounded-2xl border border-slate-200/90 dark:border-[#27272a] p-5 sm:p-6 shadow-xs space-y-5 scroll-mt-20"
-        >
-          {/* Cabeçalho Sóbrio / Editorial */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-[#27272a]/60 pb-4">
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Relatório de Alunos Atualmente Matriculados por Escola & Modalidade
-            </h3>
-
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleExportarTabelaPrefeituraCSV}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#18181b] dark:hover:bg-[#27272a] text-slate-800 dark:text-zinc-100 border border-slate-200/80 dark:border-[#27272a] text-xs font-bold transition cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
-                <span>Baixar Tabela Resumo (CSV)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMostrarListaNominalPrefeitura((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200/80 dark:border-[#27272a] bg-white hover:bg-slate-50 dark:bg-[#09090b] dark:hover:bg-[#18181b] text-slate-700 dark:text-zinc-300 text-xs font-semibold transition cursor-pointer"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
-                <span>
-                  {mostrarListaNominalPrefeitura ? 'Ocultar Lista Nominal' : 'Ver Lista Nominal'} (
-                  {relatorioPrefeitura.totalRedeMatriculadosAtivos})
-                </span>
-                {mostrarListaNominalPrefeitura ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Tabela 1: Quadro Numérico Minimalista */}
-          <div className="border border-slate-100 dark:border-[#27272a]/80 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/70 dark:bg-[#09090b]/60 text-slate-500 dark:text-zinc-400 font-semibold border-b border-slate-100 dark:border-[#27272a]/80">
-                  <tr>
-                    <th className="py-3 px-4">Escola Livre (Unidade)</th>
-                    <th className="py-3 px-3 text-center font-mono">Formação</th>
-                    <th className="py-3 px-3 text-center font-mono">Núcleo</th>
-                    <th className="py-3 px-3 text-center font-mono">Oficina</th>
-                    <th className="py-3 px-4 text-center font-mono text-slate-700 dark:text-zinc-200">
-                      Total Matriculados Ativos
-                    </th>
-                    <th className="py-3 px-3 text-center font-mono">Desistências (Nº)</th>
-                    <th className="py-3 px-4 text-right font-mono">Taxa de Desistência</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-[#27272a]/50">
-                  {relatorioPrefeitura.escolas.map((esc) => (
-                    <tr
-                      key={esc.escolaId}
-                      className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/30 transition-colors"
-                    >
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <span className="font-bold text-slate-900 dark:text-white font-mono">
-                            {esc.escolaSigla}
-                          </span>
-                          <span className="text-slate-500 dark:text-zinc-400">
-                            {esc.escolaNome}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 text-center font-mono font-semibold text-slate-700 dark:text-zinc-300">
-                        {esc.matriculadosFormacao}
-                      </td>
-                      <td className="py-3 px-3 text-center font-mono font-semibold text-slate-700 dark:text-zinc-300">
-                        {esc.matriculadosNucleo}
-                      </td>
-                      <td className="py-3 px-3 text-center font-mono font-semibold text-slate-700 dark:text-zinc-300">
-                        {esc.matriculadosOficina}
-                      </td>
-                      <td className="py-3 px-4 text-center font-mono font-extrabold text-slate-900 dark:text-white">
-                        {esc.totalMatriculadosAtivos}
-                      </td>
-                      <td className="py-3 px-3 text-center font-mono font-semibold text-slate-600 dark:text-zinc-400">
-                        {esc.totalDesistencias}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-[#18181b] text-slate-700 dark:text-zinc-300 border border-slate-200/70 dark:border-[#27272a] text-xs font-semibold">
-                          {esc.taxaDesistencia}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="bg-slate-50/90 dark:bg-[#18181b]/70 border-t border-slate-200/80 dark:border-[#27272a] font-bold text-slate-900 dark:text-white">
-                  <tr>
-                    <td className="py-3 px-4 uppercase tracking-wider text-[11px] font-mono text-slate-500 dark:text-zinc-400">
-                      Total Consolidado ({relatorioPrefeitura.escolas.length}{' '}
-                      {relatorioPrefeitura.escolas.length === 1 ? 'escola' : 'escolas'})
-                    </td>
-                    <td className="py-3 px-3 text-center font-mono">
-                      {relatorioPrefeitura.totalRedeFormacao}
-                    </td>
-                    <td className="py-3 px-3 text-center font-mono">
-                      {relatorioPrefeitura.totalRedeNucleo}
-                    </td>
-                    <td className="py-3 px-3 text-center font-mono">
-                      {relatorioPrefeitura.totalRedeOficina}
-                    </td>
-                    <td className="py-3 px-4 text-center font-mono font-extrabold">
-                      {relatorioPrefeitura.totalRedeMatriculadosAtivos}
-                    </td>
-                    <td className="py-3 px-3 text-center font-mono text-slate-600 dark:text-zinc-400">
-                      {relatorioPrefeitura.totalRedeDesistencias}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-white dark:bg-[#09090b] text-slate-900 dark:text-white border border-slate-200/80 dark:border-[#27272a] text-xs font-bold">
-                        {relatorioPrefeitura.taxaRedeDesistencia}%
-                      </span>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          {/* Tabela 2 (Expansível): Relação Nominal de Alunos Atualmente Matriculados */}
-          {mostrarListaNominalPrefeitura && (
-            <div className="pt-2 space-y-3 animate-in fade-in duration-150">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 dark:bg-[#09090b]/60 p-3 rounded-xl border border-slate-100 dark:border-[#27272a]/80">
-                <div className="flex flex-wrap items-center gap-1">
-                  {(
-                    [
-                      { id: 'TODAS', label: 'Todas as Modalidades' },
-                      { id: 'FORMACAO', label: 'Formação' },
-                      { id: 'NUCLEO', label: 'Núcleo' },
-                      { id: 'OFICINA', label: 'Oficina' },
-                    ] as const
-                  ).map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setFiltroModalidadePrefeitura(tab.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                        filtroModalidadePrefeitura === tab.id
-                          ? 'bg-white dark:bg-[#27272a] text-slate-900 dark:text-white shadow-2xs'
-                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
-                    <input
-                      type="text"
-                      placeholder="Buscar aluno, curso ou turma..."
-                      value={buscaAlunoPrefeitura}
-                      onChange={(e) => setBuscaAlunoPrefeitura(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-[#27272a] rounded-lg text-xs text-slate-900 dark:text-white"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleExportarNominalPrefeituraCSV}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#18181b] dark:hover:bg-[#27272a] text-slate-800 dark:text-zinc-100 border border-slate-200/80 dark:border-[#27272a] text-xs font-bold transition cursor-pointer shrink-0"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Exportar Lista (CSV)</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="border border-slate-100 dark:border-[#27272a]/80 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50/70 dark:bg-[#09090b]/60 text-slate-500 dark:text-zinc-400 font-semibold border-b border-slate-100 dark:border-[#27272a]/80 sticky top-0 z-10">
-                    <tr>
-                      <th className="py-2.5 px-3">Escola</th>
-                      <th className="py-2.5 px-3">Modalidade</th>
-                      <th className="py-2.5 px-3">Curso & Turma</th>
-                      <th className="py-2.5 px-3">Aluno Matriculado (Cursando)</th>
-                      <th className="py-2.5 px-3 font-mono">CPF</th>
-                      <th className="py-2.5 px-3 text-right">Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-[#27272a]/50">
-                    {alunosPrefeituraFiltrados.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400 italic">
-                          Nenhum aluno ativo encontrado para o filtro selecionado.
-                        </td>
-                      </tr>
-                    ) : (
-                      alunosPrefeituraFiltrados.map((item) => (
-                        <tr
-                          key={item.matriculaId}
-                          className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/30 transition-colors"
-                        >
-                          <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-zinc-200">
-                            {item.escolaSigla}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-[#18181b] text-slate-600 dark:text-zinc-300 border border-slate-200/70 dark:border-[#27272a] text-[10px] font-semibold uppercase font-mono">
-                              {item.modalidade === 'FORMACAO'
-                                ? 'Formação'
-                                : item.modalidade === 'NUCLEO'
-                                ? 'Núcleo'
-                                : 'Oficina'}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className="font-semibold text-slate-900 dark:text-white block">
-                              {item.cursoNome}
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-400">
-                              Turma: {item.turmaCodigo}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">
-                            {item.alunoNome}
-                          </td>
-                          <td className="py-2.5 px-3 font-mono text-slate-500 dark:text-zinc-400">
-                            {formatarCpfMascara(item.alunoCpf)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => onOpenPerfilAluno(item.alunoId)}
-                              className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#18181b] hover:bg-slate-200 dark:hover:bg-[#27272a] text-slate-700 dark:text-zinc-200 text-[11px] font-semibold transition cursor-pointer"
-                            >
-                              Dossiê
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

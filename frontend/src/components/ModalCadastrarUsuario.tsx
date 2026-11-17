@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api, Escola, CadastrarUsuarioPayload } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
-import { X, ShieldCheck, AlertCircle, Building2, Mail, Lock, User, Users2, Sparkles } from 'lucide-react';
+import { X, ShieldCheck, AlertCircle, Building2, Mail, Lock, User, Users2, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { FotoPerfilUploader } from './FotoPerfilUploader';
 
 interface ModalCadastrarUsuarioProps {
@@ -21,6 +21,7 @@ export function ModalCadastrarUsuario({
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [fotoUrl, setFotoUrl] = useState('');
   const [role, setRole] = useState<'ROLE_ADMIN' | 'ROLE_ENCARREGADA'>('ROLE_ENCARREGADA');
   const [escolaId, setEscolaId] = useState<number | ''>('');
@@ -42,6 +43,7 @@ export function ModalCadastrarUsuario({
     setNome('');
     setEmail('');
     setSenha('');
+    setMostrarSenha(false);
     setFotoUrl('');
     setRole('ROLE_ENCARREGADA');
     setEscolaId('');
@@ -255,14 +257,27 @@ export function ModalCadastrarUsuario({
             <div className="relative">
               <Lock className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
               <input
-                type="password"
+                type={mostrarSenha ? 'text' : 'password'}
                 required
                 minLength={5}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder="Mínimo de 5 caracteres"
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                className="w-full pl-9 pr-9 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
               />
+              <button
+                type="button"
+                onClick={() => setMostrarSenha((prev) => !prev)}
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                title={mostrarSenha ? 'Ocultar senha' : 'Ver senha'}
+                aria-label={mostrarSenha ? 'Ocultar senha' : 'Ver senha'}
+              >
+                {mostrarSenha ? (
+                  <EyeOff className="w-3.5 h-3.5" />
+                ) : (
+                  <Eye className="w-3.5 h-3.5" />
+                )}
+              </button>
             </div>
           </div>
 

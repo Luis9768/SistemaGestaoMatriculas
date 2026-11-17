@@ -9,6 +9,7 @@ import {
   Search,
   BookOpen,
   FileSpreadsheet,
+  FileBarChart,
   Send,
   Lock,
   LogOut,
@@ -32,7 +33,8 @@ export type ScreenId =
   | 'frequencia'
   | 'alunos'
   | 'inscricao'
-  | 'importacao';
+  | 'importacao'
+  | 'relatorios';
 
 interface SidebarCulturalProps {
   currentScreen: ScreenId;
@@ -144,6 +146,14 @@ export function SidebarCultural({
       label: 'Importação em Lote',
       description: 'Carga de planilhas CSV e Excel',
       icon: FileSpreadsheet,
+      section: 'gestao',
+      protected: true,
+    },
+    {
+      id: 'relatorios',
+      label: 'Relatório de Alunos',
+      description: 'Prestação de contas e listas nominais',
+      icon: FileBarChart,
       section: 'gestao',
       protected: true,
     },

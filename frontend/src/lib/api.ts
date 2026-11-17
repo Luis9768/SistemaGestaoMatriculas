@@ -1437,6 +1437,8 @@ export type TipoAcaoAuditoria =
   | 'CRIACAO_TURMA'
   | 'ATUALIZACAO_TURMA'
   | 'CRIACAO_MATERIA'
+  | 'CRIACAO_CURSO'
+  | 'ATUALIZACAO_CURSO'
   | 'CADASTRO_USUARIO'
   | 'ATUALIZACAO_USUARIO'
   | 'CADASTRO_ALUNO'
@@ -1495,9 +1497,12 @@ export interface EscolaPrefeituraItem {
 
 export interface AlunoAtivoPrefeitura {
   matriculaId: number;
+  codigoMatricula?: string;
   alunoId: number;
   alunoNome: string;
   alunoCpf: string;
+  alunoEmail?: string;
+  alunoTelefone?: string;
   escolaId: number;
   escolaSigla: string;
   escolaNome: string;
@@ -1505,6 +1510,9 @@ export interface AlunoAtivoPrefeitura {
   modalidade: 'FORMACAO' | 'NUCLEO' | 'OFICINA' | string;
   turmaCodigo: string;
   dataMatricula: string;
+  canalOrigem?: string;
+  statusMatricula?: string;
+  statusDescricao?: string;
 }
 
 export interface RelatorioPrefeituraData {
@@ -1516,4 +1524,5 @@ export interface RelatorioPrefeituraData {
   taxaRedeDesistencia: number;
   escolas: EscolaPrefeituraItem[];
   alunosAtivos: AlunoAtivoPrefeitura[];
+  alunosEvasoes?: AlunoAtivoPrefeitura[];
 }

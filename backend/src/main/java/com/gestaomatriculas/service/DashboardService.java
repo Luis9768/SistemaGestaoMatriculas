@@ -192,6 +192,7 @@ public class DashboardService {
 
         List<RelatorioPrefeituraDTO.EscolaPrefeituraItemDTO> itensEscola = new ArrayList<>();
         List<RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO> alunosAtivos = new ArrayList<>();
+        List<RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO> alunosEvasoes = new ArrayList<>();
 
         long somaRedeFormacao = 0;
         long somaRedeNucleo = 0;
@@ -269,11 +270,16 @@ public class DashboardService {
                 Aluno a = m.getAluno();
                 Curso c = m.getTurma().getCurso();
                 ModalidadeCurso mod = c.getModalidade() != null ? c.getModalidade() : ModalidadeCurso.OFICINA;
+                String codMatricula = String.format("MAT-%05d", m.getId());
+
                 alunosAtivos.add(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO.builder()
                         .matriculaId(m.getId())
+                        .codigoMatricula(codMatricula)
                         .alunoId(a != null ? a.getId() : null)
                         .alunoNome(a != null ? a.getNome() : "Sem Nome")
-                        .alunoCpf(a != null ? mascararCpf(a.getCpf()) : "")
+                        .alunoCpf(a != null ? a.getCpf() : "")
+                        .alunoEmail(a != null ? a.getEmail() : "")
+                        .alunoTelefone(a != null ? a.getTelefone() : "")
                         .escolaId(esc.getId())
                         .escolaSigla(esc.getSigla())
                         .escolaNome(esc.getNome())
@@ -281,11 +287,52 @@ public class DashboardService {
                         .modalidade(mod.name())
                         .turmaCodigo(m.getTurma().getCodigo())
                         .dataMatricula(m.getDataMatricula() != null ? m.getDataMatricula().format(fmt) : "")
+                        .canalOrigem(m.getCanalOrigem() != null ? m.getCanalOrigem().name() : "PRESENCIAL")
+                        .statusMatricula(m.getStatus() != null ? m.getStatus().name() : "CONFIRMADA")
+                        .statusDescricao("Matriculado Ativo")
+                        .build());
+            }
+
+            List<Matricula> evasoesLista = matsDaEscola.stream()
+                    .filter(m -> m.getStatus() == StatusMatricula.DESISTENTE_FALTAS || m.getStatus() == StatusMatricula.CANCELADA)
+                    .toList();
+
+            for (Matricula m : evasoesLista) {
+                Aluno a = m.getAluno();
+                Curso c = m.getTurma().getCurso();
+                ModalidadeCurso mod = c.getModalidade() != null ? c.getModalidade() : ModalidadeCurso.OFICINA;
+                String codMatricula = String.format("MAT-%05d", m.getId());
+                String statusDesc = m.getStatus() == StatusMatricula.DESISTENTE_FALTAS
+                        ? "Desistência por Faltas"
+                        : "Cancelamento Voluntário";
+
+                alunosEvasoes.add(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO.builder()
+                        .matriculaId(m.getId())
+                        .codigoMatricula(codMatricula)
+                        .alunoId(a != null ? a.getId() : null)
+                        .alunoNome(a != null ? a.getNome() : "Sem Nome")
+                        .alunoCpf(a != null ? a.getCpf() : "")
+                        .alunoEmail(a != null ? a.getEmail() : "")
+                        .alunoTelefone(a != null ? a.getTelefone() : "")
+                        .escolaId(esc.getId())
+                        .escolaSigla(esc.getSigla())
+                        .escolaNome(esc.getNome())
+                        .cursoNome(c.getNome())
+                        .modalidade(mod.name())
+                        .turmaCodigo(m.getTurma().getCodigo())
+                        .dataMatricula(m.getDataMatricula() != null ? m.getDataMatricula().format(fmt) : "")
+                        .canalOrigem(m.getCanalOrigem() != null ? m.getCanalOrigem().name() : "PRESENCIAL")
+                        .statusMatricula(m.getStatus() != null ? m.getStatus().name() : "")
+                        .statusDescricao(statusDesc)
                         .build());
             }
         }
 
         alunosAtivos.sort(Comparator.comparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getEscolaSigla)
+                .thenComparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getModalidade)
+                .thenComparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getAlunoNome));
+
+        alunosEvasoes.sort(Comparator.comparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getEscolaSigla)
                 .thenComparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getModalidade)
                 .thenComparing(RelatorioPrefeituraDTO.AlunoAtivoPrefeituraDTO::getAlunoNome));
 
@@ -303,6 +350,7 @@ public class DashboardService {
                 .taxaRedeDesistencia(taxaRedeDesistencia)
                 .escolas(itensEscola)
                 .alunosAtivos(alunosAtivos)
+                .alunosEvasoes(alunosEvasoes)
                 .build();
     }
 

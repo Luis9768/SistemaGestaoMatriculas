@@ -8,6 +8,7 @@ import com.gestaomatriculas.model.Curso;
 import com.gestaomatriculas.model.Disciplina;
 import com.gestaomatriculas.model.Escola;
 import com.gestaomatriculas.model.enums.ModalidadeCurso;
+import com.gestaomatriculas.model.enums.TipoAcaoAuditoria;
 import com.gestaomatriculas.model.enums.TipoCurso;
 import com.gestaomatriculas.repository.CursoRepository;
 import com.gestaomatriculas.repository.DisciplinaRepository;
@@ -31,6 +32,7 @@ public class CursoService {
     private final EscolaRepository escolaRepository;
     private final DisciplinaRepository disciplinaRepository;
     private final SecurityService securityService;
+    private final AuditoriaService auditoriaService;
 
     @Cacheable(value = "cursos", key = "'escola_' + (#escolaId != null ? #escolaId : 'todas') + '_tipo_' + (#tipo != null ? #tipo : 'todos')")
     @Transactional(readOnly = true)
@@ -125,6 +127,33 @@ public class CursoService {
             }
         }
 
+        String siglaEsc = (salvo.getEscola() != null) ? salvo.getEscola().getSigla() : "REDE";
+        Long idEsc = (salvo.getEscola() != null) ? salvo.getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.CRIACAO_CURSO,
+                "Curso",
+                String.valueOf(salvo.getId()),
+                String.format("Curso '%s' criado (%s, %d disciplinas) [%s]",
+                        salvo.getNome(), salvo.getModalidade(), salvo.getDisciplinas().size(), siglaEsc),
+                idEsc,
+                siglaEsc
+        );
+
+        if (salvo.getDisciplinas() != null) {
+            for (Disciplina disc : salvo.getDisciplinas()) {
+                auditoriaService.registrarAcao(
+                        TipoAcaoAuditoria.CRIACAO_MATERIA,
+                        "Disciplina",
+                        String.valueOf(disc.getId()),
+                        String.format("Disciplina '%s' (%dh) cadastrada na matriz do curso '%s' [%s]",
+                                disc.getNome(), disc.getCargaHoraria(), salvo.getNome(), siglaEsc),
+                        idEsc,
+                        siglaEsc
+                );
+            }
+        }
+
         return toDTO(salvo);
     }
 
@@ -194,6 +223,20 @@ public class CursoService {
         }
 
         Curso atualizado = cursoRepository.save(curso);
+
+        String siglaEscAtualizado = (atualizado.getEscola() != null) ? atualizado.getEscola().getSigla() : "REDE";
+        Long idEscAtualizado = (atualizado.getEscola() != null) ? atualizado.getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.ATUALIZACAO_CURSO,
+                "Curso",
+                String.valueOf(atualizado.getId()),
+                String.format("Curso '%s' atualizado (%d disciplinas) [%s]",
+                        atualizado.getNome(), atualizado.getDisciplinas().size(), siglaEscAtualizado),
+                idEscAtualizado,
+                siglaEscAtualizado
+        );
+
         return toDTO(atualizado);
     }
 
@@ -226,6 +269,19 @@ public class CursoService {
         int total = curso.getDisciplinas().stream().mapToInt(Disciplina::getCargaHoraria).sum();
         curso.setCargaHoraria(total);
         cursoRepository.save(curso);
+
+        String siglaEscCurso = (curso.getEscola() != null) ? curso.getEscola().getSigla() : "REDE";
+        Long idEscCurso = (curso.getEscola() != null) ? curso.getEscola().getId() : null;
+
+        auditoriaService.registrarAcao(
+                TipoAcaoAuditoria.CRIACAO_MATERIA,
+                "Disciplina",
+                String.valueOf(salva.getId()),
+                String.format("Disciplina '%s' (%dh) adicionada à matriz do curso '%s' [%s]",
+                        salva.getNome(), salva.getCargaHoraria(), curso.getNome(), siglaEscCurso),
+                idEscCurso,
+                siglaEscCurso
+        );
 
         return toDisciplinaDTO(salva);
     }
